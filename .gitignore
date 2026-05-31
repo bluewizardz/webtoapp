@@ -18,3 +18,8 @@ Thumbs.db
 # Agent/workspace metadata
 .agents/
 .codex/
+
+# Astro build and cache folders
+dist/
+.astro/
+

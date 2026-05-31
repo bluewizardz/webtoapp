@@ -1,0 +1,25 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const pageTitle = "About Us - SiteToApp";
+const pageDescription = "Learn about SiteToApp, our mission, and how we deliver free, secure, open-source mobile app wrappers without complex dev SDKs.";
+---
+
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page">
+  <main class="shell">
+    <article class="content-panel">
+      <h1>About SiteToApp</h1>
+      <p>SiteToApp was born out of a simple goal: to make website-to-app packaging fully accessible, secure, and developer-friendly without charging fees or adding bloat.</p>
+      
+      <h2>Our Mission</h2>
+      <p>Typically, packaging a web application for mobile distribution involves setting up heavy developer environments like Android Studio, Gradle, and managing nested package structures. The other alternative is using subscription-based services that bundle tracking scripts, advertisements, or slow, outdated engines.</p>
+      <p>We believe in democratizing application compiles. By delivering clean, boilerplate native Java wrapper projects featuring standard WebView clients, you get compile-ready codebases that conform to standard Android guidelines, with absolutely zero dependency on third-party frameworks.</p>
+
+      <h2>Zero Server Costs</h2>
+      <p>SiteToApp runs compiles using secure, automated processes. We compile standard projects on our platform, but we also include fully configured <strong>GitHub Actions</strong> pipelines directly inside your downloaded ZIP package. This allows you to deploy and build release configurations on GitHub's secure infrastructure completely for free.</p>
+
+      <h2>Security First</h2>
+      <p>Your source code remains your own. We do not inject telemetry, analytics SDKs, or background services into your wrapper. Everything matches standard native Android Java structures, ensuring lightweight, high-performance execution on any device.</p>
+    </article>
+  </main>
+</Layout>

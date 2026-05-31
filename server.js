@@ -81,38 +81,38 @@ app.use((req, res, next) => {
 
 // Explicit routes for clean URL pages
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 app.get('/android', (req, res) => {
-  res.sendFile(path.join(__dirname, 'android.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'android', 'index.html'));
 });
 
 app.get('/about', (req, res) => {
-  res.sendFile(path.join(__dirname, 'about.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'about', 'index.html'));
 });
 
 app.get('/faq', (req, res) => {
-  res.sendFile(path.join(__dirname, 'faq.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'faq', 'index.html'));
 });
 
 app.get('/privacy', (req, res) => {
-  res.sendFile(path.join(__dirname, 'privacy.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'privacy', 'index.html'));
 });
 
 // Explicit routes for SEO crawlers
 app.get('/robots.txt', (req, res) => {
   res.type('text/plain');
-  res.sendFile(path.join(__dirname, 'robots.txt'));
+  res.sendFile(path.join(__dirname, 'dist', 'robots.txt'));
 });
 
 app.get('/sitemap.xml', (req, res) => {
   res.type('application/xml');
-  res.sendFile(path.join(__dirname, 'sitemap.xml'));
+  res.sendFile(path.join(__dirname, 'dist', 'sitemap.xml'));
 });
 
 // Fallback middleware to serve styles, scripts and other static files
-app.use(express.static('.'));
+app.use(express.static('dist'));
 
 // Build request queue
 const buildQueue = new Map();

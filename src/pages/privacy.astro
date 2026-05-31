@@ -1,0 +1,27 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const pageTitle = "Privacy Policy - SiteToApp";
+const pageDescription = "Read the SiteToApp Privacy Policy. We do not gather telemetry, inject advertising trackers, or access your credentials. All compiled code is yours.";
+---
+
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page">
+  <main class="shell">
+    <article class="content-panel">
+      <h1>Privacy Policy</h1>
+      <p>Your privacy is paramount to us. Because SiteToApp operates as a clean code compilation tool, we do not require user accounts, track user activity, or store your site credentials.</p>
+      
+      <h2>No Telemetry or Tracking</h2>
+      <p>We do not collect telemetry, usage metrics, or request history from our compiler. When you input a website URL to package into an application, that URL is only used dynamically to generate the template Java config files.</p>
+
+      <h2>Zero Data Injection</h2>
+      <p>The codebases compiled by our generator contain <strong>only native Android/WebView API instructions</strong>. We do not inject background trackers, third-party analytics libraries, advertising cookies, or telemetry frameworks. The compiled APK runs independently and connects only to the URL you specified.</p>
+
+      <h2>Secure Client Data</h2>
+      <p>Standard cookies, local session storage, and database caches handled by your web application are securely isolated inside the client WebView. Neither SiteToApp nor any intermediate script can access this local container space.</p>
+
+      <h2>Local Control</h2>
+      <p>All source project folders are zipped and downloaded directly to your computer. You retain full control and ownership of the generated code and files.</p>
+    </article>
+  </main>
+</Layout>

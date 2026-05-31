@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const pageTitle = "FAQ - Frequently Asked Questions - SiteToApp";
+const pageDescription = "Find answers to common questions about converting websites to Android apps, package configuration, offline features, and custom options.";
+---
+
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page">
+  <main class="shell">
+    <article class="content-panel">
+      <h1>FAQ</h1>
+      
+      <h2>How does SiteToApp convert a website?</h2>
+      <p>SiteToApp creates a standard, native mobile app package containing a lightweight WebView container. Instead of rendering your pages inside a bulky, non-standard layout framework, it uses Google’s high-performance Android WebKit components to render your site directly as a native application.</p>
+
+      <h2>Is the compiled APK safe to upload to Google Play?</h2>
+      <p>Yes. The generated code strictly follows Google’s guidelines for Android application development. It uses standard security measures, enables mixed-content filters where necessary, and compiles cleanly with standard Gradle build workflows, making it 100% compliant for Google Play Store submissions.</p>
+
+      <h2>Can I build release configurations locally?</h2>
+      <p>Absolutely. When you choose to compile your project, we package the complete Java source code, assets, and layouts into a workspace ZIP file. You can import this directly into Android Studio to compile, sign, customize layouts, and add plugins or debug locally.</p>
+
+      <h2>Does the wrapper support offline functionality?</h2>
+      <p>The native wrapper enables standard DOM storage, database access, and cache configurations inside the WebView. If your website is a Progressive Web App (PWA) with active service workers, the compiled APK wrapper will support robust offline rendering automatically.</p>
+
+      <h2>How do I customize the user agent?</h2>
+      <p>Inside the builder interface under "Advanced Settings", you can specify a custom User Agent string. This allows your server to detect when requests originate from your custom Android wrapper and serve tailored styling or hidden components.</p>
+    </article>
+  </main>
+</Layout>

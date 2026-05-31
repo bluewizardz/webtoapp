@@ -1,0 +1,194 @@
+---
+import '../styles/styles.css';
+
+interface Props {
+  title: string;
+  description: string;
+  canonicalUrl?: string;
+  bodyClass?: string;
+  structuredData?: Record<string, any>;
+}
+
+const {
+  title,
+  description,
+  canonicalUrl = `https://sitetoapp.dev${Astro.url.pathname === '/' ? '' : Astro.url.pathname}`,
+  bodyClass = 'landing-page',
+  structuredData
+} = Astro.props;
+
+// Construct default structured data if none provided
+const defaultStructuredData = structuredData || {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "SiteToApp",
+  "operatingSystem": "Android",
+  "applicationCategory": "DeveloperApplication",
+  "offers": {
+    "@type": "Offer",
+    "price": "0.00",
+    "priceCurrency": "USD"
+  },
+  "description": "Convert website URLs into native Android wrapper apps (APK) instantly with zero coding."
+};
+
+const pathname = Astro.url.pathname;
+const isHome = pathname === '/' || pathname === '/index';
+const isAndroid = pathname.startsWith('/android');
+const isAbout = pathname.startsWith('/about');
+const isFaq = pathname.startsWith('/faq');
+const isPrivacy = pathname.startsWith('/privacy');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    
+    <!-- Core SEO Meta Tags -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:site_name" content="SiteToApp" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalUrl} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+
+    <!-- Schema.org JSON-LD Structured Data -->
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(defaultStructuredData)} />
+
+    <!-- Preconnect & Preloads for Web Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap"
+      as="style"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+
+    <!-- Theme Inline Script to prevent FOUC -->
+    <script is:inline>
+      (function () {
+        "use strict";
+        const savedTheme = localStorage.getItem("theme");
+        const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        if (savedTheme === "light" || (!savedTheme && !systemPrefersDark)) {
+          document.documentElement.classList.add("light-theme");
+        } else {
+          document.documentElement.classList.remove("light-theme");
+        }
+      })();
+    </script>
+  </head>
+  <body class={bodyClass}>
+    <header class="navbar" aria-label="Main navigation">
+      <div class="navbar-container">
+        <a href="/" class="brand" aria-label="SiteToApp Homepage">
+          <svg class="brand-logo" viewBox="0 0 24 24" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+            <path d="M12 18h.01"></path>
+            <path d="M9 6h6"></path>
+          </svg>
+          <span class="brand-text">SiteToApp</span>
+        </a>
+        
+        {isAndroid ? (
+          <div class="breadcrumbs">
+            <span class="slash">/</span>
+            <a href="/">Overview</a>
+            <span class="slash">/</span>
+            <span class="current">Android Builder</span>
+          </div>
+        ) : (
+          <nav class="nav-links" aria-label="Secondary navigation">
+            <a href="/" class={isHome ? "active" : ""}>Overview</a>
+            <a href="/android" class={isAndroid ? "active" : ""}>Android APK</a>
+            <span class="nav-disabled">iOS (Soon)</span>
+          </nav>
+        )}
+
+        <div class="nav-actions" style="display: flex; align-items: center;">
+          <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
+            <!-- Sun Icon (shown in dark theme) -->
+            <svg class="sun-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="5"></circle>
+              <line x1="12" y1="1" x2="12" y2="3"></line>
+              <line x1="12" y1="21" x2="12" y2="23"></line>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+              <line x1="1" y1="12" x2="3" y2="12"></line>
+              <line x1="21" y1="12" x2="23" y2="12"></line>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <!-- Moon Icon (shown in light theme) -->
+            <svg class="moon-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+          </button>
+          
+          {isAndroid ? (
+            <a href="/" class="btn btn-secondary btn-small">Back to Overview</a>
+          ) : (
+            <a href="https://github.com/bluewizardz/webtoapp" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+              GitHub
+            </a>
+          )}
+        </div>
+      </div>
+    </header>
+
+    <slot />
+
+    <footer class="footer" aria-label="Footer">
+      <div class="footer-container">
+        <div class="footer-links">
+          <a href="/about" class={isAbout ? "active" : ""}>About Us</a>
+          <a href="/faq" class={isFaq ? "active" : ""}>FAQ</a>
+          <a href="/privacy" class={isPrivacy ? "active" : ""}>Privacy Policy</a>
+        </div>
+        <p class="copyright">&copy; {new Date().getFullYear()} SiteToApp. Powered by GitHub Actions & Vercel design framework.</p>
+      </div>
+    </footer>
+
+    <!-- Theme toggler logic -->
+    <script>
+      const toggleBtn = document.getElementById("themeToggle");
+      if (toggleBtn) {
+        toggleBtn.addEventListener("click", () => {
+          const isLight = document.documentElement.classList.contains("light-theme");
+          if (isLight) {
+            document.documentElement.classList.remove("light-theme");
+            localStorage.setItem("theme", "dark");
+          } else {
+            document.documentElement.classList.add("light-theme");
+            localStorage.setItem("theme", "light");
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
