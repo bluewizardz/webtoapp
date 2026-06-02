@@ -1,11 +1,50 @@
 ---
 import Layout from '../layouts/Layout.astro';
 
-const pageTitle = "FAQ - Frequently Asked Questions - SiteToApp";
-const pageDescription = "Find answers to common questions about converting websites to Android apps, package configuration, offline features, and custom options.";
+const pageTitle = "FAQs - Website to APK Conversion & Google Play Store Publishing";
+const pageDescription = "Find answers to common questions about converting websites to Android apps, Google Play Protect warning solutions, WebView capabilities, and Play Store compliance.";
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How does SiteToApp convert a website into an Android app?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SiteToApp packages your website URL into a native Android wrapper project using a high-performance WebView container. It utilizes standard WebKit components so your app loads fast and displays your site accurately."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is the compiled APK safe to upload to the Google Play Store?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes, the generated wrapper conforms to Google's standard developer guidelines. It compiles cleanly using Gradle builds, making it fully compliant for submission to the Google Play Store."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Will my app update automatically when I change my website?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Because the app loads your website URL directly in a native WebView, any updates, design tweaks, or new pages published on your website will appear in your mobile app instantly without compiling a new APK."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Why does Google Play Protect warn me during installation?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Since the APK is compiled dynamically on our server and hasn't been signed with your registered developer certificate (or published to the Play Store), Google flags it as unrecognized. The app is completely safe, virus-free, and has zero tracking modules."
+      }
+    }
+  ]
+};
 ---
 
-<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page">
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={faqSchema}>
   <main class="shell">
     <article class="content-panel">
       <h1>FAQ</h1>
