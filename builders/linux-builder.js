@@ -129,6 +129,9 @@ dist/
   fs.mkdirSync(githubWorkflowsDir, { recursive: true });
   fs.writeFileSync(path.join(githubWorkflowsDir, 'build.yml'), `name: Build Linux Application
 on: [push, pull_request]
+concurrency:
+  group: \${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -363,6 +366,9 @@ dist/
   fs.mkdirSync(githubWorkflowsDir, { recursive: true });
   fs.writeFileSync(path.join(githubWorkflowsDir, 'build.yml'), `name: Build Linux Application
 on: [push, pull_request]
+concurrency:
+  group: \${{ github.workflow }}-\${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   build:
     runs-on: ubuntu-latest
