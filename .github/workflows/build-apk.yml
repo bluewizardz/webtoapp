@@ -1,0 +1,97 @@
+name: Build Android APK Wrapper
+
+on:
+  workflow_dispatch:
+    inputs:
+      siteUrl:
+        description: 'Website URL to convert (e.g. https://example.com)'
+        required: true
+        default: 'https://example.com'
+      appName:
+        description: 'Application Name (e.g. My Portal)'
+        required: true
+        default: 'My Web App'
+      appId:
+        description: 'Application Package ID (e.g. com.example.app)'
+        required: true
+        default: 'com.example.app'
+      appVersion:
+        description: 'Application Version'
+        required: true
+        default: '1.0.0'
+      pullToRefresh:
+        description: 'Enable Pull-to-Refresh'
+        type: boolean
+        required: true
+        default: true
+      showSpinner:
+        description: 'Enable Horizontal Load Progress Line'
+        type: boolean
+        required: true
+        default: true
+      showSplash:
+        description: 'Enable Splash Screen'
+        type: boolean
+        required: true
+        default: true
+      splashDuration:
+        description: 'Splash Screen Duration (ms)'
+        required: true
+        default: '2000'
+      fullScreen:
+        description: 'Enable Full Screen Mode'
+        type: boolean
+        required: true
+        default: false
+      customUserAgent:
+        description: 'Custom User Agent String (Optional)'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+
+      - name: Set up Android SDK Environment Variables
+        run: |
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
+      - name: Compile Android APK
+        run: |
+          node cli-build-apk.js \
+            "${{ github.event.inputs.siteUrl }}" \
+            "${{ github.event.inputs.appName }}" \
+            "${{ github.event.inputs.appId }}" \
+            "${{ github.event.inputs.appVersion }}" \
+            "${{ github.event.inputs.pullToRefresh }}" \
+            "${{ github.event.inputs.showSpinner }}" \
+            "${{ github.event.inputs.showSplash }}" \
+            "${{ github.event.inputs.splashDuration }}" \
+            "${{ github.event.inputs.fullScreen }}" \
+            "${{ github.event.inputs.customUserAgent }}"
+
+      - name: Locate Built APK and Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: '${{ github.event.inputs.appName }}-APK'
+          path: 'builds-cli/latest/*.apk'
+          if-no-files-found: error
