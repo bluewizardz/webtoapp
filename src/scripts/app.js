@@ -1,6 +1,8 @@
 (function () {
   "use strict";
 
+  const backendUrl = import.meta.env.PUBLIC_BACKEND_URL || window.location.origin;
+
   // === DOM Elements ===
   const els = {
     form: document.querySelector("#generatorForm"),
@@ -269,7 +271,7 @@
       } catch (e) {}
       
       if (domain) {
-        const faviconUrl = `/api/favicon?url=${encodeURIComponent(normalizeUrl(els.siteUrl.value))}`;
+        const faviconUrl = `${backendUrl}/api/favicon?url=${encodeURIComponent(normalizeUrl(els.siteUrl.value))}`;
         
         // Show spinner while fetching auto-fetched icon
         if (els.iconPreviewSpinner) {
@@ -345,7 +347,6 @@
   }
 
   async function buildAndDownload(app) {
-    const backendUrl = window.location.origin;
     const requestBody = {
       siteUrl: app.url,
       appName: app.name,
