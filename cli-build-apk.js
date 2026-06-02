@@ -13,8 +13,8 @@ const splashDuration = parseInt(process.argv[9] || '2000', 10);
 const fullScreen = process.argv[10] === 'true';
 const customUserAgent = process.argv[11] || null;
 
+const buildId = process.argv[12] || 'latest';
 const buildsDir = path.resolve('./builds-cli');
-const buildId = 'latest';
 
 console.log('--- SiteToApp CLI Build ---');
 console.log('Website URL:', siteUrl);

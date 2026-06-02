@@ -47,6 +47,10 @@ on:
         description: 'Custom User Agent String (Optional)'
         required: false
         default: ''
+      buildId:
+        description: 'Internal Build ID'
+        required: true
+        default: 'latest'
 
 jobs:
   build:
@@ -87,11 +91,12 @@ jobs:
             "${{ github.event.inputs.showSplash }}" \
             "${{ github.event.inputs.splashDuration }}" \
             "${{ github.event.inputs.fullScreen }}" \
-            "${{ github.event.inputs.customUserAgent }}"
+            "${{ github.event.inputs.customUserAgent }}" \
+            "${{ github.event.inputs.buildId }}"
 
       - name: Locate Built APK and Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: '${{ github.event.inputs.appName }}-APK'
-          path: 'builds-cli/latest/*.apk'
+          name: 'build-${{ github.event.inputs.buildId }}'
+          path: 'builds-cli/${{ github.event.inputs.buildId }}/*.apk'
           if-no-files-found: error
