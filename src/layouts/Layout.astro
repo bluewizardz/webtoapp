@@ -1,4 +1,5 @@
 ---
+import '../styles/fonts.css';
 import '../styles/styles.css';
 
 interface Props {
@@ -45,6 +46,7 @@ const isPrivacy = pathname.startsWith('/privacy');
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
     
     <!-- Core SEO Meta Tags -->
     <title>{title}</title>
@@ -68,26 +70,14 @@ const isPrivacy = pathname.startsWith('/privacy');
     <!-- Schema.org JSON-LD Structured Data -->
     <script type="application/ld+json" is:inline set:html={JSON.stringify(defaultStructuredData)} />
 
-    <!-- Preconnect & Preloads for Web Performance -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Font Preloading for Web Performance -->
     <link
       rel="preload"
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap"
-      as="style"
+      href="/fonts/geist-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
     />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet"
-      media="print"
-      onload="this.media='all'"
-    />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
 
     <!-- Theme Inline Script to prevent FOUC -->
     <script is:inline>
@@ -153,8 +143,8 @@ const isPrivacy = pathname.startsWith('/privacy');
           {isAndroid ? (
             <a href="/" class="btn btn-secondary btn-small">Back to Overview</a>
           ) : (
-            <a href="https://github.com/bluewizardz/webtoapp" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-              GitHub
+            <a href="https://buymeacoffee.com/bluewiz" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+              Buy Me a Coffee
             </a>
           )}
         </div>

@@ -698,16 +698,18 @@ app.use((req, res) => {
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>404 - Page Not Found</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" as="style">
-    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    </noscript>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="preload" href="/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="stylesheet" href="/styles.css">
     <script src="/theme.js"></script>
     <style>
+      @font-face {
+        font-family: 'Geist';
+        font-style: normal;
+        font-weight: 300 800;
+        font-display: swap;
+        src: url('/fonts/geist-variable.woff2') format('woff2');
+      }
       .error-container {
         max-width: 600px;
         margin: 120px auto;
