@@ -77,7 +77,13 @@ jobs:
 
       - name: Set up Android SDK Environment Variables
         run: |
-          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          if [ -z "$ANDROID_HOME" ]; then
+            if [ -n "$ANDROID_SDK_ROOT" ]; then
+              echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+            else
+              echo "ANDROID_HOME=/usr/local/lib/android/sdk" >> $GITHUB_ENV
+            fi
+          fi
 
       - name: Compile Android APK
         run: |

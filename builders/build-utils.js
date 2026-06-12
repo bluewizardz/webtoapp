@@ -69,7 +69,8 @@ export async function tryBuildAPK(buildDir) {
     const commonPaths = [
       path.join(process.env.HOME || '', 'Android/Sdk'),
       '/opt/android-sdk',
-      '/usr/lib/android-sdk'
+      '/usr/lib/android-sdk',
+      '/usr/local/lib/android/sdk'
     ];
     const found = commonPaths.find(p => fs.existsSync(p));
     if (found) {
@@ -160,6 +161,19 @@ export async function tryBuildAPK(buildDir) {
  * Ensure JDK 17 is available. Downloads if needed. Returns JAVA_HOME path or null.
  */
 async function ensureJdk17() {
+  // 1. Check if process.env.JAVA_HOME is already configured with JDK 17
+  if (process.env.JAVA_HOME && fs.existsSync(path.join(process.env.JAVA_HOME, 'bin', 'java'))) {
+    try {
+      const versionOutput = execSync(`"${path.join(process.env.JAVA_HOME, 'bin', 'java')}" -version 2>&1`).toString();
+      if (versionOutput.includes('version "17') || versionOutput.includes(' 17.')) {
+        console.log('[build-utils] Using system JAVA_HOME: ' + process.env.JAVA_HOME);
+        return process.env.JAVA_HOME;
+      }
+    } catch (e) {
+      console.log('[build-utils] Error checking system JAVA_HOME version:', e.message);
+    }
+  }
+
   const jdk17Dir = path.join(process.env.HOME || '/tmp', '.jdk', 'jdk-17');
 
   // Check if already downloaded
@@ -191,7 +205,9 @@ async function ensureJdk17() {
 
     tryExec(`rm -f "${tarPath}"`, { timeout: 5000 });
 
-    if (fs.existsSync(path.join(jdk17Dir, 'bin', 'java'))) {
+    const javaBin = path.join(jdk17Dir, 'bin', 'java');
+    if (fs.existsSync(javaBin)) {
+      tryExec(`chmod +x "${javaBin}"`);
       console.log('[build-utils] JDK 17 installed at ' + jdk17Dir);
       return jdk17Dir;
     }
@@ -230,6 +246,7 @@ async function ensureGradle8() {
     tryExec(`rm -f "${zipPath}"`, { timeout: 5000 });
 
     if (fs.existsSync(gradleBin)) {
+      tryExec(`chmod +x "${gradleBin}"`);
       console.log('[build-utils] Gradle 8.12.1 installed');
       return gradleBin;
     }
