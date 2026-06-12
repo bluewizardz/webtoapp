@@ -827,6 +827,8 @@ button, input {
   text-align: center;
   overflow: hidden;
   position: relative;
+  width: 100%;
+  min-width: 0;
 }
 
 .screen span,
@@ -853,6 +855,7 @@ button, input {
   font-size: 1.1rem;
   font-weight: 800;
   max-width: 100%;
+  min-width: 0;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -863,6 +866,7 @@ button, input {
   font-size: 0.78rem;
   color: var(--accents-5);
   max-width: 100%;
+  min-width: 0;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
@@ -926,6 +930,7 @@ button, input {
   border: 1px solid var(--accents-3);
   border-radius: 12px;
   padding: 16px;
+  min-width: 0;
 }
 
 .output-meta dt {
