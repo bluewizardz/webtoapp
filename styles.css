@@ -1490,6 +1490,11 @@ input[type="file"]::file-selector-button:active {
     width: 100%;
   }
   
+  .field-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
   .output-meta {
     grid-template-columns: 1fr;
     gap: 12px;
@@ -1498,6 +1503,10 @@ input[type="file"]::file-selector-button:active {
   .builder-panel,
   .preview-panel {
     padding: 24px 16px;
+  }
+
+  .device-preview {
+    padding: 24px 8px;
   }
 
   .icon-fetch-container {
@@ -1515,12 +1524,28 @@ input[type="file"]::file-selector-button:active {
 }
 
 @media (max-width: 400px) {
+  .brand {
+    font-size: 0.95rem;
+    gap: 4px;
+  }
+
+  .nav-links {
+    margin-left: 6px;
+    gap: 6px;
+    padding: 4px 6px;
+  }
+
+  .nav-links a {
+    font-size: 0.72rem;
+    padding: 2px 4px;
+  }
+
   .hero-title {
-    font-size: 1.85rem;
+    font-size: 1.7rem;
   }
 
   .brand-text {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .hero-subtitle {
@@ -1540,6 +1565,31 @@ input[type="file"]::file-selector-button:active {
   
   .feature-item {
     padding: 16px;
+  }
+
+  .phone {
+    width: 175px;
+    height: 275px;
+    border-width: 6px;
+    padding: 12px 6px 6px;
+    border-radius: 24px;
+  }
+
+  .screen {
+    border-radius: 16px;
+    gap: 8px;
+    padding: 12px 10px;
+  }
+
+  .screen span,
+  .screen img {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+
+  .screen strong {
+    font-size: 0.95rem;
   }
 }
 
