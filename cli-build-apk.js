@@ -2,7 +2,11 @@ import { buildAPK } from './builders/android-builder.js';
 import path from 'path';
 
 // Parse command line arguments
-const siteUrl = process.argv[2] || 'https://example.com';
+let siteUrl = process.argv[2] || 'https://example.com';
+siteUrl = siteUrl.trim();
+if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(siteUrl)) {
+  siteUrl = 'https://' + siteUrl;
+}
 const appName = process.argv[3] || 'My Web App';
 const appId = process.argv[4] || 'com.example.app';
 const appVersion = process.argv[5] || '1.0.0';

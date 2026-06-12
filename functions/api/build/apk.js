@@ -31,8 +31,14 @@ export async function onRequestPost(context) {
   const githubUrl = `https://api.github.com/repos/${owner}/${repo}/actions/workflows/${workflowId}/dispatches`;
 
   // Map request body fields to string values (GitHub API expects inputs as strings)
+  let siteUrl = body.siteUrl || "https://example.com";
+  siteUrl = String(siteUrl).trim();
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(siteUrl)) {
+    siteUrl = "https://" + siteUrl;
+  }
+
   const inputs = {
-    siteUrl: body.siteUrl || "https://example.com",
+    siteUrl: siteUrl,
     appName: body.appName || "My Web App",
     appId: body.appId || "com.example.app",
     appVersion: body.appVersion || "1.0.0",

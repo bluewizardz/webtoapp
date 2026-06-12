@@ -10,6 +10,13 @@ import { tryBuildAPK as attemptAPK } from './build-utils.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function buildAPK(params) {
+  if (params && params.siteUrl) {
+    let raw = String(params.siteUrl).trim();
+    if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) {
+      raw = 'https://' + raw;
+    }
+    params.siteUrl = raw;
+  }
   return await executeAndroidBuild(params);
 }
 
@@ -73,23 +80,41 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
   }
 
   // Self-correcting check: Test if sharp can successfully decode the buffer
-  if (customIconBuffer) {
+  if (customIconBuffer && customIconBuffer.length > 0) {
     try {
       await sharp(customIconBuffer).metadata();
     } catch (sharpError) {
       console.log(`[android-builder] Icon format unsupported by sharp, falling back to Google Favicon API wrapper: ${sharpError.message}`);
       try {
-        const domain = new URL(siteUrl).hostname;
+        let domain = siteUrl;
+        try {
+          domain = new URL(siteUrl).hostname || siteUrl;
+        } catch (_) {}
         const googleUrl = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
         const res = await fetch(googleUrl);
         if (res.ok) {
-          customIconBuffer = Buffer.from(await res.arrayBuffer());
+          const arrBuf = await res.arrayBuffer();
+          if (arrBuf && arrBuf.byteLength > 0) {
+            customIconBuffer = Buffer.from(arrBuf);
+            // Confirm the fallback is readable
+            try {
+              await sharp(customIconBuffer).metadata();
+            } catch (_) {
+              customIconBuffer = null;
+            }
+          } else {
+            customIconBuffer = null;
+          }
+        } else {
+          customIconBuffer = null;
         }
       } catch (fallbackError) {
         console.log(`[android-builder] Google Favicon API fallback failed: ${fallbackError.message}`);
         customIconBuffer = null; // Fall back to initials if everything fails
       }
     }
+  } else {
+    customIconBuffer = null;
   }
 
   for (const { name, size } of mipmapDensities) {

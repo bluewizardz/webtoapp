@@ -30,6 +30,17 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
+// Global siteUrl normalization middleware to ensure URLs have a scheme
+app.use((req, res, next) => {
+  if (req.body && req.body.siteUrl) {
+    let raw = String(req.body.siteUrl).trim();
+    if (raw && !/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) {
+      req.body.siteUrl = 'https://' + raw;
+    }
+  }
+  next();
+});
+
 // Rate limiting middleware to prevent abuse and API exhaustion
 const rateLimits = new Map();
 
