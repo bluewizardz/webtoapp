@@ -114,20 +114,11 @@ const isPrivacy = pathname.startsWith('/privacy');
           <span class="brand-text">SiteToApp</span>
         </a>
         
-        {isAndroid ? (
-          <div class="breadcrumbs">
-            <span class="slash">/</span>
-            <a href="/">Overview</a>
-            <span class="slash">/</span>
-            <span class="current">Android Builder</span>
-          </div>
-        ) : (
           <nav class="nav-links" aria-label="Secondary navigation">
             <a href="/" class={isHome ? "active" : ""}>Overview</a>
             <a href="/android" class={isAndroid ? "active" : ""}>Android APK</a>
             <span class="nav-disabled">iOS (Soon)</span>
           </nav>
-        )}
 
         <div class="nav-actions" style="display: flex; align-items: center;">
           <button id="themeToggle" class="theme-toggle" aria-label="Toggle theme">
@@ -149,13 +140,9 @@ const isPrivacy = pathname.startsWith('/privacy');
             </svg>
           </button>
           
-          {isAndroid ? (
-            <a href="/" class="btn btn-secondary btn-small">Back to Overview</a>
-          ) : (
-            <a href="https://buymeacoffee.com/bluewiz" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
-              Buy Me a Coffee
-            </a>
-          )}
+          <a href="https://buymeacoffee.com/bluewiz" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">
+            Buy Me a Coffee
+          </a>
         </div>
       </div>
     </header>
