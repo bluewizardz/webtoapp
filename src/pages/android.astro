@@ -48,18 +48,18 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
           <input id="appIcon" type="file" accept="image/png, image/jpeg">
         </label>
 
-        <div class="icon-fetch-container" style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 24px; padding: 12px; border: 1px solid var(--accents-3); border-radius: var(--border-radius); background-color: rgba(0, 0, 0, 0.2);">
-          <label class="check-row" style="border: none; margin: 0; padding: 0; background: transparent; display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
-            <input id="autoFetchIcon" type="checkbox" checked style="margin-top: 4px; accent-color: #10b981;">
-            <span style="display: flex; flex-direction: column; gap: 2px; text-align: left;">
-              <strong style="font-size: 0.9rem; font-weight: 600;">Auto Fetch Website Icon</strong>
-              <small style="font-size: 0.75rem; color: var(--accents-5); line-height: 1.4;">Scrapes the favicon of your site automatically</small>
+        <div class="icon-fetch-container">
+          <label class="icon-fetch-label">
+            <input id="autoFetchIcon" type="checkbox" checked>
+            <span class="icon-fetch-text">
+              <strong>Auto Fetch Website Icon</strong>
+              <small>Scrapes the favicon of your site automatically</small>
             </span>
           </label>
-          <div class="icon-preview-wrapper" style="width: 48px; height: 48px; border-radius: 8px; border: 1px solid var(--accents-3); display: grid; place-items: center; background-color: #000; overflow: hidden; flex-shrink: 0; position: relative;">
-            <img id="iconPreview" src="" alt="Icon Preview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-            <div id="iconPreviewPlaceholder" class="icon-preview-placeholder" style="font-weight: 800; color: var(--accents-4); font-size: 0.9rem;">SA</div>
-            <div id="iconPreviewSpinner" class="spinner" style="display: none; margin: 0; border-color: rgba(255, 255, 255, 0.15); border-top-color: #10b981; position: absolute;"></div>
+          <div class="icon-preview-wrapper">
+            <img id="iconPreview" src="" alt="Icon Preview">
+            <div id="iconPreviewPlaceholder" class="icon-preview-placeholder">SA</div>
+            <div id="iconPreviewSpinner" class="spinner"></div>
           </div>
         </div>
 
@@ -121,13 +121,13 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
         </fieldset>
 
         <!-- Serverless GitHub Actions Build Info -->
-        <div class="info-banner" style="margin-bottom: 24px; border: 1px solid rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05); display: flex; gap: 12px; align-items: flex-start; padding: 12px 16px; border-radius: var(--border-radius);">
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: #10b981; flex-shrink: 0; margin-top: 2px;">
+        <div class="info-banner">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="10"></circle>
             <path d="M12 16v-4"></path>
             <path d="M12 8h.01"></path>
           </svg>
-          <span style="font-size: 0.8rem; color: var(--accents-6); line-height: 1.45;">
+          <span>
             <strong>Build Time:</strong> APK compilation will take approximately 1.5 to 2 minutes to complete.
           </span>
         </div>

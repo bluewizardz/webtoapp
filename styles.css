@@ -1167,6 +1167,131 @@ button, input {
   color: var(--foreground);
 }
 
+/* === Icon Fetch Container & Preview === */
+.icon-fetch-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 14px 18px;
+  border: 1px solid var(--accents-3);
+  border-radius: 12px;
+  background-color: var(--accents-2);
+  box-shadow: inset 2px 2px 4px rgba(0, 0, 0, 0.4), 1px 1px 0px rgba(255, 255, 255, 0.05);
+}
+
+.light-theme .icon-fetch-container {
+  box-shadow: inset 2px 2px 4px rgba(163, 177, 198, 0.4), 1px 1px 0px rgba(255, 255, 255, 0.8);
+}
+
+.icon-fetch-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  cursor: pointer;
+  flex: 1;
+}
+
+.icon-fetch-label input[type="checkbox"] {
+  margin-top: 4px;
+  accent-color: #4f46e5;
+  width: 18px;
+  height: 18px;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+
+.icon-fetch-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.icon-fetch-text strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.icon-fetch-text small {
+  font-size: 0.8rem;
+  color: var(--accents-5);
+  line-height: 1.45;
+}
+
+.icon-preview-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid var(--accents-3);
+  display: grid;
+  place-items: center;
+  background-color: var(--accents-2);
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: var(--shadow-sm);
+}
+
+.icon-preview-wrapper img {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.icon-preview-placeholder {
+  font-weight: 800;
+  color: var(--accents-5);
+  font-size: 0.95rem;
+  text-shadow: 1px 1px 1px rgba(0,0,0,0.4);
+}
+
+.light-theme .icon-preview-placeholder {
+  text-shadow: none;
+}
+
+.icon-preview-wrapper .spinner {
+  display: none;
+  margin: 0;
+  border-color: rgba(255, 255, 255, 0.15);
+  border-top-color: #4f46e5;
+  position: absolute;
+}
+
+/* === Info Banner === */
+.info-banner {
+  margin-bottom: 24px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  background-color: rgba(16, 185, 129, 0.05);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 18px;
+  border-radius: 12px;
+  box-shadow: var(--bevel-light);
+}
+
+.info-banner svg {
+  flex-shrink: 0;
+  color: var(--success);
+  margin-top: 2px;
+  filter: drop-shadow(0 0 2px rgba(16, 185, 129, 0.4));
+}
+
+.info-banner span {
+  font-size: 0.85rem;
+  color: var(--accents-6);
+  line-height: 1.45;
+  text-align: left;
+}
+
+.info-banner strong {
+  color: var(--foreground);
+}
+
 /* === Spinner animation === */
 .spinner {
   display: inline-block;
@@ -1341,6 +1466,19 @@ input[type="file"]::file-selector-button:active {
   .builder-panel,
   .preview-panel {
     padding: 24px 16px;
+  }
+
+  .icon-fetch-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .icon-preview-wrapper {
+    align-self: center;
+    width: 64px;
+    height: 64px;
   }
 }
 
