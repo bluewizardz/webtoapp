@@ -837,8 +837,8 @@ button, input {
 }
 
 .screen span {
-  background: var(--primary-gradient);
-  color: #ffffff;
+  background: var(--primary-color);
+  color: var(--primary-btn-text);
   font-size: 1.8rem;
   font-weight: 800;
   display: grid;
