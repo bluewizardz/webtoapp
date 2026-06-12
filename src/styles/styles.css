@@ -1433,13 +1433,41 @@ input[type="file"]::file-selector-button:active {
 
 @media (max-width: 600px) {
   .navbar-container {
-    padding: 0 16px;
+    padding: 0 12px;
   }
   
+  .brand {
+    font-size: 1.1rem;
+    gap: 6px;
+  }
+
+  .nav-links {
+    margin-left: 12px;
+    gap: 8px;
+    padding: 4px 8px;
+  }
+
+  .nav-links a {
+    font-size: 0.8rem;
+    padding: 2px 6px;
+  }
+
+  .nav-disabled {
+    display: none;
+  }
+
+  .nav-actions .btn-small {
+    display: none;
+  }
+
   .breadcrumbs {
     display: none;
   }
   
+  .shell {
+    padding: 24px 12px;
+  }
+
   .hero {
     padding: 60px 16px 40px;
   }
