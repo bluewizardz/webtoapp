@@ -407,13 +407,15 @@
     updatePreview();
   });
 
-  els.sampleButton.addEventListener("click", () => {
-    els.siteUrl.value = "https://example.com";
-    els.appName.value = "Example Portal";
-    els.appVersion.value = "1.0.0";
-    packageWasEdited = false;
-    updatePreview();
-  });
+  if (els.sampleButton) {
+    els.sampleButton.addEventListener("click", () => {
+      els.siteUrl.value = "https://example.com";
+      els.appName.value = "Example Portal";
+      els.appVersion.value = "1.0.0";
+      packageWasEdited = false;
+      updatePreview();
+    });
+  }
 
   els.appId.addEventListener("input", () => {
     packageWasEdited = true;
