@@ -710,7 +710,7 @@ app.use((req, res) => {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>404 - Page Not Found</title>
     <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="preload" href="/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin="anonymous">
     <link rel="stylesheet" href="/styles.css">
     <script src="/theme.js"></script>
     <style>
