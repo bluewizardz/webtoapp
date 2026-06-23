@@ -22,6 +22,7 @@ export async function buildAPK(params) {
 
 async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, autoFetchIcon = true, showSpinner = true, pullToRefresh = true, showSplash = true, splashDuration = 2000, fullScreen = false, customUserAgent = null, buildId, buildsDir }) {
   const buildDir = path.join(buildsDir, buildId, 'android');
+  const sanitizedThemeName = appName.replace(/[^a-zA-Z0-9]/g, '') || 'App';
   
   // Clean up source files from any previous build to prevent compiling stale source files
   if (fs.existsSync(path.join(buildDir, 'app', 'src'))) {
@@ -252,7 +253,7 @@ dependencies {
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.${appName.replace(/\s+/g, '')}">
+        android:theme="@style/Theme.${sanitizedThemeName}">
 
         <activity
             android:name=".MainActivity"
@@ -294,7 +295,7 @@ dependencies {
   // Create styles.xml (using native Android theme - no AppCompat dependency needed)
   const stylesContent = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.${appName.replace(/\s+/g, '')}" parent="android:Theme.Material.Light.NoActionBar">
+    <style name="Theme.${sanitizedThemeName}" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:colorPrimary">@color/primary</item>
