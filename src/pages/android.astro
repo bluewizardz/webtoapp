@@ -42,8 +42,23 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
 
         <label class="field">
           <span>App Icon (Optional 512x512 PNG)</span>
-          <input id="appIcon" type="file" accept="image/png, image/jpeg">
+          <div class="icon-upload-row">
+            <input id="appIcon" type="file" accept="image/png, image/jpeg">
+            <button type="button" id="removeIconButton" class="icon-remove-btn" style="display: none;" title="Remove icon">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+              Remove
+            </button>
+          </div>
         </label>
+
+        <div class="icon-or-divider">
+          <span class="icon-or-line"></span>
+          <span class="icon-or-text">OR</span>
+          <span class="icon-or-line"></span>
+        </div>
 
         <div class="icon-fetch-container">
           <label class="icon-fetch-label">
@@ -139,6 +154,16 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
           <button class="btn btn-primary" id="downloadButton" type="submit">
             Build & Download APK
           </button>
+          <div class="build-success" id="buildSuccess" style="display: none;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span class="build-success-text">Build Successful! Your APK is downloading.</span>
+          </div>
+          <div class="build-retry" id="buildRetry" style="display: none;">
+            <a id="retryDownloadLink" href="#" class="retry-link">Click here</a> if your download didn't start automatically.
+          </div>
         </div>
 
         <!-- Build Progress -->
@@ -158,12 +183,36 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
         <!-- Device Preview Frame -->
         <div class="device-preview" aria-hidden="true">
           <div class="phone">
-            <div class="phone-bar"></div>
-            <div class="screen">
-              <span id="previewInitials">SA</span>
-              <img id="previewIcon" src="" alt="App Icon" style="display: none; width: 54px; height: 54px; border-radius: 12px; object-fit: cover; box-shadow: var(--shadow-md);">
-              <strong id="previewName">Site App</strong>
-              <small id="previewUrl">https://example.com</small>
+            <div class="phone-frame">
+              <div class="phone-camera"></div>
+              <div class="phone-status-bar" id="phoneStatusBar">
+                <span class="status-time">12:00</span>
+                <span class="status-icons">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3a4.237 4.237 0 0 0-6 0zm-4-4l2 2a7.074 7.074 0 0 1 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M15.67 4H14V2h-4v2H8.33C7.6 4 7 4.6 7 5.33v15.33C7 21.4 7.6 22 8.33 22h7.33c.74 0 1.34-.6 1.34-1.33V5.33C17 4.6 16.4 4 15.67 4z"/></svg>
+                </span>
+              </div>
+              <div class="screen" id="phoneScreen">
+                <div class="screen-progress" id="screenProgress"></div>
+                <div class="screen-pull-refresh" id="screenPullRefresh">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                  </svg>
+                </div>
+                <div class="screen-splash" id="screenSplash">
+                  <div class="splash-icon">
+                    <span id="splashInitials">SA</span>
+                  </div>
+                </div>
+                <span id="previewInitials">SA</span>
+                <img id="previewIcon" src="" alt="App Icon" style="display: none; width: 54px; height: 54px; border-radius: 12px; object-fit: cover; box-shadow: var(--shadow-md);">
+                <strong id="previewName">Site App</strong>
+                <small id="previewUrl">https://example.com</small>
+              </div>
+              <div class="phone-nav-bar" id="phoneNavBar">
+                <span class="nav-pill"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -188,6 +237,15 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
             <dd id="artifactSummary">Android APK</dd>
           </div>
         </dl>
+
+        <!-- Build History -->
+        <div class="build-history" id="buildHistory" style="display: none;">
+          <div class="section-title">
+            <h2>Build History</h2>
+            <button type="button" class="btn btn-secondary btn-small" id="clearHistoryBtn">Clear</button>
+          </div>
+          <ul class="history-list" id="historyList"></ul>
+        </div>
 
         <div class="build-info">
           <p>Building compiles a <strong>native Android Java wrapper project</strong> containing a lightweight high-performance WebView.</p>

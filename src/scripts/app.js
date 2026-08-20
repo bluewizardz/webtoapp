@@ -36,6 +36,28 @@
     progressText: document.querySelector("#progressText"),
     progressFill: document.querySelector("#progressFill"),
 
+    // Build Success & Retry
+    buildSuccess: document.querySelector("#buildSuccess"),
+    buildRetry: document.querySelector("#buildRetry"),
+    retryDownloadLink: document.querySelector("#retryDownloadLink"),
+
+    // Build History
+    buildHistory: document.querySelector("#buildHistory"),
+    historyList: document.querySelector("#historyList"),
+    clearHistoryBtn: document.querySelector("#clearHistoryBtn"),
+
+    // Icon Remove
+    removeIconButton: document.querySelector("#removeIconButton"),
+
+    // Phone Preview
+    phoneScreen: document.querySelector("#phoneScreen"),
+    screenProgress: document.querySelector("#screenProgress"),
+    screenSplash: document.querySelector("#screenSplash"),
+    splashInitials: document.querySelector("#splashInitials"),
+    phoneNavBar: document.querySelector("#phoneNavBar"),
+    phoneStatusBar: document.querySelector("#phoneStatusBar"),
+    screenPullRefresh: document.querySelector("#screenPullRefresh"),
+
     // Icon Fetching & Previews
     autoFetchIcon: document.querySelector("#autoFetchIcon"),
     iconPreview: document.querySelector("#iconPreview"),
@@ -191,6 +213,98 @@
     els.progressFill.style.width = "0%";
   }
 
+  function showBuildSuccess(downloadUrl, filename) {
+    if (els.buildSuccess) {
+      els.buildSuccess.style.display = "flex";
+    }
+    if (els.buildRetry && els.retryDownloadLink) {
+      els.buildRetry.style.display = "block";
+      els.retryDownloadLink.href = downloadUrl;
+      els.retryDownloadLink.download = filename || "app.apk";
+    }
+  }
+
+  function hideBuildSuccess() {
+    if (els.buildSuccess) {
+      els.buildSuccess.style.display = "none";
+    }
+    if (els.buildRetry) {
+      els.buildRetry.style.display = "none";
+    }
+  }
+
+  // === Build History ===
+
+  const HISTORY_KEY = "sitetapp_build_history";
+  const MAX_HISTORY = 5;
+
+  function loadHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(HISTORY_KEY)) || [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveHistory(history) {
+    try {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    } catch {}
+  }
+
+  function addToHistory(entry) {
+    const history = loadHistory();
+    history.unshift(entry);
+    saveHistory(history.slice(0, MAX_HISTORY));
+    renderHistory();
+  }
+
+  function timeAgo(dateStr) {
+    const now = Date.now();
+    const then = new Date(dateStr).getTime();
+    const diffMs = now - then;
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return mins + "m ago";
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return hrs + "h ago";
+    const days = Math.floor(hrs / 24);
+    return days + "d ago";
+  }
+
+  function renderHistory() {
+    const history = loadHistory();
+    if (!els.buildHistory || !els.historyList) return;
+
+    if (history.length === 0) {
+      els.buildHistory.style.display = "none";
+      return;
+    }
+
+    els.buildHistory.style.display = "block";
+    els.historyList.innerHTML = history
+      .map(function (item) {
+        return '<li class="history-item">' +
+          '<div class="history-item-info">' +
+            '<span class="history-item-name">' + escapeHtml(item.name) + '</span>' +
+            '<span class="history-item-meta">' +
+              '<span>' + escapeHtml(item.appId) + '</span>' +
+              '<span class="history-item-dot"></span>' +
+              '<span>' + timeAgo(item.date) + '</span>' +
+            '</span>' +
+          '</div>' +
+          '<a href="' + escapeHtml(item.url) + '" download="' + escapeHtml(item.filename) + '" class="history-item-download">Download</a>' +
+        '</li>';
+      })
+      .join("");
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+
   function setButtonLoading(loading) {
     els.downloadButton.disabled = loading;
     if (loading) {
@@ -310,6 +424,62 @@
       }
       resetPreviewsToInitials(appInitials);
     }
+
+    updatePhonePreview();
+  }
+
+  // === Phone Preview ===
+
+  function updatePhonePreview() {
+    // Splash screen
+    const showSplash = els.showSplash && els.showSplash.checked;
+    if (els.screenSplash) {
+      if (showSplash) {
+        els.screenSplash.classList.add("active");
+        // Copy current initials to splash
+        if (els.splashInitials) {
+          els.splashInitials.textContent = els.previewInitials ? els.previewInitials.textContent : "SA";
+        }
+      } else {
+        els.screenSplash.classList.remove("active");
+      }
+    }
+
+    // Pull-to-refresh indicator
+    const pullToRefresh = els.pullToRefresh && els.pullToRefresh.checked;
+    if (els.screenPullRefresh) {
+      els.screenPullRefresh.classList.toggle("active", pullToRefresh);
+    }
+
+    // Full screen — hide status bar and nav bar
+    const fullScreen = els.fullScreen && els.fullScreen.checked;
+    if (els.phoneStatusBar) {
+      els.phoneStatusBar.classList.toggle("hidden", fullScreen);
+    }
+    if (els.phoneNavBar) {
+      els.phoneNavBar.classList.toggle("hidden", fullScreen);
+    }
+
+    // Progress indicator — simulate a loading line
+    if (els.screenProgress) {
+      if (els.showSpinner && els.showSpinner.checked) {
+        els.screenProgress.classList.add("active");
+        // Animate a quick sweep
+        els.screenProgress.style.width = "0%";
+        setTimeout(function () {
+          els.screenProgress.style.width = "60%";
+        }, 100);
+        setTimeout(function () {
+          els.screenProgress.style.width = "100%";
+        }, 600);
+        setTimeout(function () {
+          els.screenProgress.style.width = "0%";
+        }, 1000);
+      } else {
+        els.screenProgress.classList.remove("active");
+        els.screenProgress.style.width = "0%";
+      }
+    }
   }
 
   // === Backend Build API ===
@@ -325,14 +495,18 @@
       if (status.status === "completed") {
         showProgress(`${label} compiled! Downloading…`, 100);
 
+        const downloadUrl = `${backendUrl}/api/download/${buildId}`;
+        const filename = status.filename || "app.apk";
+
         const downloadLink = document.createElement("a");
-        downloadLink.href = `${backendUrl}/api/download/${buildId}`;
-        downloadLink.download = status.filename || "app.apk";
+        downloadLink.href = downloadUrl;
+        downloadLink.download = filename;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
 
         setMessage("Build complete!", "ok");
+        showBuildSuccess(downloadUrl, filename);
         return;
       } else if (status.status === "error") {
         throw new Error(status.error || "Build failed");
@@ -381,7 +555,17 @@
       const { buildId } = await response.json();
       showProgress("Initializing build environment…", 30);
       await pollAndDownload(buildId, backendUrl, "Android APK");
+
+      const finalUrl = `${backendUrl}/api/download/${buildId}`;
+      addToHistory({
+        name: app.name,
+        appId: app.appId,
+        url: finalUrl,
+        filename: "app.apk",
+        date: new Date().toISOString()
+      });
     } catch (error) {
+      hideBuildSuccess();
       setMessage(error.message, "error");
     } finally {
       setButtonLoading(false);
@@ -422,20 +606,52 @@
     updatePreview();
   });
 
+  // === Icon Upload State Management ===
+
+  function updateIconUploadState() {
+    const hasIcon = !!base64Icon;
+
+    // Show/hide remove button
+    if (els.removeIconButton) {
+      els.removeIconButton.style.display = hasIcon ? "inline-flex" : "none";
+    }
+
+    // Grey out auto-fetch toggle
+    if (els.autoFetchIcon) {
+      const label = els.autoFetchIcon.closest(".icon-fetch-label");
+      if (label) {
+        label.classList.toggle("disabled", hasIcon);
+      }
+      els.autoFetchIcon.disabled = hasIcon;
+    }
+  }
+
   els.appIcon.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (event) => {
         base64Icon = event.target.result;
+        updateIconUploadState();
         updatePreview();
       };
       reader.readAsDataURL(file);
     } else {
       base64Icon = null;
+      updateIconUploadState();
       updatePreview();
     }
   });
+
+  // Remove icon button
+  if (els.removeIconButton) {
+    els.removeIconButton.addEventListener("click", function () {
+      base64Icon = null;
+      els.appIcon.value = "";
+      updateIconUploadState();
+      updatePreview();
+    });
+  }
 
   if (els.autoFetchIcon) {
     els.autoFetchIcon.addEventListener("change", updatePreview);
@@ -443,6 +659,19 @@
 
   els.showSplash.addEventListener("change", (e) => {
     els.splashDurationField.style.display = e.target.checked ? "block" : "none";
+    updatePhonePreview();
+  });
+
+  els.fullScreen.addEventListener("change", function () {
+    updatePhonePreview();
+  });
+
+  els.showSpinner.addEventListener("change", function () {
+    updatePhonePreview();
+  });
+
+  els.pullToRefresh.addEventListener("change", function () {
+    updatePhonePreview();
   });
 
   [
@@ -502,4 +731,12 @@
   els.siteUrl.value = "https://example.com";
   els.appName.value = "Site App";
   updatePreview();
+  renderHistory();
+
+  if (els.clearHistoryBtn) {
+    els.clearHistoryBtn.addEventListener("click", function () {
+      saveHistory([]);
+      renderHistory();
+    });
+  }
 })();
