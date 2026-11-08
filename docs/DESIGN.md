@@ -145,7 +145,7 @@ Headlines lean on weight and negative tracking rather than size alone; nothing u
 - `.check-row` — full-width tappable label card with custom 22px checkbox: `--accents-4` border, green fill with white check mark when checked, scale 1.05 pop, 8px green glow; focus-visible gets a 2px indigo outline.
 - `.toggle-switch` — 44×24 pill, 20px knob, green when on; used for "Auto Fetch Website Icon" and disabled (45% opacity, non-interactive) once an icon is uploaded manually.
 - File input — native control restyled via `::file-selector-button` into a bordered secondary button, paired with a red "Remove" chip.
-- `.icon-fetch-container` — card holding the favicon toggle plus a 48px preview well that shows initials placeholder, spinner, or the fetched image.
+- `.icon-fetch-container` — card holding the favicon toggle plus a 48px preview well that shows a neutral website glyph, a spinner while the favicon loads, or the fetched image. The favicon is refetched shortly after the URL stops changing, so editing the URL updates the icon without a reload.
 - `.info-banner` (green, informational) and `.warning-banner` (amber, Play Protect notice) — icon + rich text, 12px radius, tinted 4–5% backgrounds.
 
 ### Feedback & progress
@@ -155,7 +155,7 @@ Headlines lean on weight and negative tracking rather than size alone; nothing u
 - `.validation` — `aria-live="polite"` red 13.6px line below the submit button for inline errors.
 
 ### Phone preview
-A 220×360 Samsung-S24-style mockup (`aria-hidden`), built entirely in CSS: 3px `#3a3d45` frame on a dark gradient body, punch-hole camera, mini status bar with time and icons, and a bottom nav pill. Inside the 20px-radius screen the app icon (or green initials tile), app name, and URL are centered and ellipsized single-line. Simulated behaviors: a 2px green loading line (`#screenProgress`), a bouncing pull-to-refresh circle, a splash overlay with the app icon tile, and the status/nav bars collapsing in full-screen mode. Only the screen content is dynamic; the chrome is fixed.
+A 220×360 Samsung-S24-style mockup (`aria-hidden`), built entirely in CSS: 3px `#3a3d45` frame on a dark gradient body, punch-hole camera, mini status bar with time and icons, and a bottom nav pill. Inside the 20px-radius screen the app icon (or a green tile with a neutral website glyph), app name, and URL are centered and ellipsized single-line. Simulated behaviors: a 2px green loading line (`#screenProgress`), a bouncing pull-to-refresh circle, a splash overlay with the app icon tile, and the status/nav bars collapsing in full-screen mode. Only the screen content is dynamic; the chrome is fixed.
 
 ---
 

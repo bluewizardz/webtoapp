@@ -986,6 +986,12 @@ button, input {
   color: var(--primary-btn-text);
   font-size: 1.3rem;
   font-weight: 800;
+  line-height: 0;
+}
+
+.screen span svg {
+  width: 55%;
+  height: 55%;
 }
 
 .screen span,
@@ -1253,9 +1259,15 @@ button, input {
 }
 
 .icon-preview-placeholder {
-  font-weight: 800;
+  display: grid;
+  place-items: center;
   color: var(--accents-5);
-  font-size: 0.95rem;
+  line-height: 0;
+}
+
+.icon-preview-placeholder svg {
+  width: 22px;
+  height: 22px;
 }
 
 .icon-preview-wrapper .spinner {

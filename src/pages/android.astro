@@ -70,8 +70,15 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
             </span>
           </label>
           <div class="icon-preview-wrapper">
-            <img id="iconPreview" src="" alt="Icon Preview">
-            <div id="iconPreviewPlaceholder" class="icon-preview-placeholder">SA</div>
+            <img id="iconPreview" alt="Icon Preview">
+            <div id="iconPreviewPlaceholder" class="icon-preview-placeholder" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                <path d="M3 9h18"></path>
+                <circle cx="6.4" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                <circle cx="9" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+              </svg>
+            </div>
             <div id="iconPreviewSpinner" class="spinner"></div>
           </div>
         </div>
@@ -202,11 +209,25 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
                 </div>
                 <div class="screen-splash" id="screenSplash">
                   <div class="splash-icon">
-                    <span id="splashInitials">SA</span>
+                    <span id="splashInitials" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                        <path d="M3 9h18"></path>
+                        <circle cx="6.4" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                        <circle cx="9" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                      </svg>
+                    </span>
                   </div>
                 </div>
-                <span id="previewInitials">SA</span>
-                <img id="previewIcon" src="" alt="App Icon" style="display: none; width: 54px; height: 54px; border-radius: 12px; object-fit: cover; box-shadow: var(--shadow-md);">
+                <span id="previewInitials" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                    <path d="M3 9h18"></path>
+                    <circle cx="6.4" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                    <circle cx="9" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                  </svg>
+                </span>
+                <img id="previewIcon" alt="App Icon" style="display: none; width: 54px; height: 54px; border-radius: 12px; object-fit: cover; box-shadow: var(--shadow-md);">
                 <strong id="previewName">Site App</strong>
                 <small id="previewUrl">https://example.com</small>
               </div>

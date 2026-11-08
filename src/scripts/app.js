@@ -172,13 +172,6 @@
     return /^\d+\.\d+\.\d+([-.][a-z0-9.-]+)?$/i.test(version) ? version : "1.0.0";
   }
 
-  function initials(name) {
-    const pieces = String(name || "Site App").trim().split(/\s+/).filter(Boolean);
-    const first = pieces[0] ? pieces[0].charAt(0) : "S";
-    const second = pieces.length > 1 ? pieces[1].charAt(0) : (pieces[0] ? pieces[0].charAt(1) : "A");
-    return (first + second).toUpperCase();
-  }
-
   function getAppConfig() {
     const url = normalizeUrl(els.siteUrl.value);
     const name = String(els.appName.value || "").trim() || titleCaseFromSlug(slugify(new URL(url).hostname, "site-app"));
@@ -188,8 +181,7 @@
       url,
       name,
       version,
-      appId,
-      initials: initials(name)
+      appId
     };
   }
 
@@ -314,7 +306,27 @@
     }
   }
 
-  function resetPreviewsToInitials(initialsText) {
+  // === Icon Preview State ===
+  //
+  // The favicon is refetched shortly after the URL stops changing, and a request
+  // token guarantees a slow response for an old URL can never overwrite the icon
+  // for the URL that is currently in the field.
+
+  const FAVICON_DEBOUNCE_MS = 450;
+  let iconFetchTimer = null;
+  let iconFetchToken = 0;
+  let iconAppliedUrl = "";
+  let iconScheduledUrl = "";
+
+  function cancelPendingIconFetch() {
+    if (iconFetchTimer) {
+      clearTimeout(iconFetchTimer);
+      iconFetchTimer = null;
+    }
+    iconFetchToken++;
+  }
+
+  function showPlaceholderIcon() {
     if (els.iconPreviewSpinner) {
       els.iconPreviewSpinner.style.display = "none";
     }
@@ -323,28 +335,164 @@
       els.iconPreview.style.display = "none";
     }
     if (els.iconPreviewPlaceholder) {
-      els.iconPreviewPlaceholder.textContent = initialsText;
-      els.iconPreviewPlaceholder.style.display = "block";
+      els.iconPreviewPlaceholder.style.display = "grid";
     }
     if (els.previewIcon) {
       els.previewIcon.removeAttribute("src");
       els.previewIcon.style.display = "none";
     }
     if (els.previewInitials) {
-      els.previewInitials.textContent = initialsText;
+      els.previewInitials.style.display = "grid";
+    }
+    iconAppliedUrl = "";
+  }
+
+  function showIconPending() {
+    if (els.iconPreviewSpinner) {
+      els.iconPreviewSpinner.style.display = "block";
+    }
+    if (els.iconPreview) {
+      els.iconPreview.style.display = "none";
+    }
+    if (els.iconPreviewPlaceholder) {
+      els.iconPreviewPlaceholder.style.display = "none";
+    }
+    if (els.previewIcon) {
+      els.previewIcon.style.display = "none";
+    }
+    if (els.previewInitials) {
       els.previewInitials.style.display = "grid";
     }
   }
 
+  function showUploadedIcon() {
+    if (els.iconPreviewSpinner) {
+      els.iconPreviewSpinner.style.display = "none";
+    }
+    if (els.iconPreview) {
+      els.iconPreview.src = base64Icon;
+      els.iconPreview.style.display = "block";
+    }
+    if (els.iconPreviewPlaceholder) {
+      els.iconPreviewPlaceholder.style.display = "none";
+    }
+    if (els.previewIcon) {
+      els.previewIcon.src = base64Icon;
+      els.previewIcon.style.display = "block";
+    }
+    if (els.previewInitials) {
+      els.previewInitials.style.display = "none";
+    }
+    iconAppliedUrl = "";
+  }
+
+  function showFetchedIcon(src) {
+    if (els.iconPreviewSpinner) {
+      els.iconPreviewSpinner.style.display = "none";
+    }
+    if (els.iconPreview) {
+      els.iconPreview.src = src;
+      els.iconPreview.style.display = "block";
+    }
+    if (els.iconPreviewPlaceholder) {
+      els.iconPreviewPlaceholder.style.display = "none";
+    }
+    if (els.previewIcon) {
+      els.previewIcon.src = src;
+      els.previewIcon.style.display = "block";
+    }
+    if (els.previewInitials) {
+      els.previewInitials.style.display = "none";
+    }
+  }
+
+  function preloadImage(src) {
+    return new Promise((resolve, reject) => {
+      const probe = new Image();
+      probe.onload = () => resolve(src);
+      probe.onerror = () => reject(new Error("favicon-unavailable"));
+      probe.src = src;
+    });
+  }
+
+  function isFetchableHost(url) {
+    try {
+      const hostname = new URL(url).hostname;
+      return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(hostname) && /\.[a-z]{2,}$/i.test(hostname);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async function refreshFavicon(rawValue) {
+    let url;
+    try {
+      url = normalizeUrl(rawValue);
+    } catch (error) {
+      showPlaceholderIcon();
+      return;
+    }
+
+    if (!isFetchableHost(url)) {
+      showPlaceholderIcon();
+      return;
+    }
+
+    if (url === iconAppliedUrl) {
+      return;
+    }
+
+    const token = ++iconFetchToken;
+    const faviconUrl = `${backendUrl}/api/favicon?url=${encodeURIComponent(url)}`;
+
+    try {
+      await preloadImage(faviconUrl);
+    } catch (error) {
+      if (token === iconFetchToken) {
+        showPlaceholderIcon();
+      }
+      return;
+    }
+
+    if (token !== iconFetchToken) {
+      return;
+    }
+
+    iconAppliedUrl = url;
+    showFetchedIcon(faviconUrl);
+  }
+
+  function scheduleFaviconRefresh() {
+    const rawValue = String(els.siteUrl.value || "").trim();
+
+    if (!rawValue) {
+      cancelPendingIconFetch();
+      iconScheduledUrl = "";
+      showPlaceholderIcon();
+      return;
+    }
+
+    if (rawValue === iconScheduledUrl) {
+      // The URL did not change (the app name or version was edited) — keep the icon.
+      return;
+    }
+
+    iconScheduledUrl = rawValue;
+    cancelPendingIconFetch();
+    showIconPending();
+
+    iconFetchTimer = setTimeout(() => {
+      iconFetchTimer = null;
+      refreshFavicon(rawValue);
+    }, FAVICON_DEBOUNCE_MS);
+  }
+
   function updatePreview() {
-    let appInitials = "SA";
     try {
       if (!packageWasEdited) {
         els.appId.value = derivePackageId(els.siteUrl.value, els.appName.value);
       }
       const app = getAppConfig();
-      appInitials = app.initials;
-      els.previewInitials.textContent = app.initials;
       els.previewName.textContent = app.name;
       els.previewUrl.textContent = app.url;
       els.outputAppName.textContent = app.name;
@@ -359,70 +507,15 @@
 
     // Icon Preview Handling
     if (base64Icon) {
-      // Custom uploaded icon
-      if (els.iconPreviewSpinner) {
-        els.iconPreviewSpinner.style.display = "none";
-      }
-      if (els.iconPreview) {
-        els.iconPreview.src = base64Icon;
-        els.iconPreview.style.display = "block";
-      }
-      if (els.iconPreviewPlaceholder) {
-        els.iconPreviewPlaceholder.style.display = "none";
-      }
-      if (els.previewIcon) {
-        els.previewIcon.src = base64Icon;
-        els.previewIcon.style.display = "block";
-      }
-      if (els.previewInitials) {
-        els.previewInitials.style.display = "none";
-      }
-    } else if (els.autoFetchIcon && els.autoFetchIcon.checked && els.siteUrl.value) {
-      // Auto-fetch website icon
-      let domain = "";
-      try {
-        domain = new URL(normalizeUrl(els.siteUrl.value)).hostname;
-      } catch (e) {}
-      
-      if (domain) {
-        const faviconUrl = `${backendUrl}/api/favicon?url=${encodeURIComponent(normalizeUrl(els.siteUrl.value))}`;
-        
-        // Show spinner while fetching auto-fetched icon
-        if (els.iconPreviewSpinner) {
-          els.iconPreviewSpinner.style.display = "block";
-        }
-        if (els.iconPreview) {
-          els.iconPreview.style.display = "none"; // Hide image until loaded
-        }
-        if (els.iconPreviewPlaceholder) {
-          els.iconPreviewPlaceholder.style.display = "none";
-        }
-        if (els.previewIcon) {
-          els.previewIcon.style.display = "none"; // Hide device preview image until loaded
-        }
-        if (els.previewInitials) {
-          els.previewInitials.textContent = appInitials;
-          els.previewInitials.style.display = "grid"; // Show initials as placeholder during load
-        }
-        
-        // Set sources (triggers loading)
-        if (els.iconPreview) {
-          els.iconPreview.src = faviconUrl;
-        }
-        if (els.previewIcon) {
-          els.previewIcon.src = faviconUrl;
-        }
-      } else {
-        if (els.iconPreviewSpinner) {
-          els.iconPreviewSpinner.style.display = "none";
-        }
-        resetPreviewsToInitials(appInitials);
-      }
+      cancelPendingIconFetch();
+      iconScheduledUrl = "";
+      showUploadedIcon();
+    } else if (els.autoFetchIcon && els.autoFetchIcon.checked) {
+      scheduleFaviconRefresh();
     } else {
-      if (els.iconPreviewSpinner) {
-        els.iconPreviewSpinner.style.display = "none";
-      }
-      resetPreviewsToInitials(appInitials);
+      cancelPendingIconFetch();
+      iconScheduledUrl = "";
+      showPlaceholderIcon();
     }
 
     updatePhonePreview();
@@ -436,10 +529,6 @@
     if (els.screenSplash) {
       if (showSplash) {
         els.screenSplash.classList.add("active");
-        // Copy current initials to splash
-        if (els.splashInitials) {
-          els.splashInitials.textContent = els.previewInitials ? els.previewInitials.textContent : "SA";
-        }
       } else {
         els.screenSplash.classList.remove("active");
       }
@@ -682,50 +771,6 @@
     el.addEventListener("input", updatePreview);
     el.addEventListener("change", updatePreview);
   });
-
-  if (els.iconPreview) {
-    els.iconPreview.addEventListener("load", () => {
-      if (els.iconPreviewSpinner) {
-        els.iconPreviewSpinner.style.display = "none";
-      }
-      if (base64Icon || (els.autoFetchIcon && els.autoFetchIcon.checked)) {
-        els.iconPreview.style.display = "block";
-        if (els.iconPreviewPlaceholder) {
-          els.iconPreviewPlaceholder.style.display = "none";
-        }
-        if (els.previewIcon) {
-          els.previewIcon.style.display = "block";
-        }
-        if (els.previewInitials) {
-          els.previewInitials.style.display = "none";
-        }
-      }
-    });
-
-    els.iconPreview.addEventListener("error", () => {
-      const currentSrc = els.iconPreview.src;
-      if (currentSrc && currentSrc.includes("google.com/s2/favicons")) {
-        try {
-          const urlObj = new URL(currentSrc);
-          const domain = urlObj.searchParams.get("domain");
-          if (domain) {
-            const fallbackUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-            els.iconPreview.src = fallbackUrl;
-            if (els.previewIcon) {
-              els.previewIcon.src = fallbackUrl;
-            }
-            return;
-          }
-        } catch (e) {}
-      }
-      
-      if (els.iconPreviewSpinner) {
-        els.iconPreviewSpinner.style.display = "none";
-      }
-      const app = getAppConfig();
-      resetPreviewsToInitials(app.initials || "SA");
-    });
-  }
 
   // === Init ===
   els.siteUrl.value = "https://example.com";

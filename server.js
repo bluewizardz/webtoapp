@@ -155,9 +155,8 @@ app.get('/api/favicon', async (req, res) => {
     console.error(`Error in /api/favicon proxy: ${err.message}`);
   }
 
-  // 1x1 transparent GIF fallback if all fails
-  res.setHeader('Content-Type', 'image/gif');
-  return res.send(Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64'));
+  // No usable icon: answer 404 so the client can show its own placeholder
+  return res.status(404).send('Favicon not found');
 });
 
 // Generate APK
