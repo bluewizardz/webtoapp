@@ -33,10 +33,9 @@ jobs:
           PUBLIC_BACKEND_URL: ${{ secrets.PUBLIC_BACKEND_URL }}
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: 'websitetoapp'
-          directory: dist
+          command: pages deploy dist --project-name=websitetoapp
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
