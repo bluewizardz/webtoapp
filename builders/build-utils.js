@@ -234,7 +234,7 @@ async function ensureGradle8() {
   const zipPath = '/tmp/gradle-8.12.1.zip';
 
   try {
-    if (!tryExec(`curl -fsSL "${gradleUrl}" -o "${zipPath}"`, { timeout: 120000 })) {
+    if (!tryExec(`curl -fsSL --retry 5 --retry-delay 5 --retry-max-time 600 --connect-timeout 30 "${gradleUrl}" -o "${zipPath}"`, { timeout: 660000 })) {
       return null;
     }
 
