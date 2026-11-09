@@ -23,3 +23,6 @@ Thumbs.db
 dist/
 .astro/
 
+# Wrangler bundle output
+.wrangler/
+
