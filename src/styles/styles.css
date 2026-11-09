@@ -1338,6 +1338,98 @@ button, input {
   letter-spacing: 0.08em;
 }
 
+/* === Play Protect Notice Popup === */
+body.modal-open {
+  overflow: hidden;
+}
+
+.notice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+}
+
+.notice-overlay[hidden] {
+  display: none;
+}
+
+.notice-dialog {
+  width: 100%;
+  max-width: 460px;
+  border: 1px solid var(--accents-3);
+  border-radius: 16px;
+  background: var(--accents-1);
+  padding: 24px;
+  box-shadow: var(--shadow-lg);
+  animation: notice-pop 0.18s ease-out;
+}
+
+@keyframes notice-pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.notice-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.notice-dialog-header h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.notice-close {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 1px solid var(--accents-3);
+  border-radius: 8px;
+  background: var(--accents-2);
+  color: var(--accents-5);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.notice-close:hover {
+  color: var(--foreground);
+  border-color: var(--accents-4);
+}
+
+.notice-close:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.notice-dialog-text {
+  margin: 0 0 20px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--accents-6);
+}
+
+.notice-dialog .btn-small {
+  width: 100%;
+}
+
 /* === Simple Zone & Advanced Panel === */
 .simple-zone {
   margin-bottom: 8px;

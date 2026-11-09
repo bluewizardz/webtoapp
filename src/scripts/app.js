@@ -44,6 +44,11 @@
     buildRetry: document.querySelector("#buildRetry"),
     retryDownloadLink: document.querySelector("#retryDownloadLink"),
 
+    // Play Protect Notice Popup
+    playProtectModal: document.querySelector("#playProtectModal"),
+    playProtectClose: document.querySelector("#playProtectClose"),
+    playProtectDismiss: document.querySelector("#playProtectDismiss"),
+
     // Build History
     buildHistory: document.querySelector("#buildHistory"),
     historyList: document.querySelector("#historyList"),
@@ -236,6 +241,33 @@
     if (els.buildRetry) {
       els.buildRetry.style.display = "none";
     }
+  }
+
+  // === Play Protect Notice ===
+  //
+  // Shown as a popup the moment an APK download starts, so the warning is
+  // visible exactly when it matters (before installing the file).
+
+  let noticeReturnFocus = null;
+
+  function showPlayProtectNotice() {
+    if (!els.playProtectModal || !els.playProtectModal.hidden) return;
+    noticeReturnFocus = document.activeElement;
+    els.playProtectModal.hidden = false;
+    document.body.classList.add("modal-open");
+    if (els.playProtectClose) {
+      els.playProtectClose.focus();
+    }
+  }
+
+  function hidePlayProtectNotice() {
+    if (!els.playProtectModal || els.playProtectModal.hidden) return;
+    els.playProtectModal.hidden = true;
+    document.body.classList.remove("modal-open");
+    if (noticeReturnFocus && typeof noticeReturnFocus.focus === "function") {
+      noticeReturnFocus.focus();
+    }
+    noticeReturnFocus = null;
   }
 
   // === Build History ===
@@ -613,6 +645,7 @@
         downloadLink.click();
         document.body.removeChild(downloadLink);
 
+        showPlayProtectNotice();
         setMessage("Build complete!", "ok");
         showBuildSuccess(downloadUrl, filename);
         return;
@@ -915,6 +948,26 @@
 
   if (els.resetDefaultsButton) {
     els.resetDefaultsButton.addEventListener("click", resetAdvancedDefaults);
+  }
+
+  if (els.playProtectModal) {
+    [els.playProtectClose, els.playProtectDismiss].forEach((button) => {
+      if (button) {
+        button.addEventListener("click", hidePlayProtectNotice);
+      }
+    });
+
+    els.playProtectModal.addEventListener("click", (event) => {
+      if (event.target === els.playProtectModal) {
+        hidePlayProtectNotice();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !els.playProtectModal.hidden) {
+        hidePlayProtectNotice();
+      }
+    });
   }
 
   // === Init ===

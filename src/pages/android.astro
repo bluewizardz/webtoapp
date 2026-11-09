@@ -291,20 +291,26 @@ const pageDescription = "Convert website to APK with our free, no-code Android a
             <li><strong>Zero Dependencies</strong> — Compiles using standard Android APIs.</li>
             <li><strong>CI/CD Pre-configured</strong> — Workspace ZIP includes GitHub Actions.</li>
           </ul>
-
-          <div class="warning-banner">
-            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <span>
-              <strong>Google Play Protect Notice:</strong> Google Play Protect might warn you during installation since the compiled APK is unrecognized/unsigned. Rest assured, the app is 100% clean and does not contain any viruses or malware.
-            </span>
-          </div>
         </div>
       </aside>
 
+    </div>
+
+    <!-- Play Protect Notice (shown when a download starts) -->
+    <div class="notice-overlay" id="playProtectModal" hidden>
+      <div class="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="playProtectTitle" aria-describedby="playProtectText">
+        <div class="notice-dialog-header">
+          <h2 id="playProtectTitle">Google Play Protect Notice</h2>
+          <button type="button" class="notice-close" id="playProtectClose" aria-label="Close notice">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="notice-dialog-text" id="playProtectText">Google Play Protect might warn you during installation since the compiled APK is unrecognized/unsigned. Rest assured, the app is 100% clean and does not contain any viruses or malware.</p>
+        <button type="button" class="btn btn-primary btn-small" id="playProtectDismiss">Got it</button>
+      </div>
     </div>
   </main>
 </Layout>
