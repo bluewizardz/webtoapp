@@ -174,6 +174,23 @@ contextBridge.exposeInMainWorld('api', {
       productName: appName,
       artifactName: `${safeName}.exe`,
       files: ['src/**/*', 'package.json'],
+      // Ship only the source and the Electron runtime: no dev deps, no native
+      // rebuild, and maximum compression keep the installer as small as possible.
+      compression: 'maximum',
+      asar: true,
+      npmRebuild: false,
+      nodeGypRebuild: false,
+      // Bundling every Chromium locale adds ~10-15 MB for a WebView wrapper that
+      // never shows Chromium UI. English is enough.
+      electronLanguages: ['en-US'],
+      // Disable unused Electron capabilities; this removes a little size and
+      // tightens security without affecting the wrapped website.
+      electronFuses: {
+        runAsNode: false,
+        enableNodeOptionsEnvironmentVariable: false,
+        enableNodeCliInspectArguments: false,
+        onlyLoadAppFromAsar: true
+      },
       directories: {
         output: 'dist',
         buildResources: 'assets'

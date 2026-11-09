@@ -96,6 +96,17 @@ contextBridge.exposeInMainWorld('api', {
       appId: appId,
       productName: appName,
       files: ['src/**/*', 'package.json'],
+      compression: 'maximum',
+      asar: true,
+      npmRebuild: false,
+      nodeGypRebuild: false,
+      electronLanguages: ['en-US'],
+      electronFuses: {
+        runAsNode: false,
+        enableNodeOptionsEnvironmentVariable: false,
+        enableNodeCliInspectArguments: false,
+        onlyLoadAppFromAsar: true
+      },
       directories: {
         output: 'dist',
         buildResources: 'assets'
@@ -329,6 +340,17 @@ contextBridge.exposeInMainWorld('api', {
       appId: appId,
       productName: appName,
       files: ['src/**/*', 'package.json'],
+      compression: 'maximum',
+      asar: true,
+      npmRebuild: false,
+      nodeGypRebuild: false,
+      electronLanguages: ['en-US'],
+      electronFuses: {
+        runAsNode: false,
+        enableNodeOptionsEnvironmentVariable: false,
+        enableNodeCliInspectArguments: false,
+        onlyLoadAppFromAsar: true
+      },
       directories: {
         output: 'dist',
         buildResources: 'assets'
