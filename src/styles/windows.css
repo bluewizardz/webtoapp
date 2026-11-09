@@ -363,27 +363,3 @@
   line-height: 1.45;
   color: var(--accents-5);
 }
-
-/* === Build metadata typography ===
-   Metadata cards are narrow (3 columns), so values used to be clipped with an
-   ellipsis. Scale the text with the card width and let long names / IDs wrap so
-   nothing is ever hidden, regardless of device size. */
-.windows-page .output-meta > div {
-  container-type: inline-size;
-}
-
-.windows-page .output-meta dt {
-  font-size: 0.72rem;
-  font-size: clamp(0.64rem, 5cqi, 0.75rem);
-}
-
-.windows-page .output-meta dd {
-  font-size: 0.8rem;
-  font-size: clamp(0.72rem, 5.5cqi, 0.9rem);
-  line-height: 1.3;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
