@@ -631,8 +631,8 @@ button, input {
 
 .workspace {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 40px;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 28px;
   align-items: start;
 }
 
@@ -641,7 +641,7 @@ button, input {
   border: 1px solid var(--accents-3);
   border-radius: 16px;
   background: var(--accents-1);
-  padding: 40px;
+  padding: 36px;
   box-shadow: var(--shadow-lg);
 }
 
@@ -2246,13 +2246,14 @@ input[type="file"]::file-selector-button:active {
 
 /* === Content Panel for FAQ, About & Privacy === */
 .content-panel {
-  max-width: 800px;
+  max-width: 860px;
+  width: 100%;
   margin: 40px auto;
   line-height: 1.8;
   background: var(--accents-1);
   border: 1px solid var(--accents-3);
   border-radius: 16px;
-  padding: 48px;
+  padding: 52px 56px;
   box-shadow: var(--shadow-lg);
 }
 
@@ -2350,7 +2351,8 @@ input[type="file"]::file-selector-button:active {
 
 /* === Guides Hub & Changelog Pages === */
 .page-hero {
-  max-width: 900px;
+  max-width: 860px;
+  width: 100%;
   margin: 16px auto 48px;
   display: flex;
   flex-direction: column;
@@ -2777,8 +2779,9 @@ input[type="file"]::file-selector-button:active {
 
 @media (max-width: 600px) {
   .content-panel {
-    padding: 32px 20px;
-    margin: 20px 12px;
+    padding: 28px 20px;
+    margin: 16px 12px;
+    border-radius: 12px;
   }
   .content-panel h1 {
     font-size: 1.85rem;

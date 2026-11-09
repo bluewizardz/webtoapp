@@ -363,3 +363,30 @@
   line-height: 1.45;
   color: var(--accents-5);
 }
+
+/* Secondary button — Windows-accented outline style */
+.windows-page .btn-secondary {
+  border-color: rgba(0, 120, 212, 0.4);
+  color: var(--win-accent);
+}
+
+.windows-page .btn-secondary:hover {
+  border-color: var(--win-accent);
+  background: rgba(0, 120, 212, 0.08);
+  color: var(--win-accent);
+}
+
+/* Input focus rings */
+.windows-page input[type="text"]:focus-visible,
+.windows-page input[type="number"]:focus-visible,
+.windows-page textarea:focus-visible {
+  border-color: var(--win-accent);
+  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.18);
+  outline: none;
+}
+
+/* Engine radio option selected accent */
+.windows-page .engine-option input:checked + .engine-body {
+  border-color: rgba(0, 120, 212, 0.4);
+  background: rgba(0, 120, 212, 0.07);
+}

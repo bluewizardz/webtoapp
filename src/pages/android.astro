@@ -1,11 +1,12 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import '../styles/android.css';
 
 const pageTitle = "Convert Website to APK - Free Android App Wrapper Builder";
 const pageDescription = "Convert website to APK: free Android app wrapper with WebView, pull-to-refresh, splash screen, and offline support.";
 ---
 
-<Layout title={pageTitle} description={pageDescription} bodyClass="builder-page">
+<Layout title={pageTitle} description={pageDescription} bodyClass="builder-page android-page">
   <main class="shell">
     <h1 class="sr-only">Convert a website to an Android APK — free no-code app wrapper builder</h1>
     <div class="workspace">
@@ -285,14 +286,14 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
         </div>
 
         <div class="build-info">
-          <p>Building compiles a <strong>native Android Java wrapper project</strong> containing a lightweight high-performance WebView.</p>
+          <p>Each build compiles a <strong>native Android Java wrapper project</strong> — a lightweight WebView shell that loads your website inside a real Android app. The APK weighs just 30–60 KB (not MB), installs in seconds, and loads your site using the same engine as Chrome.</p>
           <ul>
-            <li><strong>No Login Required</strong> — Start building immediately without creating any account.</li>
-            <li><strong>100% Free / Zero Cost</strong> — Compile unlimited Android APKs with no subscriptions or hidden fees.</li>
-            <li><strong>Zero Dependencies</strong> — Compiles using standard Android APIs.</li>
-            <li><strong>CI/CD Pre-configured</strong> — Workspace ZIP includes GitHub Actions.</li>
+            <li><strong>No Login Required</strong> — Start building immediately. No account, no email, no waiting.</li>
+            <li><strong>100% Free / Zero Cost</strong> — Compile unlimited APKs with no subscriptions, watermarks, or hidden fees.</li>
+            <li><strong>Zero Dependencies</strong> — Compiles using standard Android APIs. Works on any Android 5.0+ device.</li>
+            <li><strong>CI/CD Pre-configured</strong> — The workspace ZIP ships with a GitHub Actions workflow so you can rebuild and re-sign on every push.</li>
           </ul>
-          <p style="margin-top: 16px;">Ready to go live? Follow our <a href="/guides/publish-to-play-store"><strong>step-by-step Play Store publishing guide</strong></a> — from a finished APK to a published listing.</p>
+          <p style="margin-top: 16px;">Ready to go live? Follow the <a href="/guides/publish-to-play-store"><strong>step-by-step Play Store publishing guide</strong></a> — from a finished APK to a published listing in a few hours.</p>
         </div>
       </aside>
 

@@ -31,36 +31,35 @@ const signApkSchema = { "@graph": [{
   <main class="shell">
     <article class="content-panel">
       <h1>How to Sign an APK for Google Play Store Publishing</h1>
-      <p>Every APK uploaded to the Google Play Store must be cryptographically signed with your developer upload key. This guide shows how to sign the APK that <a href="/android">SiteToApp</a> generates — from creating a keystore to verifying the signature — so your release is accepted by Play Console on the first attempt.</p>
+      <p>Every APK uploaded to Google Play must be cryptographically signed with your developer upload key. This guide walks through signing the APK that <a href="/android">SiteToApp</a> generates — from creating a keystore to verifying the signature — so your release is accepted by Play Console on the first attempt.</p>
 
-      <h2>What signing does</h2>
-      <p>An app signature proves the APK was built by you (or someone with your key). Google uses it to guarantee that updates to your app come from the same source. The debug APK you test with is <em>not</em> accepted for publishing — you need a release-signed build.</p>
+      <h2>Why signing matters</h2>
+      <p>An app signature proves the APK was built by you (or someone with access to your key). Google uses it to guarantee that updates to your app always come from the same trusted source. The debug APK you download and test locally is <em>not</em> accepted for publishing — you need a release-signed build.</p>
+      <p><strong>Important:</strong> never lose your keystore file. If you lose it without Google's key recovery, you'll be unable to push updates to the same listing — you'd have to publish as a brand-new app.</p>
 
       <h2>Step 1 — Generate an upload keystore</h2>
-      <p>The easiest way is Android Studio: <strong>File → Project Structure → Signing &amp; Configs → Create new keystore</strong>. Or from the command line:</p>
+      <p>The easiest route is Android Studio: <strong>File → Project Structure → Signing &amp; Configs → Create new keystore</strong>. Or run this from the command line (requires JDK or Android Studio's bundled JDK):</p>
       <pre>keytool -genkeypair -keystore upload-key.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000</pre>
-      <p>Choose a strong password and <strong>back the `.jks` file up in at least two secure places</strong>. If you lose it, you can still recover via Google Play's key recovery — but only if your identity is verified. Never commit it to a public repository: if a private key leaks, anyone can ship updates as you.</p>
+      <p>Fill in the prompts (name, organisation, country code) and choose a strong password. Store the resulting <code>upload-key.jks</code> file in at least two secure, separate locations — an encrypted cloud backup and a local copy are both good options. Never commit it to a public repository.</p>
 
-      <h2>Step 2 — Build the release APK</h2>
+      <h2>Step 2 — Build the release APK from the workspace</h2>
       <p>Unzip the SiteToApp workspace ZIP. In the project root, run:</p>
       <pre>./gradlew assembleRelease</pre>
-      <p>The unsigned release APK lands in <code>app/build/outputs/apk/release/</code>. (Android Studio's <em>Generate Signed Bundle / APK</em> wizard does steps 2–3 in one go if you prefer a GUI.)</p>
+      <p>The unsigned release APK lands in <code>app/build/outputs/apk/release/</code>. If you prefer a GUI, Android Studio's <em>Build → Generate Signed Bundle / APK</em> wizard handles steps 2 and 3 in one flow.</p>
 
       <h2>Step 3 — Sign with apksigner</h2>
-      <pre>apksigner sign --ks upload-key.jks --ks-key-alias upload --out app-signed.apk app-release.apk</pre>
-      <p>Enter your keystore password when prompted. apksigner ships with the Android build tools (<code>~/Library/Android/sdk/build-tools/&lt;version&gt;/</code> on macOS, <code>/opt/android-sdk/build-tools</code> on Linux).</p>
+      <p><code>apksigner</code> ships with the Android SDK build-tools. Run:</p>
+      <pre>apksigner sign --ks upload-key.jks --ks-key-alias upload --out app-signed.apk app-release-unsigned.apk</pre>
+      <p>You'll be prompted for the keystore password. The output file <code>app-signed.apk</code> is what you upload to Play Console.</p>
 
       <h2>Step 4 — Verify the signature</h2>
+      <p>Before uploading, confirm the signing succeeded:</p>
       <pre>apksigner verify --print-certs app-signed.apk</pre>
-      <p>If verification passes, the output shows your certificate SHA-256 digest. Install the signed APK on a device as a final sanity check, then upload it.</p>
+      <p>If you see certificate details printed without any errors, the APK is correctly signed and ready for Play Console.</p>
 
       <h2>Step 5 — Upload to Play Console</h2>
-      <p>Head to <strong>Production → Create new release → Upload</strong> and add <code>app-signed.apk</code>. Then finish the store listing and submit — our <a href="/guides/publish-to-play-store">complete Play Store publishing guide</a> covers every screen of that process.</p>
-
-      <h2>Sign once, update forever</h2>
-      <p>Keep the same upload key for every version of your app. Future releases just run the same three commands with a bumped <code>versionCode</code> in <code>build.gradle</code> — and because the app loads your live website, content updates never need a recompile at all.</p>
-
-      <p>Not built your app yet? <a href="/android"><strong>Generate the wrapper project</strong></a>, or compare the desktop options in our <a href="/guides/website-to-desktop-windows">website-to-Windows-desktop guide</a>.</p>
+      <p>In Play Console, go to <strong>Production → Releases → Create new release → Upload</strong> and add <code>app-signed.apk</code>. If Play Console flags the target API level, the SiteToApp template already targets a current API, so simply confirm and proceed. Write a release note and submit for review.</p>
+      <p>Need the full publishing walkthrough from scratch? Follow our <a href="/guides/publish-to-play-store">step-by-step Play Store publishing guide</a>.</p>
     </article>
   </main>
 </Layout>

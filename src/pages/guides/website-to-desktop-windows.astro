@@ -31,34 +31,43 @@ const desktopGuideSchema = { "@graph": [{
   <main class="shell">
     <article class="content-panel">
       <h1>How to Convert a Website to a Windows Desktop App (EXE)</h1>
-      <p>Not every user is on a phone. If your audience sits at a Windows PC, a desktop wrapper gives your website a native icon, a real install/onboarding flow, and offline-friendly shell behavior — without maintaining a second codebase. Here's how to do it with the <a href="/windows">free SiteToApp Windows builder</a>.</p>
+      <p>Not every user is on a phone. If your audience works on Windows, a desktop wrapper gives your website a native icon in the taskbar, a proper install wizard, and shell-level behavior — all without maintaining a second codebase. Here's how to do it with the <a href="/windows">free SiteToApp Windows builder</a>, from first config to distributing the EXE.</p>
 
       <h2>Step 1 — Add your URL and configure the app</h2>
-      <p>Open the <a href="/windows">Windows builder</a>, enter your website URL, app name, package ID, and window size (1200×800 is a good default). The builder scrapes your site's favicon for the app icon, or you can upload your own 512×512 PNG.</p>
+      <p>Open the <a href="/windows">Windows builder</a> and enter your website URL and app name. The builder automatically scrapes your site's favicon for the app icon — or upload your own 512×512 PNG for a sharper result. Set the window dimensions: <strong>1200×800</strong> is a solid default for most content sites, while <strong>1440×900</strong> suits dashboards or admin panels that benefit from more horizontal space.</p>
 
       <h2>Step 2 — Pick a build engine</h2>
-      <p>You have two engines, shown with size estimates in the builder:</p>
+      <p>This is the most important decision. Two engines are available:</p>
       <ul>
-        <li><strong>Electron (~65–90 MB)</strong> — the battle-tested path. Full Node.js + Chromium, huge plugin ecosystem, and NSIS installer output. Choose this if you need Node features or maximum compatibility.</li>
-        <li><strong>Tauri (~5–10 MB)</strong> — a Rust-powered shell around the system WebView (Edge WebView2 on Windows). Dramatically smaller installs and faster cold start. Choose this for a lean, modern desktop app.</li>
+        <li><strong>Electron (~65–90 MB)</strong> — bundles a full Chromium + Node.js runtime with your app. Everything works out of the box: file system access, background workers, auto-updates, and a huge plugin ecosystem. The trade-off is a larger install size and slightly slower cold start while Chromium boots. Choose Electron if your site uses Node.js features, or if you want maximum browser compatibility.</li>
+        <li><strong>Tauri (~5–10 MB)</strong> — a Rust shell that reuses the system's WebView2 engine (built into Windows 10/11). The result is a dramatically smaller installer and near-instant cold start. Choose Tauri when size and speed are your top priorities and you don't need Node.js.</li>
       </ul>
+      <p>Not sure which to pick? Read the full <a href="/guides/webview-vs-electron-vs-tauri">WebView vs Electron vs Tauri comparison</a>.</p>
 
-      <h2>Step 3 — Choose your package</h2>
+      <h2>Step 3 — Choose your package format</h2>
       <ul>
-        <li><strong>NSIS installer</strong> — a proper setup wizard, Start Menu shortcut, and uninstaller. Best for distributing to non-technical users.</li>
-        <li><strong>Portable</strong> — a single EXE that runs from anywhere, no installation, works from USB. Best for internal tools and power users.</li>
+        <li><strong>NSIS installer</strong> — a standard Windows setup wizard with a Start Menu shortcut, desktop icon, and uninstaller. Best choice for apps you're distributing to customers or non-technical users.</li>
+        <li><strong>Portable EXE</strong> — a single self-contained executable that runs from anywhere, requires no installation, and works from a USB drive. Perfect for internal tools, kiosk setups, or power users who prefer clean systems.</li>
       </ul>
 
       <h2>Step 4 — Build and download</h2>
-      <p>Click <em>Build → EXE</em>. The build compiles in our CI (GitHub Actions on `windows-latest`), and you'll get a download link in about a minute. You also get the full Electron/Tauri source workspace with a GitHub Actions workflow, so you can rebuild anytime for free.</p>
+      <p>Click <em>Build → EXE</em>. The build runs on GitHub Actions (<code>windows-latest</code> runner) and completes in about a minute. You get a direct download link for the installer or portable EXE, plus the full Electron or Tauri source workspace with a pre-wired GitHub Actions workflow — so rebuilding for future versions costs nothing.</p>
 
-      <h2>Step 5 — Distribute the EXE</h2>
-      <p>Share it however you like: host it on your website, attach it to a GitHub Release, or upload it to the Microsoft Store via <a href="https://learn.microsoft.com/windows/msix/overview" target="_blank" rel="noopener noreferrer">MSIX packaging</a>. If Windows SmartScreen warns about an unsigned installer, users can click <strong>More info → Run anyway</strong> — the app is a clean wrapper with no malware or trackers (see the <a href="/privacy">privacy policy</a>).</p>
+      <h2>Step 5 — Distribute your EXE</h2>
+      <p>You have several options:</p>
+      <ul>
+        <li><strong>Host on your website</strong> — a simple download link, the most direct path to your existing audience.</li>
+        <li><strong>GitHub Releases</strong> — attach the EXE to a versioned release for a free, reliable CDN with a changelog.</li>
+        <li><strong>Microsoft Store</strong> — package as MSIX for the Store. See <a href="https://learn.microsoft.com/windows/msix/overview" target="_blank" rel="noopener noreferrer">Microsoft's MSIX documentation</a> for packaging steps.</li>
+      </ul>
+
+      <h2>Handling the Windows SmartScreen warning</h2>
+      <p>If Windows SmartScreen flags your installer as "unrecognized", it's because the EXE is unsigned. Users can click <strong>More info → Run anyway</strong> to proceed — the app is a clean wrapper around your website with no malware or trackers (see the <a href="/privacy">privacy policy</a>). This warning disappears once the executable accumulates enough reputation, or you can code-sign it with a certificate from a trusted CA.</p>
 
       <h2>When a desktop app beats a browser tab</h2>
-      <p>Desktop wrappers shine for internal dashboards, POS systems, kiosk displays, and any tool customers open dozens of times a day. They keep your site pinned to the taskbar, preserve window state, and give native file-system and notification access. And like the mobile wrappers, content updates on your site appear instantly — no rebuild needed.</p>
+      <p>Desktop wrappers shine for internal dashboards, POS systems, kiosk displays, and any tool users open dozens of times daily. They give your site a pinned taskbar icon, preserve window state between sessions, and can tap native OS notifications and file system access. And just like the mobile wrappers, content updates on your site appear instantly in the app — no rebuild needed.</p>
 
-      <p>Ready to build? <a href="/windows"><strong>Open the free Windows EXE builder</strong></a>, or check the <a href="/faq">FAQ</a> for SmartScreen, verification, and sizing questions.</p>
+      <p>Ready to get started? <a href="/windows"><strong>Open the free Windows EXE builder</strong></a>, or check the <a href="/faq">FAQ</a> for SmartScreen, signing, and sizing questions.</p>
     </article>
   </main>
 </Layout>

@@ -1,0 +1,64 @@
+/* === Android Builder theme ===
+   Scoped to .android-page so it doesn't bleed into the landing page or Windows builder.
+   Accent values follow the official Android green: #3DDC84 */
+
+.android-page {
+  --android-accent: #3ddc84;
+  --android-accent-hover: #2bbf6e;
+  --android-accent-pressed: #1aa058;
+  --android-accent-muted: rgba(61, 220, 132, 0.12);
+  --android-accent-border: rgba(61, 220, 132, 0.3);
+}
+
+/* Primary button — solid Android green */
+.android-page .btn-primary {
+  background: var(--android-accent);
+  color: #0a0f1a;
+  box-shadow: none;
+}
+
+.android-page .btn-primary:hover {
+  background: var(--android-accent-hover);
+  transform: translateY(-1px);
+}
+
+.android-page .btn-primary:active {
+  background: var(--android-accent-pressed);
+  transform: translateY(0);
+}
+
+/* Progress bar fill */
+.android-page .progress-fill {
+  background: var(--android-accent);
+}
+
+/* Status pill */
+.android-page .status-pill {
+  color: var(--android-accent);
+  border-color: var(--android-accent-border);
+}
+
+/* Advanced summary hover */
+.android-page .advanced-summary:hover .advanced-label {
+  color: var(--android-accent);
+}
+
+/* Toggle switch checked state */
+.android-page input[type="checkbox"]:checked + .toggle-switch {
+  background: var(--android-accent);
+}
+
+/* Focus ring on inputs */
+.android-page input[type="text"]:focus-visible,
+.android-page input[type="number"]:focus-visible,
+.android-page select:focus-visible {
+  border-color: var(--android-accent);
+  box-shadow: 0 0 0 3px rgba(61, 220, 132, 0.18);
+  outline: none;
+}
+
+/* Engine radio option selected accent */
+.android-page .engine-option input:checked + .engine-body {
+  border-color: var(--android-accent-border);
+  background: var(--android-accent-muted);
+}
