@@ -1445,37 +1445,43 @@ body.modal-open {
   color: var(--foreground);
 }
 
-/* Buy Me a Coffee brand yellow (#FFDD00 on black text), scoped so the
-   generic .btn-secondary rules can't win on order or specificity. */
-.notice-dialog .notice-support-btn {
-  width: 100%;
-  justify-content: center;
-  gap: 10px;
+/* Buy Me a Coffee brand button — official yellow (#FFDD00), official cup
+   logomark and Cookie wordmark font. Shared by the header link and the
+   download popup; .btn.bmc-btn outranks .btn-secondary regardless of order. */
+.btn.bmc-btn {
+  gap: 8px;
   background: #ffdd00;
   border-color: #ffdd00;
   color: #0a0a0a;
   font-family: 'Cookie', 'Segoe Script', cursive;
-  font-size: 1.45rem;
+  font-size: 1.15rem;
   font-weight: 400;
   line-height: 1;
   letter-spacing: 0.01em;
 }
 
-.notice-dialog .notice-support-btn:hover {
+.btn.bmc-btn:hover {
   background: #ffe74d;
   border-color: #ffe74d;
   color: #0a0a0a;
 }
 
-.notice-dialog .notice-support-btn:active {
+.btn.bmc-btn:active {
   background: #f5d400;
   border-color: #f5d400;
   color: #0a0a0a;
 }
 
-.notice-dialog .notice-support-btn:focus-visible {
-  outline: 2px solid #0a0a0a;
+.btn.bmc-btn:focus-visible {
+  outline: 2px solid #ffdd00;
   outline-offset: 2px;
+}
+
+.notice-dialog .notice-support-btn {
+  width: 100%;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1.45rem;
 }
 
 .notice-dialog .btn-small {

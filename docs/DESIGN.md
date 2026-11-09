@@ -116,7 +116,7 @@ Headlines lean on weight and negative tracking rather than size alone; nothing u
 - **Navbar** (`.navbar`): 64px tall, sticky, `rgba(9,13,22,.85)` in dark (`rgba(243,244,246,.85)` light) with a 12px backdrop blur, 1px bottom border, and a subtle shadow.
   - **Brand** left: 20px outline phone icon in indigo + "SiteToApp" at 20px/800, tracking −0.03em.
   - **Segmented nav** (`.nav-links`): an inset pill group on `--accents-2` containing *Overview* and *Android APK*, with the active item rendered as a raised card on `--accents-1`. A disabled "iOS (Soon)" item sits at the end.
-  - **Actions** right: icon-only theme toggle (sun in dark, moon in light) and a small secondary "Buy Me a Coffee" button with cup icon.
+  - **Actions** right: icon-only theme toggle (sun in dark, moon in light) and a small Buy Me a Coffee brand button (official yellow, cup logomark, Cookie wordmark font).
 - **Footer**: full-width card surface with top border, 48px padding; centered row of links (About Us, FAQ, Privacy Policy, Contact Support → mailto) above a muted copyright line. `margin-top: auto` keeps it pinned on short pages.
 - **Page width:** content maxes at 1200px; long-form panels max at 800px; the hero column maxes at 900px.
 
