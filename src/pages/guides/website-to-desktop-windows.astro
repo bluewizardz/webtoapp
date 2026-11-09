@@ -29,36 +29,178 @@ const desktopGuideSchema = { "@graph": [{
 
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={desktopGuideSchema}>
   <main class="shell">
-    <article class="content-panel">
-      <h1>How to Convert a Website to a Windows Desktop App (EXE)</h1>
-      <p>Not every user is on a phone. If your audience sits at a Windows PC, a desktop wrapper gives your website a native icon, a real install/onboarding flow, and offline-friendly shell behavior — without maintaining a second codebase. Here's how to do it with the <a href="/windows">free SiteToApp Windows builder</a>.</p>
+    <header class="page-hero">
+      <nav class="page-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li aria-current="page">Windows Desktop App</li>
+        </ol>
+      </nav>
+      <p class="page-eyebrow">Windows Desktop Guide</p>
+      <h1>Convert a Website to a Windows Desktop App</h1>
+      <p class="page-lede">Transform any website into a standalone Windows desktop application: choose between Electron or Tauri, configure installers, and distribute to users with zero coding.</p>
+    </header>
 
-      <h2>Step 1 — Add your URL and configure the app</h2>
-      <p>Open the <a href="/windows">Windows builder</a>, enter your website URL, app name, package ID, and window size (1200×800 is a good default). The builder scrapes your site's favicon for the app icon, or you can upload your own 512×512 PNG.</p>
+    <div class="guide-layout">
+      <!-- Sticky Navigation & Overview Sidebar -->
+      <aside class="guide-sidebar" aria-label="Guide overview and navigation">
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a Glance</h2>
+          <div class="guide-meta-box">
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Time</span>
+              <span class="guide-meta-val">8 min read</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Platform</span>
+              <span class="guide-meta-val">Windows 10/11</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Output</span>
+              <span class="guide-meta-val">NSIS / EXE</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Cost</span>
+              <span class="guide-meta-val">100% Free</span>
+            </div>
+          </div>
+        </div>
 
-      <h2>Step 2 — Pick a build engine</h2>
-      <p>You have two engines, shown with size estimates in the builder:</p>
-      <ul>
-        <li><strong>Electron (~65–90 MB)</strong> — the battle-tested path. Full Node.js + Chromium, huge plugin ecosystem, and NSIS installer output. Choose this if you need Node features or maximum compatibility.</li>
-        <li><strong>Tauri (~5–10 MB)</strong> — a Rust-powered shell around the system WebView (Edge WebView2 on Windows). Dramatically smaller installs and faster cold start. Choose this for a lean, modern desktop app.</li>
-      </ul>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Step Navigation</h2>
+          <nav class="guide-toc-nav" aria-label="Table of contents">
+            <a href="#why-desktop" class="guide-toc-link"><span class="guide-toc-num">00</span> Why Desktop?</a>
+            <a href="#step-1" class="guide-toc-link"><span class="guide-toc-num">01</span> Add URL</a>
+            <a href="#step-2" class="guide-toc-link"><span class="guide-toc-num">02</span> Pick Engine</a>
+            <a href="#step-3" class="guide-toc-link"><span class="guide-toc-num">03</span> Choose Package</a>
+            <a href="#step-4" class="guide-toc-link"><span class="guide-toc-num">04</span> Build &amp; Compile</a>
+            <a href="#step-5" class="guide-toc-link"><span class="guide-toc-num">05</span> Distribute</a>
+          </nav>
+        </div>
 
-      <h2>Step 3 — Choose your package</h2>
-      <ul>
-        <li><strong>NSIS installer</strong> — a proper setup wizard, Start Menu shortcut, and uninstaller. Best for distributing to non-technical users.</li>
-        <li><strong>Portable</strong> — a single EXE that runs from anywhere, no installation, works from USB. Best for internal tools and power users.</li>
-      </ul>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Need a Windows EXE?</h2>
+          <p style="font-size: 0.86rem; color: var(--accents-6); line-height: 1.5; margin: 0 0 12px;">Compile a desktop installer or portable executable in minutes.</p>
+          <a href="/windows" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;">Open Windows Builder</a>
+        </div>
+      </aside>
 
-      <h2>Step 4 — Build and download</h2>
-      <p>Click <em>Build → EXE</em>. The build compiles in our CI (GitHub Actions on `windows-latest`), and you'll get a download link in about a minute. You also get the full Electron/Tauri source workspace with a GitHub Actions workflow, so you can rebuild anytime for free.</p>
+      <!-- Main Guide Stepper Body -->
+      <div class="guide-content">
+        
+        <article class="guide-step-card" id="why-desktop">
+          <div class="guide-step-header">
+            <span class="guide-step-badge guide-step-badge--win">Overview</span>
+            <h2>When a desktop app beats a browser tab</h2>
+          </div>
+          <p>Not every user is on a phone. If your audience works from a Windows PC, a desktop wrapper gives your website a permanent home on their desktop: an icon on the taskbar, window state preservation, standalone performance, and offline-friendly shell behavior — all without maintaining a secondary codebase.</p>
+          <p>Desktop wrappers shine for internal dashboards, SaaS tools, POS point-of-sale clients, and any product customers keep open throughout their entire workday.</p>
+        </article>
 
-      <h2>Step 5 — Distribute the EXE</h2>
-      <p>Share it however you like: host it on your website, attach it to a GitHub Release, or upload it to the Microsoft Store via <a href="https://learn.microsoft.com/windows/msix/overview" target="_blank" rel="noopener noreferrer">MSIX packaging</a>. If Windows SmartScreen warns about an unsigned installer, users can click <strong>More info → Run anyway</strong> — the app is a clean wrapper with no malware or trackers (see the <a href="/privacy">privacy policy</a>).</p>
+        <!-- Step 1 -->
+        <article class="guide-step-card" id="step-1">
+          <div class="guide-step-header">
+            <span class="guide-step-badge guide-step-badge--win">Step 01</span>
+            <h2>Add your URL and configure the app</h2>
+          </div>
+          <p>Open the <a href="/windows">free Windows builder</a>, enter your website URL, app name, and default window resolution (1200 &times; 800 is recommended for most desktop workflows).</p>
+          <p>The builder automatically scrapes your site's favicon for the desktop taskbar and titlebar icon, or you can upload a high-resolution 512 &times; 512 PNG directly.</p>
+        </article>
 
-      <h2>When a desktop app beats a browser tab</h2>
-      <p>Desktop wrappers shine for internal dashboards, POS systems, kiosk displays, and any tool customers open dozens of times a day. They keep your site pinned to the taskbar, preserve window state, and give native file-system and notification access. And like the mobile wrappers, content updates on your site appear instantly — no rebuild needed.</p>
+        <!-- Step 2 -->
+        <article class="guide-step-card" id="step-2">
+          <div class="guide-step-header">
+            <span class="guide-step-badge guide-step-badge--win">Step 02</span>
+            <h2>Pick a build engine (Tauri vs Electron)</h2>
+          </div>
+          <p>SiteToApp provides two engines directly in the builder:</p>
+          <div class="comparison-table-wrap">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Engine</th>
+                  <th>Installer Size</th>
+                  <th>Architecture</th>
+                  <th>Best Fit</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Tauri</strong></td>
+                  <td><span style="color: #10b981; font-weight: 700;">~5–10 MB</span></td>
+                  <td>Rust + Edge WebView2</td>
+                  <td>Lean modern websites, quick downloads, fast cold start.</td>
+                </tr>
+                <tr>
+                  <td><strong>Electron</strong></td>
+                  <td><span>~65–90 MB</span></td>
+                  <td>Bundled Chromium + Node.js</td>
+                  <td>Sites requiring deep Node APIs, plugins, or legacy Windows support.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p>For a detailed architectural breakdown, see our dedicated <a href="/guides/webview-vs-electron-vs-tauri">WebView vs Electron vs Tauri guide</a>.</p>
+        </article>
 
-      <p>Ready to build? <a href="/windows"><strong>Open the free Windows EXE builder</strong></a>, or check the <a href="/faq">FAQ</a> for SmartScreen, verification, and sizing questions.</p>
-    </article>
+        <!-- Step 3 -->
+        <article class="guide-step-card" id="step-3">
+          <div class="guide-step-header">
+            <span class="guide-step-badge guide-step-badge--win">Step 03</span>
+            <h2>Choose your package type</h2>
+          </div>
+          <ul style="color: var(--accents-6); padding-left: 20px; line-height: 1.7; margin-bottom: 16px;">
+            <li><strong>NSIS installer (.exe):</strong> A professional setup wizard that installs into <code>Program Files</code>, creates Start Menu and Desktop shortcuts, and provides an automatic uninstaller. Recommended for shipping to customers.</li>
+            <li><strong>Portable executable (.exe):</strong> A standalone executable that runs directly with no installation required. Ideal for internal testing, IT tools, or running from USB drives.</li>
+          </ul>
+        </article>
+
+        <!-- Step 4 -->
+        <article class="guide-step-card" id="step-4">
+          <div class="guide-step-header">
+            <span class="guide-step-badge guide-step-badge--win">Step 04</span>
+            <h2>Build and compile in the cloud</h2>
+          </div>
+          <p>Click <strong>Build Windows Installer</strong>. Our build infrastructure automatically packages your website into the selected native shell, attaches your custom icon, and compiles the executable via automated GitHub Actions on <code>windows-latest</code>.</p>
+          <p>Within a few minutes, your finished Windows installer download will begin automatically.</p>
+        </article>
+
+        <!-- Step 5 -->
+        <article class="guide-step-card" id="step-5">
+          <div class="guide-step-header">
+            <span class="guide-step-badge guide-step-badge--win">Step 05</span>
+            <h2>Distribute your Windows app</h2>
+          </div>
+          <p>Share your executable freely: host it directly on your website, attach it to a GitHub Release, or package it for the Microsoft Store via MSIX.</p>
+          
+          <div class="callout callout-info">
+            <div class="callout-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </div>
+            <div>
+              <strong>Windows SmartScreen Notice:</strong> Because dynamically compiled installers are not yet signed with a Microsoft Authenticode EV certificate, Windows SmartScreen may show an initial unrecognized warning. Instruct users to click <strong>More info &rarr; Run anyway</strong>. The application is a 100% clean wrapper with zero telemetry.
+            </div>
+          </div>
+        </article>
+
+        <!-- Callout Banner -->
+        <section class="guides-cta" style="margin-top: 32px;" aria-labelledby="win-next-title">
+          <div>
+            <h2 id="win-next-title">Ready to package your Windows desktop app?</h2>
+            <p>Compile a Tauri or Electron desktop installer from your URL in minutes. 100% free with no login required.</p>
+          </div>
+          <div class="guides-cta-actions">
+            <a href="/windows" class="btn btn-primary">Start Windows Builder</a>
+            <a href="/guides/webview-vs-electron-vs-tauri" class="btn btn-secondary">Engine Comparison</a>
+          </div>
+        </section>
+
+      </div>
+    </div>
   </main>
 </Layout>

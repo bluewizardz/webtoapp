@@ -5,8 +5,8 @@ const pageTitle = "Convert Website to APK - Free Android App Wrapper Builder";
 const pageDescription = "Convert website to APK: free Android app wrapper with WebView, pull-to-refresh, splash screen, and offline support.";
 ---
 
-<Layout title={pageTitle} description={pageDescription} bodyClass="builder-page">
-  <main class="shell">
+<Layout title={pageTitle} description={pageDescription} bodyClass="builder-page android-page">
+  <main class="shell android-page">
     <h1 class="sr-only">Convert a website to an Android APK — free no-code app wrapper builder</h1>
     <div class="workspace">
       
@@ -17,15 +17,17 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
         </div>
 
         <div class="simple-zone">
-          <label class="field">
-            <span>Website URL</span>
-            <input id="siteUrl" name="siteUrl" type="text" inputmode="url" placeholder="https://example.com" autocomplete="url" required>
-          </label>
+          <div class="builder-fields-row">
+            <label class="field">
+              <span>Website URL</span>
+              <input id="siteUrl" name="siteUrl" type="text" inputmode="url" placeholder="https://example.com" autocomplete="url" required>
+            </label>
 
-          <label class="field">
-            <span>App Name</span>
-            <input id="appName" name="appName" type="text" placeholder="My Web App" autocomplete="organization">
-          </label>
+            <label class="field">
+              <span>App Name</span>
+              <input id="appName" name="appName" type="text" placeholder="My Web App" autocomplete="organization">
+            </label>
+          </div>
 
           <p class="defaults-hint" id="defaultsHint">Defaults: version 1.0.0 · auto-fetched icon · splash screen · pull-to-refresh</p>
         </div>
@@ -38,115 +40,121 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
             <fieldset class="features-fieldset">
               <legend>App Identity</legend>
 
-              <label class="field">
-                <span>Version</span>
-                <input id="appVersion" name="appVersion" type="text" value="1.0.0" inputmode="decimal">
-              </label>
+              <div class="identity-fields-row">
+                <label class="field">
+                  <span>Version</span>
+                  <input id="appVersion" name="appVersion" type="text" value="1.0.0" inputmode="decimal">
+                </label>
+
+                <label class="field">
+                  <span>App ID (Package Name)</span>
+                  <div class="inline-control">
+                    <input id="appId" name="appId" type="text" placeholder="com.example.app" spellcheck="false">
+                    <button type="button" id="resetIdButton" class="btn btn-secondary">Auto</button>
+                  </div>
+                </label>
+              </div>
 
               <label class="field">
-                <span>App ID (Package Name)</span>
-                <div class="inline-control">
-                  <input id="appId" name="appId" type="text" placeholder="com.example.app" spellcheck="false">
-                  <button type="button" id="resetIdButton" class="btn btn-secondary">Auto</button>
+                <span>App Icon (Optional 512x512 PNG)</span>
+                <div class="icon-upload-row">
+                  <input id="appIcon" type="file" accept="image/png, image/jpeg">
+                  <button type="button" id="removeIconButton" class="icon-remove-btn" style="display: none;" title="Remove icon">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Remove
+                  </button>
                 </div>
               </label>
 
-            <label class="field">
-              <span>App Icon (Optional 512x512 PNG)</span>
-              <div class="icon-upload-row">
-                <input id="appIcon" type="file" accept="image/png, image/jpeg">
-                <button type="button" id="removeIconButton" class="icon-remove-btn" style="display: none;" title="Remove icon">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                  Remove
-                </button>
+              <div class="icon-or-divider">
+                <span class="icon-or-line"></span>
+                <span class="icon-or-text">OR</span>
+                <span class="icon-or-line"></span>
               </div>
-            </label>
 
-            <div class="icon-or-divider">
-              <span class="icon-or-line"></span>
-              <span class="icon-or-text">OR</span>
-              <span class="icon-or-line"></span>
-            </div>
-
-            <div class="icon-fetch-container">
-              <label class="icon-fetch-label">
-                <input id="autoFetchIcon" type="checkbox" checked>
-                <span class="toggle-switch"></span>
-                <span class="icon-fetch-text">
-                  <strong>Auto Fetch Website Icon</strong>
-                  <small>Scrapes the favicon of your site automatically</small>
-                </span>
-              </label>
-              <div class="icon-preview-wrapper">
-                <img id="iconPreview" alt="Icon Preview">
-                <div id="iconPreviewPlaceholder" class="icon-preview-placeholder" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="16" rx="3"></rect>
-                    <path d="M3 9h18"></path>
-                    <circle cx="6.4" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
-                    <circle cx="9" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
-                  </svg>
+              <div class="icon-fetch-container">
+                <label class="icon-fetch-label">
+                  <input id="autoFetchIcon" type="checkbox" checked>
+                  <span class="toggle-switch"></span>
+                  <span class="icon-fetch-text">
+                    <strong>Auto Fetch Website Icon</strong>
+                    <small>Scrapes the favicon of your site automatically</small>
+                  </span>
+                </label>
+                <div class="icon-preview-wrapper">
+                  <img id="iconPreview" alt="Icon Preview">
+                  <div id="iconPreviewPlaceholder" class="icon-preview-placeholder" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                      <path d="M3 9h18"></path>
+                      <circle cx="6.4" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                      <circle cx="9" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                    </svg>
+                  </div>
+                  <div id="iconPreviewSpinner" class="spinner"></div>
                 </div>
-                <div id="iconPreviewSpinner" class="spinner"></div>
               </div>
-            </div>
-                </fieldset>
+            </fieldset>
 
             <fieldset class="features-fieldset">
               <legend>Interface Settings</legend>
-              <label class="check-row">
-                <input id="showSpinner" type="checkbox" checked>
-                <span class="check-mark"></span>
-                <span>
-                  <strong>Horizontal Progress Indicator</strong>
-                  <small>Show a thin horizontal progress line on the top edge while pages load</small>
-                </span>
-              </label>
-              <label class="check-row">
-                <input id="pullToRefresh" type="checkbox" checked>
-                <span class="check-mark"></span>
-                <span>
-                  <strong>Pull-to-Refresh</strong>
-                  <small>Swipe down from the top to reload the page</small>
-                </span>
-              </label>
-              <label class="check-row">
-                <input id="allowZoom" type="checkbox">
-                <span class="check-mark"></span>
-                <span>
-                  <strong>Allow Zoom</strong>
-                  <small>Enable pinch-to-zoom controls in the WebView</small>
-                </span>
-              </label>
+              <div class="features-checkbox-grid">
+                <label class="check-row">
+                  <input id="showSpinner" type="checkbox" checked>
+                  <span class="check-mark"></span>
+                  <span>
+                    <strong>Horizontal Progress Indicator</strong>
+                    <small>Show a thin horizontal progress line on the top edge while pages load</small>
+                  </span>
+                </label>
+                <label class="check-row">
+                  <input id="pullToRefresh" type="checkbox" checked>
+                  <span class="check-mark"></span>
+                  <span>
+                    <strong>Pull-to-Refresh</strong>
+                    <small>Swipe down from the top to reload the page</small>
+                  </span>
+                </label>
+                <label class="check-row">
+                  <input id="allowZoom" type="checkbox">
+                  <span class="check-mark"></span>
+                  <span>
+                    <strong>Allow Zoom</strong>
+                    <small>Enable pinch-to-zoom controls in the WebView</small>
+                  </span>
+                </label>
+              </div>
             </fieldset>
 
             <fieldset class="features-fieldset">
               <legend>Visual &amp; Launch Options</legend>
-              <label class="check-row">
-                <input id="showSplash" type="checkbox" checked>
-                <span class="check-mark"></span>
-                <span>
-                  <strong>Splash Screen</strong>
-                  <small>Show a centered logo splash screen on launch</small>
-                </span>
-              </label>
+              <div class="builder-fields-row">
+                <label class="check-row">
+                  <input id="showSplash" type="checkbox" checked>
+                  <span class="check-mark"></span>
+                  <span>
+                    <strong>Splash Screen</strong>
+                    <small>Show a centered logo splash screen on launch</small>
+                  </span>
+                </label>
+
+                <label class="check-row">
+                  <input id="fullScreen" type="checkbox">
+                  <span class="check-mark"></span>
+                  <span>
+                    <strong>Full Screen Mode</strong>
+                    <small>Hide the status bar and system navigation bar</small>
+                  </span>
+                </label>
+              </div>
               
-              <div class="field" id="splashDurationField" style="margin-bottom: 20px;">
+              <div class="field" id="splashDurationField" style="margin-top: 12px; margin-bottom: 20px;">
                 <span>Splash Screen Duration (ms)</span>
                 <input id="splashDuration" type="number" value="2000" step="100" style="width: 100%;">
               </div>
-
-              <label class="check-row">
-                <input id="fullScreen" type="checkbox">
-                <span class="check-mark"></span>
-                <span>
-                  <strong>Full Screen Mode</strong>
-                  <small>Hide the status bar and system navigation bar</small>
-                </span>
-              </label>
             </fieldset>
 
             <fieldset class="features-fieldset">
@@ -285,14 +293,14 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
         </div>
 
         <div class="build-info">
-          <p>Building compiles a <strong>native Android Java wrapper project</strong> containing a lightweight high-performance WebView.</p>
+          <p>Compiles a <strong>native Android Java wrapper project</strong> containing a lightweight high-performance WebView.</p>
           <ul>
-            <li><strong>No Login Required</strong> — Start building immediately without creating any account.</li>
+            <li><strong>No Login Required</strong> — Start building immediately without creating an account.</li>
             <li><strong>100% Free / Zero Cost</strong> — Compile unlimited Android APKs with no subscriptions or hidden fees.</li>
-            <li><strong>Zero Dependencies</strong> — Compiles using standard Android APIs.</li>
-            <li><strong>CI/CD Pre-configured</strong> — Workspace ZIP includes GitHub Actions.</li>
+            <li><strong>Zero Dependencies</strong> — Compiles using standard Android APIs and native WebKit.</li>
+            <li><strong>CI/CD Pre-configured</strong> — Workspace ZIP includes automated GitHub Actions build workflows.</li>
           </ul>
-          <p style="margin-top: 16px;">Ready to go live? Follow our <a href="/guides/publish-to-play-store"><strong>step-by-step Play Store publishing guide</strong></a> — from a finished APK to a published listing.</p>
+          <p style="margin-top: 14px;">Ready to go live? Follow our <a href="/guides/publish-to-play-store"><strong>step-by-step Play Store publishing guide</strong></a> — from a finished APK to a published listing.</p>
         </div>
       </aside>
 

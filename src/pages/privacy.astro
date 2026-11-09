@@ -3,28 +3,113 @@ import Layout from '../layouts/Layout.astro';
 
 const pageTitle = "Privacy Policy - SiteToApp";
 const pageDescription = "Read the SiteToApp Privacy Policy. We do not gather telemetry, inject advertising trackers, or access your credentials. All compiled code is yours.";
+
+const privacySchema = {
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://sitetoapp.dev/privacy#webpage",
+      "url": "https://sitetoapp.dev/privacy",
+      "name": pageTitle,
+      "description": pageDescription,
+      "isPartOf": { "@id": "https://sitetoapp.dev/#website" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sitetoapp.dev/" },
+        { "@type": "ListItem", "position": 2, "name": "Privacy Policy", "item": "https://sitetoapp.dev/privacy" }
+      ]
+    }
+  ]
+};
 ---
 
-<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page">
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={privacySchema}>
   <main class="shell">
-    <article class="content-panel">
+    <header class="page-hero">
+      <nav class="page-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li aria-current="page">Privacy Policy</li>
+        </ol>
+      </nav>
+      <p class="page-eyebrow">Data Protection &amp; Security</p>
       <h1>Privacy Policy</h1>
-      <p>Your privacy is paramount to us. Because SiteToApp operates as a clean code compilation tool, we do not require user accounts, track user activity, or store your site credentials.</p>
+      <p class="page-lede">Your privacy is paramount to us. Because SiteToApp operates as a clean code compilation tool, we do not require user accounts, track user activity, or store your site credentials.</p>
+    </header>
+
+    <!-- Key Privacy Badges -->
+    <div class="about-stats-grid" style="margin-bottom: 32px;" aria-label="Privacy principles">
+      <div class="about-stat-card">
+        <span class="about-stat-val" style="color: #10b981;">No Telemetry</span>
+        <span class="about-stat-desc">Zero usage tracking, request logging, or diagnostic snooping.</span>
+      </div>
+      <div class="about-stat-card">
+        <span class="about-stat-val" style="color: #3ddc84;">No Adware</span>
+        <span class="about-stat-desc">Compiled applications never contain third-party ad libraries.</span>
+      </div>
+      <div class="about-stat-card">
+        <span class="about-stat-val" style="color: #0070f3;">Secure Isolation</span>
+        <span class="about-stat-desc">Client sessions and local storage remain inside the sandboxed container.</span>
+      </div>
+      <div class="about-stat-card">
+        <span class="about-stat-val" style="color: #f59e0b;">Local Ownership</span>
+        <span class="about-stat-desc">All compiled source code and assets are downloaded directly to you.</span>
+      </div>
+    </div>
+
+    <!-- Responsive Layout with Quick Jump -->
+    <div class="privacy-layout">
       
-      <h2>Website Analytics</h2>
-      <p>Our public website uses Google Analytics to understand aggregate traffic, such as which pages are visited and how many people visit them. This applies to this website only: the apps we compile for you never include this tag or any other analytics, and the URLs you submit are not sent to analytics.</p>
+      <!-- Quick Navigation Sidebar -->
+      <aside class="privacy-sidebar" aria-label="Privacy sections">
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Sections</h2>
+          <nav class="guide-toc-nav" aria-label="Privacy policy table of contents">
+            <a href="#analytics" class="guide-toc-link">1. Website Analytics</a>
+            <a href="#telemetry" class="guide-toc-link">2. No Telemetry</a>
+            <a href="#injection" class="guide-toc-link">3. Zero Data Injection</a>
+            <a href="#client-data" class="guide-toc-link">4. Secure Client Data</a>
+            <a href="#local-control" class="guide-toc-link">5. Local Control</a>
+          </nav>
+        </div>
 
-      <h2>No Telemetry or Tracking</h2>
-      <p>We do not collect telemetry, usage metrics, or request history from our compiler. When you input a website URL to package into an application, that URL is only used dynamically to generate the template Java config files.</p>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Inquiries</h2>
+          <p style="font-size: 0.86rem; color: var(--accents-6); line-height: 1.5; margin: 0 0 12px;">Have questions about our data handling or compliance?</p>
+          <a href="mailto:discovereverything123@gmail.com" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">Email Support</a>
+        </div>
+      </aside>
 
-      <h2>Zero Data Injection</h2>
-      <p>The codebases compiled by our generator contain <strong>only native Android/WebView API instructions</strong>. We do not inject background trackers, third-party analytics libraries, advertising cookies, or telemetry frameworks. The compiled APK runs independently and connects only to the URL you specified.</p>
+      <!-- Main Policy Content Cards -->
+      <div class="privacy-content">
+        <article class="privacy-card" id="analytics">
+          <h2>Website Analytics</h2>
+          <p>Our public website uses Google Analytics to understand aggregate traffic, such as which pages are visited and how many people visit them. This applies to this website only: the apps we compile for you never include this tag or any other analytics, and the URLs you submit are not sent to analytics.</p>
+        </article>
 
-      <h2>Secure Client Data</h2>
-      <p>Standard cookies, local session storage, and database caches handled by your web application are securely isolated inside the client WebView. Neither SiteToApp nor any intermediate script can access this local container space.</p>
+        <article class="privacy-card" id="telemetry">
+          <h2>No Telemetry or Tracking</h2>
+          <p>We do not collect telemetry, usage metrics, or request history from our compiler. When you input a website URL to package into an application, that URL is only used dynamically to generate the template Java config files.</p>
+        </article>
 
-      <h2>Local Control</h2>
-      <p>All source project folders are zipped and downloaded directly to your computer. You retain full control and ownership of the generated code and files.</p>
-    </article>
+        <article class="privacy-card" id="injection">
+          <h2>Zero Data Injection</h2>
+          <p>The codebases compiled by our generator contain <strong>only native Android/WebView API instructions</strong>. We do not inject background trackers, third-party analytics libraries, advertising cookies, or telemetry frameworks. The compiled APK runs independently and connects only to the URL you specified.</p>
+        </article>
+
+        <article class="privacy-card" id="client-data">
+          <h2>Secure Client Data</h2>
+          <p>Standard cookies, local session storage, and database caches handled by your web application are securely isolated inside the client WebView. Neither SiteToApp nor any intermediate script can access this local container space.</p>
+        </article>
+
+        <article class="privacy-card" id="local-control">
+          <h2>Local Control</h2>
+          <p>All source project folders are zipped and downloaded directly to your computer. You retain full control and ownership of the generated code and files.</p>
+        </article>
+      </div>
+
+    </div>
   </main>
 </Layout>

@@ -29,38 +29,181 @@ const signApkSchema = { "@graph": [{
 
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={signApkSchema}>
   <main class="shell">
-    <article class="content-panel">
-      <h1>How to Sign an APK for Google Play Store Publishing</h1>
-      <p>Every APK uploaded to the Google Play Store must be cryptographically signed with your developer upload key. This guide shows how to sign the APK that <a href="/android">SiteToApp</a> generates — from creating a keystore to verifying the signature — so your release is accepted by Play Console on the first attempt.</p>
+    <header class="page-hero">
+      <nav class="page-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li aria-current="page">Sign APK</li>
+        </ol>
+      </nav>
+      <p class="page-eyebrow">Android Security &amp; Keys</p>
+      <h1>How to Sign an APK for Google Play</h1>
+      <p class="page-lede">Step-by-step cryptographic signing walkthrough: generate an upload keystore, sign with apksigner, verify certificates, and upload to Google Play Console.</p>
+    </header>
 
-      <h2>What signing does</h2>
-      <p>An app signature proves the APK was built by you (or someone with your key). Google uses it to guarantee that updates to your app come from the same source. The debug APK you test with is <em>not</em> accepted for publishing — you need a release-signed build.</p>
+    <div class="guide-layout">
+      <!-- Sticky Navigation & Overview Sidebar -->
+      <aside class="guide-sidebar" aria-label="Guide overview and navigation">
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a Glance</h2>
+          <div class="guide-meta-box">
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Time</span>
+              <span class="guide-meta-val">6 min read</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Level</span>
+              <span class="guide-meta-val">Intermediate</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Tools</span>
+              <span class="guide-meta-val">JDK / apksigner</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Output</span>
+              <span class="guide-meta-val">Signed APK</span>
+            </div>
+          </div>
+        </div>
 
-      <h2>Step 1 — Generate an upload keystore</h2>
-      <p>The easiest way is Android Studio: <strong>File → Project Structure → Signing &amp; Configs → Create new keystore</strong>. Or from the command line:</p>
-      <pre>keytool -genkeypair -keystore upload-key.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000</pre>
-      <p>Choose a strong password and <strong>back the `.jks` file up in at least two secure places</strong>. If you lose it, you can still recover via Google Play's key recovery — but only if your identity is verified. Never commit it to a public repository: if a private key leaks, anyone can ship updates as you.</p>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Step Navigation</h2>
+          <nav class="guide-toc-nav" aria-label="Table of contents">
+            <a href="#what-signing-does" class="guide-toc-link"><span class="guide-toc-num">00</span> Why Sign?</a>
+            <a href="#step-1" class="guide-toc-link"><span class="guide-toc-num">01</span> Generate Keystore</a>
+            <a href="#step-2" class="guide-toc-link"><span class="guide-toc-num">02</span> Build Release</a>
+            <a href="#step-3" class="guide-toc-link"><span class="guide-toc-num">03</span> apksigner Sign</a>
+            <a href="#step-4" class="guide-toc-link"><span class="guide-toc-num">04</span> Verify Signature</a>
+            <a href="#step-5" class="guide-toc-link"><span class="guide-toc-num">05</span> Upload Play Store</a>
+          </nav>
+        </div>
 
-      <h2>Step 2 — Build the release APK</h2>
-      <p>Unzip the SiteToApp workspace ZIP. In the project root, run:</p>
-      <pre>./gradlew assembleRelease</pre>
-      <p>The unsigned release APK lands in <code>app/build/outputs/apk/release/</code>. (Android Studio's <em>Generate Signed Bundle / APK</em> wizard does steps 2–3 in one go if you prefer a GUI.)</p>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Next Guide</h2>
+          <p style="font-size: 0.86rem; color: var(--accents-6); line-height: 1.5; margin: 0 0 12px;">Ready to publish? Follow our complete Play Store walkthrough.</p>
+          <a href="/guides/publish-to-play-store" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">Play Store Guide</a>
+        </div>
+      </aside>
 
-      <h2>Step 3 — Sign with apksigner</h2>
-      <pre>apksigner sign --ks upload-key.jks --ks-key-alias upload --out app-signed.apk app-release.apk</pre>
-      <p>Enter your keystore password when prompted. apksigner ships with the Android build tools (<code>~/Library/Android/sdk/build-tools/&lt;version&gt;/</code> on macOS, <code>/opt/android-sdk/build-tools</code> on Linux).</p>
+      <!-- Main Guide Stepper Body -->
+      <div class="guide-content">
+        
+        <article class="guide-step-card" id="what-signing-does">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Overview</span>
+            <h2>What app signing does</h2>
+          </div>
+          <p>Every APK or AAB uploaded to the Google Play Store must be cryptographically signed with your developer upload key. An app signature proves the APK was built by you. Google uses this cryptographic fingerprint to ensure updates to your app come from the same trusted developer.</p>
+          <p>The debug APK generated for quick local device testing is <em>not</em> signed with your private key and will not be accepted for publishing — you need a release-signed build.</p>
+        </article>
 
-      <h2>Step 4 — Verify the signature</h2>
-      <pre>apksigner verify --print-certs app-signed.apk</pre>
-      <p>If verification passes, the output shows your certificate SHA-256 digest. Install the signed APK on a device as a final sanity check, then upload it.</p>
+        <!-- Step 1 -->
+        <article class="guide-step-card" id="step-1">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 01</span>
+            <h2>Generate an upload keystore</h2>
+          </div>
+          <p>You can create a keystore using Android Studio (<strong>Build &rarr; Generate Signed Bundle / APK &rarr; Create new</strong>) or directly via the command line using the standard Java <code>keytool</code> utility:</p>
+          
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots"><span></span><span></span><span></span></div>
+              <span>Terminal — Generate Keystore</span>
+            </div>
+            <pre class="terminal-body"><code>keytool -genkeypair -keystore upload-key.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000</code></pre>
+          </div>
 
-      <h2>Step 5 — Upload to Play Console</h2>
-      <p>Head to <strong>Production → Create new release → Upload</strong> and add <code>app-signed.apk</code>. Then finish the store listing and submit — our <a href="/guides/publish-to-play-store">complete Play Store publishing guide</a> covers every screen of that process.</p>
+          <div class="callout callout-warning">
+            <div class="callout-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
+            <div>
+              <strong>Critical Security Notice:</strong> Back up the generated <code>upload-key.jks</code> in at least two secure locations. Never commit keystore files or passwords to public repositories. If you lose your key, you cannot update your app without contacting Google Play Developer Support for key recovery.
+            </div>
+          </div>
+        </article>
 
-      <h2>Sign once, update forever</h2>
-      <p>Keep the same upload key for every version of your app. Future releases just run the same three commands with a bumped <code>versionCode</code> in <code>build.gradle</code> — and because the app loads your live website, content updates never need a recompile at all.</p>
+        <!-- Step 2 -->
+        <article class="guide-step-card" id="step-2">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 02</span>
+            <h2>Build the release APK from workspace</h2>
+          </div>
+          <p>Download and extract your SiteToApp workspace ZIP. In the project root folder, execute the Gradle assemble task:</p>
 
-      <p>Not built your app yet? <a href="/android"><strong>Generate the wrapper project</strong></a>, or compare the desktop options in our <a href="/guides/website-to-desktop-windows">website-to-Windows-desktop guide</a>.</p>
-    </article>
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots"><span></span><span></span><span></span></div>
+              <span>Terminal — Gradle Build</span>
+            </div>
+            <pre class="terminal-body"><code>./gradlew assembleRelease</code></pre>
+          </div>
+          <p>The unsigned release package will be generated at <code>app/build/outputs/apk/release/app-release-unsigned.apk</code>.</p>
+        </article>
+
+        <!-- Step 3 -->
+        <article class="guide-step-card" id="step-3">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 03</span>
+            <h2>Sign with apksigner</h2>
+          </div>
+          <p>Sign the release APK using the Android SDK's official <code>apksigner</code> tool:</p>
+
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots"><span></span><span></span><span></span></div>
+              <span>Terminal — apksigner</span>
+            </div>
+            <pre class="terminal-body"><code>apksigner sign --ks upload-key.jks --ks-key-alias upload --out app-signed.apk app-release-unsigned.apk</code></pre>
+          </div>
+          <p>Enter your keystore password when prompted. <code>apksigner</code> is located inside your Android SDK installation under <code>build-tools/&lt;version&gt;/</code>.</p>
+        </article>
+
+        <!-- Step 4 -->
+        <article class="guide-step-card" id="step-4">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 04</span>
+            <h2>Verify the signature</h2>
+          </div>
+          <p>Confirm that your APK is correctly signed according to Android APK Signature Scheme v2/v3:</p>
+
+          <div class="terminal-block">
+            <div class="terminal-header">
+              <div class="terminal-dots"><span></span><span></span><span></span></div>
+              <span>Terminal — Verify Signature</span>
+            </div>
+            <pre class="terminal-body"><code>apksigner verify --print-certs app-signed.apk</code></pre>
+          </div>
+          <p>If verification succeeds, the command outputs the certificate SHA-256 digest with no errors. Test install <code>app-signed.apk</code> on your physical device as a final sanity check.</p>
+        </article>
+
+        <!-- Step 5 -->
+        <article class="guide-step-card" id="step-5">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 05</span>
+            <h2>Upload to Google Play Console</h2>
+          </div>
+          <p>In Play Console, navigate to <strong>Production &rarr; Create new release &rarr; Upload</strong> and add <code>app-signed.apk</code>. Complete the store listing and submit for review. Follow our comprehensive <a href="/guides/publish-to-play-store">Play Store publishing guide</a> for step-by-step instructions on store graphics, rating questionnaires, and rollout.</p>
+        </article>
+
+        <!-- Callout Banner -->
+        <section class="guides-cta" style="margin-top: 32px;" aria-labelledby="sign-cta-title">
+          <div>
+            <h2 id="sign-cta-title">Ready to compile your project?</h2>
+            <p>Generate your Android wrapper project and download the complete workspace with GitHub Actions CI/CD included.</p>
+          </div>
+          <div class="guides-cta-actions">
+            <a href="/android" class="btn btn-primary">Start Android Builder</a>
+            <a href="/guides/publish-to-play-store" class="btn btn-secondary">Play Store Guide</a>
+          </div>
+        </section>
+
+      </div>
+    </div>
   </main>
 </Layout>

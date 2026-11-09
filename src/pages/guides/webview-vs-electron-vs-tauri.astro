@@ -29,31 +29,201 @@ const compareSchema = { "@graph": [{
 
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={compareSchema}>
   <main class="shell">
-    <article class="content-panel">
-      <h1>WebView vs Electron vs Tauri: Which Wrapper Should You Use?</h1>
-      <p>Every "website to app" tool is really a <em>wrapper</em>: a native shell that renders your website using a system browser engine. The three shells that matter — Android WebView, Electron, and Tauri — differ a lot in size, speed, and capability. Here's how to think about them, and how SiteToApp picks the right one for each platform.</p>
+    <header class="page-hero">
+      <nav class="page-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li aria-current="page">Architecture Comparison</li>
+        </ol>
+      </nav>
+      <p class="page-eyebrow">Architecture Comparison</p>
+      <h1>WebView vs Electron vs Tauri</h1>
+      <p class="page-lede">App size, startup performance, native features, and memory footprint — an objective comparison of the three major web application wrapper architectures.</p>
+    </header>
 
-      <h2>Android WebView (APK wrappers)</h2>
-      <p>On Android, the wrapper is a tiny native Java <code>Activity</code> hosting a <code>WebView</code> — the same WebKit engine Chrome uses, already installed on every device. The result is an APK of roughly <strong>30–60 KB</strong> (plus your assets), with pull-to-refresh, splash screens, and full access to Android APIs. Because the engine is shared with the OS, apps are fast to download, fast to start, and trivially pass Play Store policy review. This is what SiteToApp's <a href="/android">Android builder</a> generates.</p>
+    <div class="guide-layout">
+      <!-- Sticky Navigation & Overview Sidebar -->
+      <aside class="guide-sidebar" aria-label="Guide overview and navigation">
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a Glance</h2>
+          <div class="guide-meta-box">
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Time</span>
+              <span class="guide-meta-val">7 min read</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Track</span>
+              <span class="guide-meta-val">Fundamentals</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Scope</span>
+              <span class="guide-meta-val">Multiplatform</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Cost</span>
+              <span class="guide-meta-val">100% Free</span>
+            </div>
+          </div>
+        </div>
 
-      <h2>Electron (Windows EXE wrappers)</h2>
-      <p>Electron bundles a full Chromium + Node.js runtime with your app. The upside is maximal power: native file system access, background workers, auto-updates, and a massive plugin ecosystem — any website feature you can imagine works. The downside is size: <strong>~65–90 MB</strong> per app, and slower cold starts while Chromium boots. It's the safest choice when your app needs Node.js or exotic native APIs. This is SiteToApp's default <a href="/windows">Windows EXE</a> engine.</p>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Sections</h2>
+          <nav class="guide-toc-nav" aria-label="Table of contents">
+            <a href="#matrix" class="guide-toc-link"><span class="guide-toc-num">01</span> Comparison Matrix</a>
+            <a href="#webview" class="guide-toc-link"><span class="guide-toc-num">02</span> Android WebView</a>
+            <a href="#electron" class="guide-toc-link"><span class="guide-toc-num">03</span> Electron Desktop</a>
+            <a href="#tauri" class="guide-toc-link"><span class="guide-toc-num">04</span> Tauri Desktop</a>
+            <a href="#decision" class="guide-toc-link"><span class="guide-toc-num">05</span> Which to Choose?</a>
+          </nav>
+        </div>
 
-      <h2>Tauri (Windows EXE wrappers)</h2>
-      <p>Tauri takes the opposite approach: a small Rust shell that reuses the system's WebView (Edge WebView2 on Windows). Installers shrink to <strong>~5–10 MB</strong>, memory use drops to a fraction of Electron's, and cold starts are near-instant. The trade-off is a smaller ecosystem and no Node.js runtime, so some native integrations need Rust or OS-level glue code. SiteToApp offers Tauri as a one-click alternative in the <a href="/windows">Windows builder</a> — pick it when size and speed matter most.</p>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Start Building</h2>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <a href="/android" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;">Android Builder</a>
+            <a href="/windows" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">Windows Builder</a>
+          </div>
+        </div>
+      </aside>
 
-      <h2>Head-to-head</h2>
-      <ul>
-        <li><strong>App size:</strong> WebView (~0.05 MB) &lt; Tauri (~5–10 MB) &lt; Electron (~65–90 MB)</li>
-        <li><strong>Cold start:</strong> WebView and Tauri are near-instant; Electron pays a Chromium boot cost.</li>
-        <li><strong>Native features:</strong> Electron has the most; Tauri and WebView cover the standard API surface.</li>
-        <li><strong>Ecosystem:</strong> Electron has the largest; Tauri is growing fast; WebView is platform-native.</li>
-      </ul>
+      <!-- Main Guide Body -->
+      <div class="guide-content">
+        
+        <article class="guide-step-card" id="matrix">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Overview</span>
+            <h2>Architectural Comparison Matrix</h2>
+          </div>
+          <p>Every "website to app" technology is a wrapper: a native shell that displays your web application using an underlying rendering engine. The three architectures differ considerably across file size, cold start latency, memory usage, and native API access:</p>
 
-      <h2>Which should you choose?</h2>
-      <p>If your users are on Android, WebView is the obvious pick — it's what SiteToApp builds in the <a href="/android">APK builder</a>. For Windows, ask two questions: <em>does the app need Node.js or obscure native APIs?</em> → Electron. <em>Is a lean, fast, modern installer more important?</em> → Tauri. When in doubt, the <a href="/windows">Windows builder</a> shows both size estimates side by side so you can decide with real numbers.</p>
+          <div class="comparison-table-wrap">
+            <table class="comparison-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Android WebView</th>
+                  <th>Tauri (Desktop)</th>
+                  <th>Electron (Desktop)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Target Platform</strong></td>
+                  <td>Android 5.0+</td>
+                  <td>Windows 10 / 11</td>
+                  <td>Windows 7 / 10 / 11</td>
+                </tr>
+                <tr>
+                  <td><strong>Compiled App Size</strong></td>
+                  <td><span style="color: #3ddc84; font-weight: 800;">30–60 KB</span></td>
+                  <td><span style="color: #10b981; font-weight: 800;">5–10 MB</span></td>
+                  <td><span>65–90 MB</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Rendering Engine</strong></td>
+                  <td>System Android WebKit</td>
+                  <td>Edge WebView2</td>
+                  <td>Bundled Chromium</td>
+                </tr>
+                <tr>
+                  <td><strong>Cold Start Speed</strong></td>
+                  <td>Near-instantaneous</td>
+                  <td>Near-instantaneous</td>
+                  <td>~1–2 sec boot</td>
+                </tr>
+                <tr>
+                  <td><strong>Memory Usage (RAM)</strong></td>
+                  <td>Shared OS WebKit (~40 MB)</td>
+                  <td>Low (~50–80 MB)</td>
+                  <td>High (~150–250 MB)</td>
+                </tr>
+                <tr>
+                  <td><strong>Node.js Runtime</strong></td>
+                  <td>No (Standard Web API)</td>
+                  <td>No (Rust backend)</td>
+                  <td>Full Node.js environment</td>
+                </tr>
+                <tr>
+                  <td><strong>Store Distribution</strong></td>
+                  <td>Google Play compliant</td>
+                  <td>Microsoft Store ready</td>
+                  <td>Microsoft Store ready</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
 
-      <p>Ready to build? Start with the <a href="/android">Android APK builder</a> or the <a href="/windows">Windows EXE builder</a>, then ship it with our <a href="/guides/publish-to-play-store">Play Store publishing guide</a>.</p>
-    </article>
+        <!-- Android WebView Section -->
+        <article class="guide-step-card" id="webview">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">01</span>
+            <h2>Android WebView (APK wrappers)</h2>
+          </div>
+          <p>On Android, the wrapper is a lightweight native Java <code>Activity</code> hosting a <code>WebView</code> — the same high-performance WebKit engine Chrome uses, pre-installed on every Android device in the world.</p>
+          <p>The result is a compiled APK of roughly <strong>30–60 KB</strong> (plus your app icon and splash assets), complete with pull-to-refresh, splash screens, hardware acceleration, and offline service worker caching. Because the rendering engine is maintained by the operating system, apps download instantly, start with zero lag, and easily clear Google Play policy review.</p>
+          
+          <div class="callout callout-tip">
+            <div class="callout-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div>
+              <strong>Built into SiteToApp:</strong> This is the exact architecture generated by our <a href="/android">free Android builder</a>.
+            </div>
+          </div>
+        </article>
+
+        <!-- Electron Section -->
+        <article class="guide-step-card" id="electron">
+          <div class="guide-step-header">
+            <span class="guide-step-badge guide-step-badge--win">02</span>
+            <h2>Electron (Windows EXE wrappers)</h2>
+          </div>
+          <p>Electron bundles a full Chromium browser and Node.js runtime inside each application package. The advantage is maximum compatibility: native file system access, background system workers, custom tray menus, and access to the massive Node.js/NPM ecosystem.</p>
+          <p>The trade-off is package size: <strong>~65–90 MB</strong> per installer, and slightly longer cold starts while Chromium initializes. It remains the safest option when your web app requires specific Chrome rendering behavior or background Node.js features.</p>
+        </article>
+
+        <!-- Tauri Section -->
+        <article class="guide-step-card" id="tauri">
+          <div class="guide-step-header">
+            <span class="guide-step-badge guide-step-badge--win">03</span>
+            <h2>Tauri (Windows EXE wrappers)</h2>
+          </div>
+          <p>Tauri takes a modern approach: an ultra-lean Rust binary that leverages the system's existing Microsoft Edge WebView2 rendering engine on Windows 10 and 11.</p>
+          <p>Installers shrink drastically to <strong>~5–10 MB</strong>, memory consumption is cut by over 60% compared to Electron, and startup times are nearly instant. SiteToApp lets you select Tauri with a single click in the <a href="/windows">Windows builder</a>.</p>
+        </article>
+
+        <!-- Decision Guide -->
+        <article class="guide-step-card" id="decision">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Recommendation</span>
+            <h2>Which should you choose?</h2>
+          </div>
+          <p>Choosing the optimal wrapper depends on your target users:</p>
+          <ul style="color: var(--accents-6); padding-left: 20px; line-height: 1.8; margin-bottom: 16px;">
+            <li><strong>For mobile users:</strong> Use the <strong>Android WebView builder</strong>. You receive an ultra-compact ~40 KB APK ready for Google Play Store distribution.</li>
+            <li><strong>For Windows users prioritizing speed &amp; download size:</strong> Choose the <strong>Tauri engine</strong> (~5–10 MB installer, fast cold starts, minimal RAM).</li>
+            <li><strong>For Windows users requiring Node.js or legacy support:</strong> Choose the <strong>Electron engine</strong> (~65–90 MB, complete offline Chromium engine).</li>
+          </ul>
+        </article>
+
+        <!-- Callout Banner -->
+        <section class="guides-cta" style="margin-top: 32px;" aria-labelledby="compare-cta-title">
+          <div>
+            <h2 id="compare-cta-title">Ready to compile your native app?</h2>
+            <p>Convert any website URL into an Android APK or Windows desktop executable in under 2 minutes.</p>
+          </div>
+          <div class="guides-cta-actions">
+            <a href="/android" class="btn btn-primary">Android APK Builder</a>
+            <a href="/windows" class="btn btn-secondary">Windows EXE Builder</a>
+          </div>
+        </section>
+
+      </div>
+    </div>
   </main>
 </Layout>
