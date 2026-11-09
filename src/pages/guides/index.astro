@@ -2,39 +2,159 @@
 import Layout from '../../layouts/Layout.astro';
 
 const pageTitle = "Guides - Website to App Tutorials & Publishing Checklists";
-const pageDescription = "Step-by-step guides for SiteToApp users: publish your APK to the Google Play Store, sign your app for release, convert sites to Windows EXE apps, and compare WebView, Electron, and Tauri.";
+const pageDescription = "Step-by-step guides: publish APK to Play Store, sign APK, build Windows EXE, and compare WebView vs Electron vs Tauri.";
+
+const guides = [
+  {
+    title: "Publish Your Website App to the Google Play Store",
+    url: "/guides/publish-to-play-store",
+    description: "From a finished APK to a live Play Store listing: build, test, create a Play Console account, upload the release, complete your store listing, and submit for review. Free and no-code.",
+    tag: "Android",
+    track: "Publishing",
+    readTime: "9 min read",
+    icon: "android"
+  },
+  {
+    title: "Sign an APK for Play Store Publishing",
+    url: "/guides/sign-apk",
+    description: "Generate a keystore, sign the release build with apksigner, verify the signature, and upload — the signing walkthrough that unblocks Play Console submissions.",
+    tag: "Android",
+    track: "Security",
+    readTime: "6 min read",
+    icon: "key"
+  },
+  {
+    title: "Convert a Website to a Windows Desktop App (EXE)",
+    url: "/guides/website-to-desktop-windows",
+    description: "Build a standalone Windows app from any website: choose the Electron or Tauri engine, pick an NSIS installer or portable EXE, and distribute it to your users.",
+    tag: "Windows",
+    track: "Desktop",
+    readTime: "8 min read",
+    icon: "windows"
+  },
+  {
+    title: "WebView vs Electron vs Tauri: Which Wrapper Should You Use?",
+    url: "/guides/webview-vs-electron-vs-tauri",
+    description: "App size, performance, features, and ecosystem — a practical comparison of the three wrapper technologies, and how to pick between them for your project.",
+    tag: "Comparison",
+    track: "Fundamentals",
+    readTime: "7 min read",
+    icon: "compare"
+  }
+];
 
 const guidesSchema = {
-  "@context": "https://schema.org",
-  "@type": "CollectionPage",
-  "name": "SiteToApp Guides",
-  "about": { "@type": "Thing", "name": "Website to app tutorials" },
-  "hasPart": [
-    { "@type": "Article", "name": "How to Publish Your Website App to the Google Play Store", "url": "https://sitetoapp.dev/guides/publish-to-play-store" },
-    { "@type": "Article", "name": "How to Sign an APK for Google Play Store Publishing", "url": "https://sitetoapp.dev/guides/sign-apk" },
-    { "@type": "Article", "name": "How to Convert a Website to a Windows Desktop App (EXE)", "url": "https://sitetoapp.dev/guides/website-to-desktop-windows" },
-    { "@type": "Article", "name": "WebView vs Electron vs Tauri: Which Wrapper Should You Use?", "url": "https://sitetoapp.dev/guides/webview-vs-electron-vs-tauri" }
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      "name": "SiteToApp Guides",
+      "url": "https://sitetoapp.dev/guides",
+      "description": pageDescription,
+      "inLanguage": "en",
+      "isPartOf": { "@id": "https://sitetoapp.dev/#website" },
+      "about": { "@type": "Thing", "name": "Website to app tutorials" },
+      "mainEntity": {
+        "@type": "ItemList",
+        "numberOfItems": guides.length,
+        "itemListElement": guides.map((guide, index) => ({
+          "@type": "ListItem",
+          "position": index + 1,
+          "name": guide.title,
+          "url": `https://sitetoapp.dev${guide.url}`
+        }))
+      },
+      "hasPart": guides.map((guide) => ({
+        "@type": "Article",
+        "name": guide.title,
+        "url": `https://sitetoapp.dev${guide.url}`
+      }))
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sitetoapp.dev/" },
+        { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://sitetoapp.dev/guides" }
+      ]
+    }
   ]
 };
 ---
 
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={guidesSchema}>
   <main class="shell">
-    <article class="content-panel">
-      <h1>Guides</h1>
-      <p>Practical, step-by-step tutorials for turning your website into a native app — and shipping it. Start from the <a href="/android">Android</a> or <a href="/windows">Windows</a> builders, then follow the guides for publishing, signing, and picking the right engine.</p>
+    <header class="page-hero">
+      <nav class="page-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li aria-current="page">Guides</li>
+        </ol>
+      </nav>
+      <p class="page-eyebrow">Guides &amp; Tutorials</p>
+      <h1>Website to App Guides &amp; Tutorials</h1>
+      <p class="page-lede">Practical, step-by-step tutorials for turning your website into a native app — and shipping it. Start from the Android or Windows builder, then follow the guides for publishing, signing, and picking the right engine.</p>
+      <div class="page-hero-actions">
+        <a href="/android" class="btn btn-primary">Build an Android app</a>
+        <a href="/windows" class="btn btn-secondary">Build a Windows app</a>
+      </div>
+    </header>
 
-      <h2><a href="/guides/publish-to-play-store">Publish Your Website App to the Google Play Store</a></h2>
-      <p>From a finished APK to a live Play Store listing: build, test, create a Play Console account, upload the release, complete your store listing, and submit for review. Free and no-code.</p>
+    <div class="guide-grid">
+      {guides.map((guide) => (
+        <article class="guide-card">
+          <div class="guide-card-top">
+            <span class={`guide-icon guide-icon--${guide.icon === "key" ? "android" : guide.icon}`} aria-hidden="true">
+              {guide.icon === "android" && (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="6" y="2" width="12" height="20" rx="3"></rect>
+                  <line x1="10" y1="18" x2="14" y2="18"></line>
+                </svg>
+              )}
+              {guide.icon === "key" && (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="7.5" cy="15.5" r="4.5"></circle>
+                  <path d="M10.7 12.3 20 3"></path>
+                  <path d="M16.5 6.5 20 10"></path>
+                  <path d="M14 9 17.5 12.5"></path>
+                </svg>
+              )}
+              {guide.icon === "windows" && (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7.5" height="7.5" rx="1"></rect>
+                  <rect x="13.5" y="3" width="7.5" height="7.5" rx="1"></rect>
+                  <rect x="3" y="13.5" width="7.5" height="7.5" rx="1"></rect>
+                  <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1"></rect>
+                </svg>
+              )}
+              {guide.icon === "compare" && (
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="3" x2="12" y2="21"></line>
+                  <path d="M6 7 2.5 14h7L6 7z"></path>
+                  <path d="M18 7l-3.5 7h7L18 7z"></path>
+                  <path d="M8 21h8"></path>
+                </svg>
+              )}
+            </span>
+            <span class="guide-tag">{guide.tag}</span>
+          </div>
+          <h2><a href={guide.url}>{guide.title}</a></h2>
+          <p>{guide.description}</p>
+          <div class="guide-card-foot">
+            <span>{guide.track} · {guide.readTime}</span>
+            <span class="guide-card-arrow" aria-hidden="true">→</span>
+          </div>
+        </article>
+      ))}
+    </div>
 
-      <h2><a href="/guides/sign-apk">Sign an APK for Play Store Publishing</a></h2>
-      <p>Generate a keystore, sign the release build with apksigner, verify the signature, and upload — the signing walkthrough that unblocks Play Console submissions.</p>
-
-      <h2><a href="/guides/website-to-desktop-windows">Convert a Website to a Windows Desktop App (EXE)</a></h2>
-      <p>Build a standalone Windows app from any website: choose the Electron or Tauri engine, pick an NSIS installer or portable EXE, and distribute it to your users.</p>
-
-      <h2><a href="/guides/webview-vs-electron-vs-tauri">WebView vs Electron vs Tauri: Which Wrapper Should You Use?</a></h2>
-      <p>App size, performance, features, and ecosystem — a practical comparison of the three wrapper technologies, and how to pick between them for your project.</p>
-    </article>
+    <section class="guides-cta" aria-labelledby="guides-cta-title">
+      <div>
+        <h2 id="guides-cta-title">Ready to build your app?</h2>
+        <p>Both builders are free forever — no account, no credits. Generate a project, then use these guides to sign, publish, and distribute it.</p>
+      </div>
+      <div class="guides-cta-actions">
+        <a href="/android" class="btn btn-primary">Android APK builder</a>
+        <a href="/windows" class="btn btn-secondary">Windows EXE builder</a>
+      </div>
+    </section>
   </main>
 </Layout>

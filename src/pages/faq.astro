@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 
 const pageTitle = "FAQs - Website to APK Conversion & Google Play Store Publishing";
-const pageDescription = "Find answers to common questions about converting websites to Android apps, Google Play Protect warning solutions, WebView capabilities, and Play Store compliance.";
+const pageDescription = "FAQ: converting websites to Android apps, Play Protect warnings, WebView capabilities, and Play Store compliance.";
 
 const faqSchema = {
   "@context": "https://schema.org",
@@ -13,7 +13,7 @@ const faqSchema = {
       "name": "How does SiteToApp convert a website into an Android app?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "SiteToApp packages your website URL into a native Android wrapper project using a high-performance WebView container. It utilizes standard WebKit components so your app loads fast and displays your site accurately."
+        "text": "SiteToApp creates a standard, native mobile app package containing a lightweight WebView container. Instead of rendering your pages inside a bulky, non-standard layout framework, it uses Google's high-performance Android WebKit components to render your site directly as a native application."
       }
     },
     {
@@ -21,15 +21,31 @@ const faqSchema = {
       "name": "Is the compiled APK safe to upload to the Google Play Store?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes, the generated wrapper conforms to Google's standard developer guidelines. It compiles cleanly using Gradle builds, making it fully compliant for submission to the Google Play Store."
+        "text": "Yes. The generated code strictly follows Google's guidelines for Android application development. It uses standard security measures, enables mixed-content filters where necessary, and compiles cleanly with standard Gradle build workflows, making it 100% compliant for Google Play Store submissions."
       }
     },
     {
       "@type": "Question",
-      "name": "Will my app update automatically when I change my website?",
+      "name": "Can I build release configurations locally?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes. Because the app loads your website URL directly in a native WebView, any updates, design tweaks, or new pages published on your website will appear in your mobile app instantly without compiling a new APK."
+        "text": "Absolutely. When you choose to compile your project, we package the complete Java source code, assets, and layouts into a workspace ZIP file. You can import this directly into Android Studio to compile, sign, customize layouts, and add plugins or debug locally."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does the wrapper support offline functionality?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The native wrapper enables standard DOM storage, database access, and cache configurations inside the WebView. If your website is a Progressive Web App (PWA) with active service workers, the compiled APK wrapper will support robust offline rendering automatically."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I customize the user agent?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Inside the builder interface, open 'Advanced options' and fill in the 'Custom User Agent' field to specify a custom User Agent string. This allows your server to detect when requests originate from your custom Android wrapper and serve tailored styling or hidden components."
       }
     },
     {
@@ -37,7 +53,72 @@ const faqSchema = {
       "name": "Why does Google Play Protect warn me during installation?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Since the APK is compiled dynamically on our server and hasn't been signed with your registered developer certificate (or published to the Play Store), Google flags it as unrecognized. The app is completely safe, virus-free, and has zero tracking modules."
+        "text": "Since the APK is compiled dynamically on our server and hasn't been signed with your registered developer certificate (or published to the Play Store), Google's Play Protect service will flag it as an unrecognized application. This is normal behavior for any newly generated Android app package (APK). Rest assured, your compiled app is 100% secure, clean, and does not contain any viruses or malware."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How do I publish the app to the Google Play Store?",
+      "acceptedAnswer": {
+
+        "@type": "Answer",
+        "text": "Follow our step-by-step Play Store publishing guide: it covers building and testing your APK, creating a Play Console developer account, uploading the release, completing the store listing, and submitting for review."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How much does it cost to publish my app?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "SiteToApp itself is free forever — no subscriptions, no fees, no limits on builds. The only costs are the platforms': Google Play Console charges a one-time $25 USD developer registration. The Microsoft Store has its own registration fee. See the publishing guide for the full checklist."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is it legal to convert my website into an app?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes - wrapping your own website (or one you have rights to distribute) in a native app shell is legal and common. You must own the rights to the site's content and comply with the platform's developer policies (Google Play, Microsoft Store). The generated wrapper itself contains no third-party code, so there are no licensing surprises."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How big is the app I get?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Android wrapper compiles to roughly 30-60 KB because it reuses the system WebView. For Windows, pick the Tauri engine (5-10 MB) for a lean installer or the Electron engine (65-90 MB) for maximum Node.js compatibility - see our WebView vs Electron vs Tauri comparison for the trade-offs."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I add ads or push notifications?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The generated wrapper is a clean WebView with no ad SDKs or tracking code - that's by design. If you need ads or push notifications, download the full source workspace and add your preferred SDKs in Android Studio or your Electron/Tauri project. The wrapper gives you a standards-compliant starting point, not a locked box."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Do I need Android Studio or any software installed?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. Builds run on our CI (GitHub Actions), so you get a finished APK download in minutes from any browser. Android Studio is only needed if you want to customize the generated source code locally - which is exactly why every download includes the full workspace ZIP."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How is the Windows EXE different from the Android APK?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The Windows builder wraps your site in a desktop shell instead of a mobile one. You choose between Electron (max compatibility) and Tauri (small, fast), then pick an NSIS installer or a portable EXE. Walk through it in our website-to-Windows-desktop guide."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Still have questions or found a bug?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "If you have any further questions, need assistance, or want to report a bug, please contact our support team at discovereverything123@gmail.com."
       }
     }
   ]

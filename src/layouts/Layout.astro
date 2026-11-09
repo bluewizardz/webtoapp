@@ -18,6 +18,16 @@ const {
   structuredData
 } = Astro.props;
 
+// Page-type flags for og:type
+const isHome = Astro.url.pathname === '/' || Astro.url.pathname === '/index';
+const isAndroid = Astro.url.pathname.startsWith('/android');
+const isWindows = Astro.url.pathname.startsWith('/windows');
+const isAbout = Astro.url.pathname.startsWith('/about');
+const isGuide = Astro.url.pathname.startsWith('/guides');
+const isUpdates = Astro.url.pathname.startsWith('/updates');
+const isFaq = Astro.url.pathname.startsWith('/faq');
+const isPrivacy = Astro.url.pathname.startsWith('/privacy');
+
 // Site-wide entity graph (Organization + WebSite + SoftwareApplication).
 // Page-specific structured data (e.g. FAQPage) is merged in alongside it.
 const ORG_ID = "https://sitetoapp.dev/#org";
@@ -67,14 +77,6 @@ const defaultStructuredData = {
 };
 
 const pathname = Astro.url.pathname;
-const isHome = pathname === '/' || pathname === '/index';
-const isAndroid = pathname.startsWith('/android');
-const isWindows = pathname.startsWith('/windows');
-const isAbout = pathname.startsWith('/about');
-const isGuide = pathname.startsWith('/guides');
-const isUpdates = pathname.startsWith('/updates');
-const isFaq = pathname.startsWith('/faq');
-const isPrivacy = pathname.startsWith('/privacy');
 ---
 
 <!doctype html>
@@ -107,7 +109,7 @@ const isPrivacy = pathname.startsWith('/privacy');
     <link rel="canonical" href={canonicalUrl} />
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={isHome || isFaq || isPrivacy ? 'website' : isGuide ? 'article' : 'website'} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
@@ -119,11 +121,13 @@ const isPrivacy = pathname.startsWith('/privacy');
     <meta property="og:image:alt" content="SiteToApp — website to app" />
 
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content={canonicalUrl} />
-    <meta property="twitter:title" content={title} />
-    <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content="https://sitetoapp.dev/og-image.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@SiteToApp" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content="https://sitetoapp.dev/og-image.jpg" />
+    <meta name="twitter:image:alt" content="SiteToApp — website to app" />
 
     <!-- Schema.org JSON-LD Structured Data -->
     <script type="application/ld+json" is:inline set:html={JSON.stringify(defaultStructuredData)} />
