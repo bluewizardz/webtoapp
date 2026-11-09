@@ -45,10 +45,6 @@
   background: var(--win-accent);
 }
 
-.windows-page .builder-panel {
-  border-top: 3px solid var(--win-accent);
-}
-
 .windows-page .status-pill {
   color: var(--win-accent);
   border-color: rgba(0, 120, 212, 0.35);
@@ -90,11 +86,19 @@
 /* === Preview === */
 
 .win-preview-wrap {
-  margin-top: 24px;
-  padding: 0 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 20px;
+  margin-bottom: 28px;
+  background-color: var(--accents-2);
+  border: 1px solid var(--accents-3);
+  border-radius: 16px;
 }
 
 .win-frame {
+  width: 100%;
+  max-width: 460px;
   border: 1px solid var(--win-border);
   border-radius: 10px;
   overflow: hidden;
@@ -275,4 +279,87 @@
   .win-size-grid {
     grid-template-columns: 1fr;
   }
+
+  .win-preview-wrap {
+    padding: 24px 8px;
+  }
+}
+
+/* === Build engine selector === */
+.windows-page .engine-options {
+  display: grid;
+  gap: 10px;
+}
+
+.windows-page .engine-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--accents-3);
+  border-radius: 10px;
+  background: var(--accents-1);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.windows-page .engine-option:hover {
+  border-color: var(--win-accent);
+}
+
+.windows-page .engine-option:has(input:checked) {
+  border-color: var(--win-accent);
+  background: rgba(0, 120, 212, 0.08);
+  box-shadow: inset 0 0 0 1px var(--win-accent);
+}
+
+.windows-page .engine-option input[type="radio"] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: var(--win-accent);
+  cursor: pointer;
+}
+
+.windows-page .engine-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.windows-page .engine-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.windows-page .engine-head strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.windows-page .engine-size {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--win-accent);
+  background: rgba(0, 120, 212, 0.14);
+  white-space: nowrap;
+}
+
+.windows-page .engine-size--small {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.14);
+}
+
+.windows-page .engine-body small {
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--accents-5);
 }

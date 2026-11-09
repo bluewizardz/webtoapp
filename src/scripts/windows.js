@@ -34,8 +34,8 @@
     retry: document.querySelector("#winRetry"),
     retryLink: document.querySelector("#winRetryLink"),
     previewName: document.querySelector("#winPreviewName"),
-    previewUrl: document.querySelector("#winPreviewUrl"),
     metaFormat: document.querySelector("#winMetaFormat"),
+    metaEstimate: document.querySelector("#winMetaEstimate"),
     metaSize: document.querySelector("#winMetaSize"),
     metaId: document.querySelector("#winMetaId"),
     frame: document.querySelector("#winFrame"),
@@ -56,6 +56,7 @@
   const DEFAULTS = {
     appVersion: "1.0.0",
     installerType: "nsis",
+    engine: "electron",
     windowWidth: 1200,
     windowHeight: 800,
     fullScreen: false,
@@ -147,6 +148,27 @@
     const parsed = parseInt(value, 10);
     if (!Number.isFinite(parsed)) return fallback;
     return Math.min(max, Math.max(min, parsed));
+  }
+
+  // === Build engine ===
+
+  function getEngine() {
+    const checked = document.querySelector('input[name="winEngine"]:checked');
+    return checked && checked.value === "tauri" ? "tauri" : "electron";
+  }
+
+  function setEngine(value) {
+    const wanted = value === "tauri" ? "tauri" : "electron";
+    document.querySelectorAll('input[name="winEngine"]').forEach((radio) => {
+      radio.checked = radio.value === wanted;
+    });
+  }
+
+  function estimateSize(engine, installer) {
+    if (engine === "tauri") {
+      return installer === "portable" ? "≈4–8 MB" : "≈5–10 MB";
+    }
+    return installer === "portable" ? "≈80–95 MB" : "≈65–85 MB";
   }
 
   // === Status helpers ===
@@ -243,17 +265,21 @@
 
     const displayName = String(els.name.value || "").trim() || "My Desktop App";
     const displayUrl = String(els.url.value || "").trim() || "https://example.com";
-    const format = els.installer.value === "portable" ? "Portable app" : "NSIS installer";
+    const engine = getEngine();
+    const engineLabel = engine === "tauri" ? "Tauri" : "Electron";
+    const format = (els.installer.value === "portable" ? "Portable app" : "NSIS installer");
     const width = clamp(els.width.value, 800, 3840, DEFAULTS.windowWidth);
     const height = clamp(els.height.value, 600, 2160, DEFAULTS.windowHeight);
     const appId = String(els.appId.value || "").trim() || deriveAppId(displayUrl, displayName);
 
     els.previewName.textContent = displayName;
-    els.previewUrl.textContent = displayUrl;
     els.titleName.textContent = displayName;
     els.pageName.textContent = displayName;
     els.pageUrl.textContent = displayUrl;
-    els.metaFormat.textContent = format;
+    els.metaFormat.textContent = engineLabel + " · " + format;
+    if (els.metaEstimate) {
+      els.metaEstimate.textContent = estimateSize(engine, els.installer.value);
+    }
     els.metaSize.textContent = width + " × " + height;
     els.metaId.textContent = appId;
 
@@ -334,6 +360,7 @@
     return {
       appVersion: els.version.value,
       installerType: els.installer.value,
+      engine: getEngine(),
       windowWidth: clamp(els.width.value, 800, 3840, DEFAULTS.windowWidth),
       windowHeight: clamp(els.height.value, 600, 2160, DEFAULTS.windowHeight),
       fullScreen: els.fullScreen.checked,
@@ -347,6 +374,9 @@
     if (state.installerType === "portable" || state.installerType === "nsis") {
       els.installer.value = state.installerType;
     }
+    if (state.engine === "tauri" || state.engine === "electron") {
+      setEngine(state.engine);
+    }
     els.width.value = clamp(state.windowWidth, 800, 3840, DEFAULTS.windowWidth);
     els.height.value = clamp(state.windowHeight, 600, 2160, DEFAULTS.windowHeight);
     if (typeof state.fullScreen === "boolean") els.fullScreen.checked = state.fullScreen;
@@ -358,6 +388,7 @@
     let count = 0;
     if (normalizeVersion(state.appVersion) !== DEFAULTS.appVersion) count += 1;
     if (state.installerType !== DEFAULTS.installerType) count += 1;
+    if (state.engine !== DEFAULTS.engine) count += 1;
     if (state.windowWidth !== DEFAULTS.windowWidth) count += 1;
     if (state.windowHeight !== DEFAULTS.windowHeight) count += 1;
     if (state.fullScreen !== DEFAULTS.fullScreen) count += 1;
@@ -394,6 +425,7 @@
   function resetAdvancedDefaults() {
     els.version.value = DEFAULTS.appVersion;
     els.installer.value = DEFAULTS.installerType;
+    setEngine(DEFAULTS.engine);
     els.width.value = DEFAULTS.windowWidth;
     els.height.value = DEFAULTS.windowHeight;
     els.fullScreen.checked = DEFAULTS.fullScreen;
@@ -438,6 +470,7 @@
       appId: normalizeAppId(els.appId.value || deriveAppId(url, name)),
       appVersion: normalizeVersion(els.version.value),
       installerType: els.installer.value === "portable" ? "portable" : "nsis",
+      engine: getEngine(),
       windowWidth: clamp(els.width.value, 800, 3840, DEFAULTS.windowWidth),
       windowHeight: clamp(els.height.value, 600, 2160, DEFAULTS.windowHeight),
       fullScreen: !!els.fullScreen.checked,
@@ -600,6 +633,13 @@
       persistAdvanced();
     });
     el.addEventListener("change", () => {
+      updatePreview();
+      persistAdvanced();
+    });
+  });
+
+  document.querySelectorAll('input[name="winEngine"]').forEach((radio) => {
+    radio.addEventListener("change", () => {
       updatePreview();
       persistAdvanced();
     });

@@ -23,6 +23,7 @@ export async function onRequestPost(context) {
   const width = clampInt(body.windowWidth, 800, 3840, 1200);
   const height = clampInt(body.windowHeight, 600, 2160, 800);
   const installerType = body.installerType === 'portable' ? 'portable' : 'nsis';
+  const engine = body.engine === 'tauri' ? 'tauri' : 'electron';
 
   const inputs = {
     siteUrl: siteUrl,
@@ -30,6 +31,7 @@ export async function onRequestPost(context) {
     appId: body.appId || 'com.example.app',
     appVersion: body.appVersion || '1.0.0',
     installerType: installerType,
+    engine: engine,
     windowWidth: String(width),
     windowHeight: String(height),
     fullScreen: String(body.fullScreen === true),

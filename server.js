@@ -10,6 +10,7 @@ import { fetchFaviconBuffer, extractPngOrBmpFromIco } from './builders/android-b
 import sharp from 'sharp';
 import { buildDMG } from './builders/macos-builder.js';
 import { buildEXE } from './builders/windows-builder.js';
+import { buildTauri } from './builders/tauri-builder.js';
 import { buildAppImage, buildDeb } from './builders/linux-builder.js';
 import { queueGradleBuild } from './queue-manager.js';
 
@@ -259,7 +260,7 @@ app.post('/api/build/exe', compilerLimiter, async (req, res) => {
   try {
     const {
       siteUrl, appName, appId, appVersion, icon,
-      installerType, windowWidth, windowHeight, fullScreen, customUserAgent
+      installerType, engine, windowWidth, windowHeight, fullScreen, customUserAgent
     } = req.body;
     const buildId = uuidv4();
 
@@ -272,7 +273,8 @@ app.post('/api/build/exe', compilerLimiter, async (req, res) => {
     res.json({ buildId, status: 'queued' });
 
     try {
-      const resultPath = await buildEXE({
+      const builder = engine === 'tauri' ? buildTauri : buildEXE;
+      const resultPath = await builder({
         siteUrl,
         appName,
         appId,

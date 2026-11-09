@@ -1,4 +1,5 @@
 import { buildEXE } from './builders/windows-builder.js';
+import { buildTauri } from './builders/tauri-builder.js';
 import path from 'path';
 
 let siteUrl = process.argv[2] || 'https://example.com';
@@ -16,6 +17,9 @@ const windowHeight = parseInt(process.argv[8] || '800', 10);
 const fullScreen = process.argv[9] === 'true';
 const customUserAgent = process.argv[10] || null;
 const buildId = process.argv[11] || 'latest';
+const engine = (process.argv[12] || process.env.BUILD_ENGINE || 'electron').toLowerCase() === 'tauri'
+  ? 'tauri'
+  : 'electron';
 
 const buildsDir = path.resolve('./builds-cli');
 
@@ -25,13 +29,16 @@ console.log('App Name:', appName);
 console.log('App ID:', appId);
 console.log('App Version:', appVersion);
 console.log('Installer Type:', installerType);
+console.log('Engine:', engine);
 console.log('Window Size:', windowWidth + 'x' + windowHeight);
 console.log('Full Screen:', fullScreen);
 console.log('Custom User Agent:', customUserAgent);
 console.log('Build ID:', buildId);
 console.log('-----------------------------------');
 
-buildEXE({
+const builder = engine === 'tauri' ? buildTauri : buildEXE;
+
+builder({
   siteUrl,
   appName,
   appId,

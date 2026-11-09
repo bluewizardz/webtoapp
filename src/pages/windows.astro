@@ -27,7 +27,33 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
             <input id="winName" name="appName" type="text" placeholder="My Desktop App" autocomplete="organization">
           </label>
 
-          <p class="defaults-hint" id="winDefaultsHint">Defaults: version 1.0.0 · 1200×800 window · NSIS installer · auto favicon</p>
+          <div class="field">
+            <span>Build engine</span>
+            <div class="engine-options" role="radiogroup" aria-label="Build engine">
+              <label class="engine-option">
+                <input type="radio" name="winEngine" value="electron" checked>
+                <span class="engine-body">
+                  <span class="engine-head">
+                    <strong>Electron</strong>
+                    <span class="engine-size">~70–90 MB</span>
+                  </span>
+                  <small>Bundles Chromium. Fully self-contained and works offline.</small>
+                </span>
+              </label>
+              <label class="engine-option">
+                <input type="radio" name="winEngine" value="tauri">
+                <span class="engine-body">
+                  <span class="engine-head">
+                    <strong>Tauri</strong>
+                    <span class="engine-size engine-size--small">~5–10 MB</span>
+                  </span>
+                  <small>Uses the system WebView2. Tiny download, needs Windows 10/11.</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <p class="defaults-hint" id="winDefaultsHint">Defaults: version 1.0.0 · 1200×800 window · NSIS installer · Electron · auto favicon</p>
         </div>
 
         <details class="advanced-panel" id="winAdvanced">
@@ -141,7 +167,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
             <path d="M12 8h.01"></path>
           </svg>
           <span>
-            <strong>Build Time:</strong> the Windows installer compiles on a GitHub Windows runner in about 2 to 4 minutes.
+            <strong>Build Time:</strong> Electron compiles in about 2 to 4 minutes; Tauri takes roughly 5 to 10 minutes the first time.
           </span>
         </div>
 
@@ -171,35 +197,11 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
         <p class="validation" id="winMessage" aria-live="polite"></p>
       </form>
 
-      <!-- Right Side: Preview -->
+      <!-- Right Side: Preview & Meta -->
       <aside class="preview-panel" aria-label="Windows app preview">
-        <div class="preview-meta">
-          <div class="preview-header">
-            <span class="preview-app-name" id="winPreviewName">My Desktop App</span>
-            <span class="status-pill" id="winStatus">Ready</span>
-          </div>
-          <span class="preview-url" id="winPreviewUrl">https://example.com</span>
-          <div class="preview-grid">
-            <div class="meta-row">
-              <span class="meta-label">Platform</span>
-              <span class="meta-value">Windows 10 / 11</span>
-            </div>
-            <div class="meta-row">
-              <span class="meta-label">Format</span>
-              <span class="meta-value" id="winMetaFormat">NSIS installer</span>
-            </div>
-            <div class="meta-row">
-              <span class="meta-label">Window</span>
-              <span class="meta-value" id="winMetaSize">1200 × 800</span>
-            </div>
-            <div class="meta-row">
-              <span class="meta-label">App ID</span>
-              <span class="meta-value" id="winMetaId">com.example.app</span>
-            </div>
-          </div>
-        </div>
 
-        <div class="win-preview-wrap">
+        <!-- Device Preview Frame -->
+        <div class="win-preview-wrap" aria-hidden="true">
           <div class="win-frame" id="winFrame">
             <div class="win-titlebar">
               <div class="win-title-left">
@@ -228,6 +230,39 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
             </div>
           </div>
         </div>
+
+        <!-- Build Metadata -->
+        <div class="section-title">
+          <h2>Build Metadata</h2>
+          <div class="status-pill" id="winStatus">Ready</div>
+        </div>
+
+        <dl class="output-meta">
+          <div>
+            <dt>App Name</dt>
+            <dd id="winPreviewName">My Desktop App</dd>
+          </div>
+          <div>
+            <dt>App ID</dt>
+            <dd id="winMetaId">com.example.app</dd>
+          </div>
+          <div>
+            <dt>Platform</dt>
+            <dd>Windows 10 / 11</dd>
+          </div>
+          <div>
+            <dt>Format</dt>
+            <dd id="winMetaFormat">Electron · NSIS installer</dd>
+          </div>
+          <div>
+            <dt>Est. size</dt>
+            <dd id="winMetaEstimate">≈65–85 MB</dd>
+          </div>
+          <div>
+            <dt>Window</dt>
+            <dd id="winMetaSize">1200 × 800</dd>
+          </div>
+        </dl>
       </aside>
     </div>
 

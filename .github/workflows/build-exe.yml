@@ -23,6 +23,10 @@ on:
         description: 'Installer type: nsis or portable'
         required: true
         default: 'nsis'
+      engine:
+        description: 'Build engine: electron (~70-90 MB) or tauri (~5-10 MB)'
+        required: true
+        default: 'electron'
       windowWidth:
         description: 'Default window width'
         required: true
@@ -51,6 +55,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -64,6 +69,7 @@ jobs:
       # Electron and NSIS toolchains are ~200MB of downloads. Caching them is the
       # single biggest speed win: cold builds lose 2-3 minutes to this alone.
       - name: Cache Electron and electron-builder toolchains
+        if: ${{ github.event.inputs.engine != 'tauri' }}
         uses: actions/cache@v4
         with:
           path: |
@@ -72,6 +78,23 @@ jobs:
           key: electron-win-${{ hashFiles('builders/windows-builder.js', 'builders/build-utils.js') }}
           restore-keys: |
             electron-win-
+
+      # Tauri compiles the wrapper in Rust, so it needs the toolchain. It is
+      # preinstalled on windows-latest but we pin stable explicitly to avoid drift.
+      - name: Set up Rust (Tauri)
+        if: ${{ github.event.inputs.engine == 'tauri' }}
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies (Tauri)
+        if: ${{ github.event.inputs.engine == 'tauri' }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\.cargo\registry
+            ~\.cargo\git
+          key: rust-tauri-${{ hashFiles('builders/tauri-builder.js') }}
+          restore-keys: |
+            rust-tauri-
 
       - name: Install Dependencies
         run: npm ci
@@ -89,7 +112,8 @@ jobs:
             "${{ github.event.inputs.windowHeight }}" \
             "${{ github.event.inputs.fullScreen }}" \
             "${{ github.event.inputs.customUserAgent }}" \
-            "${{ github.event.inputs.buildId }}"
+            "${{ github.event.inputs.buildId }}" \
+            "${{ github.event.inputs.engine }}"
 
       # The artifact is what the status endpoint polls for.
       - name: Upload Build Artifact
