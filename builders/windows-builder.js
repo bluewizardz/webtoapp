@@ -2,58 +2,134 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import archiver from 'archiver';
+import sharp from 'sharp';
 import { generatePngIcon, pngToIco } from './icon-generator.js';
 import { tryBuildElectron } from './build-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export async function buildEXE({ siteUrl, appName, appId, appVersion, icon, buildId, buildsDir }) {
-  const buildDir = path.join(buildsDir, buildId, 'windows');
-  fs.mkdirSync(buildDir, { recursive: true });
+/**
+ * Build a Windows Electron wrapper.
+ *
+ * `installerType` selects the electron-builder target: 'nsis' (installer) or
+ * 'portable' (single runnable .exe). Everything else defaults to the values the
+ * builder shipped with, so existing callers keep their behaviour.
+ */
+export async function buildEXE({
+  siteUrl,
+  appName,
+  appId,
+  appVersion,
+  icon = null,
+  installerType = 'nsis',
+  windowWidth = 1200,
+  windowHeight = 800,
+  fullScreen = false,
+  customUserAgent = null,
+  buildId,
+  buildsDir
+}) {
+  const target = installerType === 'portable' ? 'portable' : 'nsis';
+  const width = clampNumber(windowWidth, 800, 3840, 1200);
+  const height = clampNumber(windowHeight, 600, 2160, 800);
+  const startFullScreen = fullScreen === true || fullScreen === 'true';
+  const userAgent = typeof customUserAgent === 'string' && customUserAgent.trim() ? customUserAgent.trim() : null;
 
-  // Create src directory
+  const buildDir = path.join(buildsDir, buildId, 'windows');
   fs.mkdirSync(path.join(buildDir, 'src'), { recursive: true });
 
   // Create Electron main process
-  const mainContent = `const { app, BrowserWindow, shell } = require('electron');
+  const mainContent = `const { app, BrowserWindow, shell, session } = require('electron');
 const path = require('path');
 
-let mainWindow;
+const APP_URL = '${siteUrl}';
+const START_FULLSCREEN = ${startFullScreen};
+let mainWindow = null;
+
+function hostOf(value) {
+  try {
+    return new URL(value).hostname.replace(/^www\\./i, '');
+  } catch (e) {
+    return '';
+  }
+}
+
+const APP_HOST = hostOf(APP_URL);
+
+function isSameSite(value) {
+  try {
+    const host = new URL(value).hostname.replace(/^www\\./i, '');
+    return host === APP_HOST || host.endsWith('.' + APP_HOST);
+  } catch (e) {
+    return false;
+  }
+}
+
+function openExternally(url) {
+  shell.openExternal(url).catch(function () {});
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    minWidth: 400,
-    minHeight: 300,
+    width: ${width},
+    height: ${height},
+    minWidth: 800,
+    minHeight: 600,
+    show: false,
+    autoHideMenuBar: true,
+    backgroundColor: '#0b0f16',
+    icon: path.join(__dirname, '..', 'assets', 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
-      sandbox: true
-    },
-    icon: path.join(__dirname, '../assets/icon.ico')
+      sandbox: true,
+      spellcheck: true
+    }
   });
 
-  mainWindow.loadURL('${siteUrl}');
-  
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+  ${userAgent ? `session.defaultSession.setUserAgent(${JSON.stringify(userAgent)});` : ''}
+
+  if (START_FULLSCREEN) {
+    mainWindow.setFullScreen(true);
+  }
+
+  mainWindow.loadURL(APP_URL);
+
+  mainWindow.once('ready-to-show', function () {
+    mainWindow.show();
+  });
+
+  // New windows and off-site navigation go to the user's default browser,
+  // mirroring the APK WebView's external-link handling.
+  mainWindow.webContents.setWindowOpenHandler(function (details) {
+    openExternally(details.url);
     return { action: 'deny' };
   });
 
-  mainWindow.on('closed', () => {
+  mainWindow.webContents.on('will-navigate', function (event, url) {
+    if (!isSameSite(url)) {
+      event.preventDefault();
+      openExternally(url);
+    }
+  });
+
+  session.defaultSession.setPermissionRequestHandler(function (contents, permission, callback) {
+    callback(['media', 'geolocation', 'notifications', 'clipboard-read'].indexOf(permission) !== -1);
+  });
+
+  mainWindow.on('closed', function () {
     mainWindow = null;
   });
 }
 
-app.on('ready', createWindow);
+app.whenReady().then(createWindow);
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', function () {
   app.quit();
 });
 
-app.on('activate', () => {
+app.on('activate', function () {
   if (mainWindow === null) {
     createWindow();
   }
@@ -67,13 +143,16 @@ app.on('activate', () => {
 
 contextBridge.exposeInMainWorld('api', {
   version: '${appVersion}',
-  appName: '${appName}'
+  appName: ${JSON.stringify(appName)}
 });
 `;
 
   fs.writeFileSync(path.join(buildDir, 'src', 'preload.js'), preloadContent);
 
-  // Create package.json for Electron
+  const safeName = `${appName}-${target === 'portable' ? 'Portable' : 'Setup'}-${appVersion}`
+    .replace(/[\\/:*?"<>|]/g, '')
+    .trim();
+
   const packageJson = {
     name: appId,
     version: appVersion,
@@ -93,120 +172,117 @@ contextBridge.exposeInMainWorld('api', {
     build: {
       appId: appId,
       productName: appName,
+      artifactName: `${safeName}.exe`,
       files: ['src/**/*', 'package.json'],
       directories: {
         output: 'dist',
         buildResources: 'assets'
       },
       win: {
-        target: ['nsis', 'portable'],
-        certificateFile: null,
-        certificatePassword: null
+        target: [target],
+        icon: 'assets/icon.ico'
       },
-      nsis: {
-        oneClick: false,
-        allowToChangeInstallationDirectory: true,
-        createDesktopShortcut: true,
-        createStartMenuShortcut: true,
-        shortcutName: appName
-      }
+      ...(target === 'nsis'
+        ? {
+            nsis: {
+              oneClick: false,
+              perMachine: false,
+              allowElevation: true,
+              allowToChangeInstallationDirectory: true,
+              createDesktopShortcut: true,
+              createStartMenuShortcut: true,
+              shortcutName: appName
+            }
+          }
+        : {})
     }
   };
 
   fs.writeFileSync(path.join(buildDir, 'package.json'), JSON.stringify(packageJson, null, 2));
 
-  // Create .npmrc
-  fs.writeFileSync(path.join(buildDir, '.npmrc'), `legacy-peer-deps=true
-`);
+  fs.writeFileSync(path.join(buildDir, '.npmrc'), `legacy-peer-deps=true\n`);
 
-  // Create .gitignore
-  const gitignoreContent = `node_modules/
-dist/
-*.log
-.env
-.env.local
-`;
+  fs.writeFileSync(
+    path.join(buildDir, '.gitignore'),
+    `node_modules/\ndist/\n*.log\n.env\n.env.local\n`
+  );
 
-  fs.writeFileSync(path.join(buildDir, '.gitignore'), gitignoreContent);
-
-  // Create GitHub Actions workflow
+  // The generated project still ships with a workflow so a user who downloads
+  // the source can rebuild it themselves.
   const githubWorkflowsDir = path.join(buildDir, '.github', 'workflows');
   fs.mkdirSync(githubWorkflowsDir, { recursive: true });
-  fs.writeFileSync(path.join(githubWorkflowsDir, 'build.yml'), `name: Build Windows Application
+  fs.writeFileSync(
+    path.join(githubWorkflowsDir, 'build.yml'),
+    `name: Build Windows Application
 on: [push, pull_request]
-concurrency:
-  group: \${{ github.workflow }}-\${{ github.ref }}
-  cancel-in-progress: false
 jobs:
   build:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
-      - name: Build EXE
-        run: npm run build
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v4
+      - run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
         with:
           name: windows-dist
           path: dist/*
-`);
+`
+  );
 
-  // Create README.md
-  const readmeContent = `# ${appName}
+  fs.writeFileSync(
+    path.join(buildDir, 'README.md'),
+    `# ${appName}
 
 Windows application wrapping ${siteUrl}
-
-## Installation
-
-\`\`\`bash
-npm install
-\`\`\`
 
 ## Development
 
 \`\`\`bash
+npm install
 npm start
 \`\`\`
 
-## Build EXE Locally
+## Build locally
 
 \`\`\`bash
 npm run build
 \`\`\`
 
-The built EXE installers will be in the \`dist/\` directory.
+Artifacts land in \`dist/\`.
+`
+  );
 
-## Build via GitHub Actions (Zero Cost Setup)
-
-This project has been pre-configured with a GitHub Actions workflow to build your EXE for free:
-1. Initialize a Git repository in this directory.
-2. Push the files to a new GitHub repository.
-3. The EXE will be built automatically on every push. You can download it from the "Actions" tab of your GitHub repository under the latest run.
-`;
-
-  fs.writeFileSync(path.join(buildDir, 'README.md'), readmeContent);
-
-  // Create assets directory structure
   fs.mkdirSync(path.join(buildDir, 'assets'), { recursive: true });
 
-  // Generate real icons using sharp
-  const pngBuffer = await generatePngIcon(appName, 256);
-  const icoBuffer = pngToIco(pngBuffer);
-  fs.writeFileSync(path.join(buildDir, 'assets', 'icon.ico'), icoBuffer);
+  // Icon: the uploaded image wins, otherwise initials on a gradient.
+  let pngBuffer = null;
+  if (icon) {
+    try {
+      const base64 = String(icon).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, '');
+      pngBuffer = await sharp(Buffer.from(base64, 'base64'))
+        .resize(256, 256, { fit: 'cover' })
+        .png()
+        .toBuffer();
+    } catch (e) {
+      console.log(`[windows-builder] Uploaded icon could not be decoded: ${e.message}`);
+    }
+  }
+  if (!pngBuffer) {
+    pngBuffer = await generatePngIcon(appName, 256);
+  }
+  fs.writeFileSync(path.join(buildDir, 'assets', 'icon.ico'), pngToIco(pngBuffer));
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.png'), pngBuffer);
 
-  // === Try to build actual EXE ===
+  // === Try to build the real installer ===
   try {
-    const artifactPath = await tryBuildElectron(buildDir, 'nsis', '--win', '.exe');
+    const artifactPath = await tryBuildElectron(buildDir, target, '--win', '.exe');
     if (artifactPath) {
-      const outputPath = path.join(buildsDir, buildId, `${appName}-Setup-${appVersion}.exe`);
+      const outputPath = path.join(buildsDir, buildId, `${safeName}.exe`);
+      fs.mkdirSync(path.dirname(outputPath), { recursive: true });
       fs.copyFileSync(artifactPath, outputPath);
       console.log(`[windows-builder] EXE built: ${outputPath}`);
       return outputPath;
@@ -215,11 +291,11 @@ This project has been pre-configured with a GitHub Actions workflow to build you
     console.log(`[windows-builder] EXE compilation failed: ${e.message}`);
   }
 
-  // === Fallback: package as ZIP ===
+  // === Fallback: source project ZIP ===
   console.log('[windows-builder] Falling back to source project ZIP');
   const zipPath = path.join(buildsDir, buildId, `${appName}-windows-${appVersion}.zip`);
-  fs.mkdirSync(path.dirname(zipPath), { recursive: true }); // Ensure output folder exists
-  
+  fs.mkdirSync(path.dirname(zipPath), { recursive: true });
+
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
     const archive = archiver('zip', { zlib: { level: 9 } });
@@ -227,13 +303,22 @@ This project has been pre-configured with a GitHub Actions workflow to build you
     output.on('close', () => resolve(zipPath));
     archive.on('error', reject);
     archive.pipe(output);
-    
-    // Archive only source files, excluding node_modules, dist, and git metadata
-    archive.glob('**/*', {
-      cwd: buildDir,
-      ignore: ['node_modules/**', 'dist/**', '.git/**']
-    }, { prefix: `${appName.replace(/\s+/g, '')}-windows-source` });
+
+    archive.glob(
+      '**/*',
+      {
+        cwd: buildDir,
+        ignore: ['node_modules/**', 'dist/**', '.git/**']
+      },
+      { prefix: `${appName.replace(/\s+/g, '')}-windows-source` }
+    );
 
     archive.finalize();
   });
+}
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
 }

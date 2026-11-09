@@ -1,0 +1,115 @@
+name: Build Windows EXE Wrapper
+
+on:
+  workflow_dispatch:
+    inputs:
+      siteUrl:
+        description: 'Website URL to wrap (e.g. https://example.com)'
+        required: true
+        default: 'https://example.com'
+      appName:
+        description: 'Application Name'
+        required: true
+        default: 'My Web App'
+      appId:
+        description: 'Application ID (e.g. com.example.app)'
+        required: true
+        default: 'com.example.app'
+      appVersion:
+        description: 'Application Version'
+        required: true
+        default: '1.0.0'
+      installerType:
+        description: 'Installer type: nsis or portable'
+        required: true
+        default: 'nsis'
+      windowWidth:
+        description: 'Default window width'
+        required: true
+        default: '1200'
+      windowHeight:
+        description: 'Default window height'
+        required: true
+        default: '800'
+      fullScreen:
+        description: 'Launch in full screen'
+        type: boolean
+        required: true
+        default: false
+      customUserAgent:
+        description: 'Custom User Agent (Optional)'
+        required: false
+        default: ''
+      buildId:
+        description: 'Internal Build ID'
+        required: true
+        default: 'latest'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+          cache: 'npm'
+
+      # Electron and NSIS toolchains are ~200MB of downloads. Caching them is the
+      # single biggest speed win: cold builds lose 2-3 minutes to this alone.
+      - name: Cache Electron and electron-builder toolchains
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\electron\Cache
+            ~\AppData\Local\electron-builder\Cache
+          key: electron-win-${{ hashFiles('builders/windows-builder.js', 'builders/build-utils.js') }}
+          restore-keys: |
+            electron-win-
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Compile Windows EXE
+        shell: bash
+        run: |
+          node cli-build-exe.js \
+            "${{ github.event.inputs.siteUrl }}" \
+            "${{ github.event.inputs.appName }}" \
+            "${{ github.event.inputs.appId }}" \
+            "${{ github.event.inputs.appVersion }}" \
+            "${{ github.event.inputs.installerType }}" \
+            "${{ github.event.inputs.windowWidth }}" \
+            "${{ github.event.inputs.windowHeight }}" \
+            "${{ github.event.inputs.fullScreen }}" \
+            "${{ github.event.inputs.customUserAgent }}" \
+            "${{ github.event.inputs.buildId }}"
+
+      # The artifact is what the status endpoint polls for.
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'build-${{ github.event.inputs.buildId }}'
+          path: 'builds-cli/${{ github.event.inputs.buildId }}/*.exe'
+          if-no-files-found: error
+
+      # The release asset is what the browser downloads: a public CDN URL,
+      # so the Cloudflare function can just redirect instead of proxying a
+      # ~100MB installer through the Worker.
+      - name: Publish Installer as Release Asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="build-${{ github.event.inputs.buildId }}"
+          gh release create "$TAG" builds-cli/${{ github.event.inputs.buildId }}/*.exe \
+            --repo "${{ github.repository }}" \
+            --title "Windows build $TAG" \
+            --notes "Automated Windows EXE for ${{ github.event.inputs.siteUrl }}" \
+            --latest=false

@@ -257,7 +257,10 @@ app.post('/api/build/dmg', compilerLimiter, async (req, res) => {
 // Generate EXE (Windows)
 app.post('/api/build/exe', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon } = req.body;
+    const {
+      siteUrl, appName, appId, appVersion, icon,
+      installerType, windowWidth, windowHeight, fullScreen, customUserAgent
+    } = req.body;
     const buildId = uuidv4();
 
     if (!siteUrl || !appName || !appId) {
@@ -275,6 +278,11 @@ app.post('/api/build/exe', compilerLimiter, async (req, res) => {
         appId,
         appVersion: appVersion || '1.0.0',
         icon,
+        installerType,
+        windowWidth,
+        windowHeight,
+        fullScreen,
+        customUserAgent,
         buildId,
         buildsDir: BUILDS_DIR
       });

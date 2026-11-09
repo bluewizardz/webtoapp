@@ -1,0 +1,268 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/windows.css';
+
+const pageTitle = "Convert Website to EXE - Free Windows App Installer Builder";
+const pageDescription = "Wrap any website into a Windows desktop app. Free, no-code builder that compiles an NSIS installer (.exe) or portable Windows executable from a URL.";
+---
+
+<Layout title={pageTitle} description={pageDescription} bodyClass="builder-page windows-page">
+  <main class="shell windows-page">
+    <div class="workspace">
+
+      <!-- Left Side: Form -->
+      <form class="builder-panel" id="winForm">
+        <div class="section-title">
+          <h2>Windows App Configuration</h2>
+        </div>
+
+        <div class="simple-zone">
+          <label class="field">
+            <span>Website URL</span>
+            <input id="winUrl" name="siteUrl" type="text" inputmode="url" placeholder="https://example.com" autocomplete="url" required>
+          </label>
+
+          <label class="field">
+            <span>App Name</span>
+            <input id="winName" name="appName" type="text" placeholder="My Desktop App" autocomplete="organization">
+          </label>
+
+          <p class="defaults-hint" id="winDefaultsHint">Defaults: version 1.0.0 · 1200×800 window · NSIS installer · auto favicon</p>
+        </div>
+
+        <details class="advanced-panel" id="winAdvanced">
+          <summary class="advanced-summary">
+            <span class="advanced-label">Advanced options<span class="advanced-badge" id="winBadge" hidden>Customized</span></span>
+          </summary>
+          <div class="advanced-body">
+
+            <fieldset class="features-fieldset">
+              <legend>App Identity</legend>
+
+              <label class="field">
+                <span>Version</span>
+                <input id="winVersion" type="text" value="1.0.0" inputmode="decimal">
+              </label>
+
+              <label class="field">
+                <span>App ID</span>
+                <div class="inline-control">
+                  <input id="winAppId" type="text" placeholder="com.example.app" spellcheck="false">
+                  <button type="button" id="winResetId" class="btn btn-secondary">Auto</button>
+                </div>
+              </label>
+
+              <label class="field">
+                <span>App Icon (Optional 512x512 PNG)</span>
+                <div class="icon-upload-row">
+                  <input id="winIcon" type="file" accept="image/png, image/jpeg">
+                  <button type="button" id="winRemoveIcon" class="icon-remove-btn" style="display: none;" title="Remove icon">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Remove
+                  </button>
+                </div>
+              </label>
+
+              <div class="icon-fetch-container">
+                <label class="icon-fetch-label">
+                  <input id="winAutoIcon" type="checkbox" checked>
+                  <span class="toggle-switch"></span>
+                  <span class="icon-fetch-text">
+                    <strong>Auto Fetch Website Icon</strong>
+                    <small>Uses your site's favicon for the installed app</small>
+                  </span>
+                </label>
+                <div class="icon-preview-wrapper">
+                  <img id="winIconPreview" alt="Icon preview">
+                  <div id="winIconPlaceholder" class="icon-preview-placeholder" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="16" rx="3"></rect>
+                      <path d="M3 9h18"></path>
+                      <circle cx="6.4" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                      <circle cx="9" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
+                    </svg>
+                  </div>
+                  <div id="winIconSpinner" class="spinner"></div>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="features-fieldset">
+              <legend>Installer &amp; Window</legend>
+
+              <label class="field">
+                <span>Installer type</span>
+                <select id="winInstaller">
+                  <option value="nsis" selected>NSIS installer (.exe)</option>
+                  <option value="portable">Portable app (.exe)</option>
+                </select>
+              </label>
+
+              <div class="win-size-grid">
+                <label class="field">
+                  <span>Window width</span>
+                  <input id="winWidth" type="number" value="1200" step="10">
+                </label>
+                <label class="field">
+                  <span>Window height</span>
+                  <input id="winHeight" type="number" value="800" step="10">
+                </label>
+              </div>
+
+              <label class="check-row">
+                <input id="winFullScreen" type="checkbox">
+                <span class="check-mark"></span>
+                <span>
+                  <strong>Full Screen</strong>
+                  <small>Launch the window in full screen mode</small>
+                </span>
+              </label>
+            </fieldset>
+
+            <fieldset class="features-fieldset">
+              <legend>Custom User Agent</legend>
+              <div class="field">
+                <span>Custom User Agent (Optional)</span>
+                <input id="winUserAgent" type="text" placeholder="e.g. MyApp/1.0 (Windows)" autocomplete="off">
+              </div>
+            </fieldset>
+
+            <button type="button" class="btn btn-secondary btn-small" id="winResetDefaults">Reset to defaults</button>
+          </div>
+        </details>
+
+        <div class="info-banner">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+          <span>
+            <strong>Build Time:</strong> the Windows installer compiles on a GitHub Windows runner in about 2 to 4 minutes.
+          </span>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary" id="winBuild" type="submit">
+            Build Windows Installer
+          </button>
+          <div class="build-success" id="winSuccess" style="display: none;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+            <span class="build-success-text">Build Successful! Your installer is downloading.</span>
+          </div>
+          <div class="build-retry" id="winRetry" style="display: none;">
+            <a id="winRetryLink" href="#" download>Download again</a>
+          </div>
+        </div>
+
+        <div class="build-progress" id="winProgress" style="display: none;">
+          <div class="progress-bar">
+            <div class="progress-fill" id="winProgressFill"></div>
+          </div>
+          <p class="progress-text" id="winProgressText">Starting compilation…</p>
+        </div>
+
+        <p class="validation" id="winMessage" aria-live="polite"></p>
+      </form>
+
+      <!-- Right Side: Preview -->
+      <aside class="preview-panel" aria-label="Windows app preview">
+        <div class="preview-meta">
+          <div class="preview-header">
+            <span class="preview-app-name" id="winPreviewName">My Desktop App</span>
+            <span class="status-pill" id="winStatus">Ready</span>
+          </div>
+          <span class="preview-url" id="winPreviewUrl">https://example.com</span>
+          <div class="preview-grid">
+            <div class="meta-row">
+              <span class="meta-label">Platform</span>
+              <span class="meta-value">Windows 10 / 11</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Format</span>
+              <span class="meta-value" id="winMetaFormat">NSIS installer</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Window</span>
+              <span class="meta-value" id="winMetaSize">1200 × 800</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">App ID</span>
+              <span class="meta-value" id="winMetaId">com.example.app</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="win-preview-wrap">
+          <div class="win-frame" id="winFrame">
+            <div class="win-titlebar">
+              <div class="win-title-left">
+                <span class="win-app-icon" id="winTitleIcon">A</span>
+                <span class="win-title-text" id="winTitleName">My Desktop App</span>
+              </div>
+              <div class="win-controls" aria-hidden="true">
+                <span class="win-ctrl">–</span>
+                <span class="win-ctrl">□</span>
+                <span class="win-ctrl win-ctrl-close">✕</span>
+              </div>
+            </div>
+            <div class="win-body">
+              <div class="win-page">
+                <span class="win-page-icon" id="winPageIcon">A</span>
+                <span class="win-page-name" id="winPageName">My Desktop App</span>
+                <span class="win-page-url" id="winPageUrl">https://example.com</span>
+              </div>
+            </div>
+            <div class="win-taskbar">
+              <span class="win-start" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </span>
+              <span class="win-tile" id="winTaskbarTile">A</span>
+              <span class="win-clock">12:00</span>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- SmartScreen notice (shown when a download starts) -->
+    <div class="notice-overlay" id="winModal" hidden>
+      <div class="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="winModalTitle" aria-describedby="winModalText">
+        <div class="notice-dialog-header">
+          <h2 id="winModalTitle">Windows SmartScreen Notice</h2>
+          <button type="button" class="notice-close" id="winModalClose" aria-label="Close notice">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="notice-dialog-text" id="winModalText">Windows SmartScreen may warn you because this installer is unsigned. Choose <strong>More info → Run anyway</strong> to install. The app is a clean wrapper around your website and contains no malware.</p>
+
+        <div class="notice-support">
+          <p class="notice-support-text">
+            <strong>Enjoying this page?</strong> Even $1 is enough — any amount is welcome. Your support keeps these free Windows builds running.
+          </p>
+          <a href="https://buymeacoffee.com/bluewiz" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small notice-support-btn bmc-btn">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+              <path d="M20.216 6.415l-.132-.666c-.119-.598-.388-1.163-1.001-1.379-.197-.069-.42-.098-.57-.241-.152-.143-.196-.366-.231-.572-.065-.378-.125-.756-.192-1.133-.057-.325-.102-.69-.25-.987-.195-.4-.597-.634-.996-.788a5.723 5.723 0 00-.626-.194c-1-.263-2.05-.36-3.077-.416a25.834 25.834 0 00-3.7.062c-.915.083-1.88.184-2.75.5-.318.116-.646.256-.888.501-.297.302-.393.77-.177 1.146.154.267.415.456.692.58.36.162.737.284 1.123.366 1.075.238 2.189.331 3.287.37 1.218.05 2.437.01 3.65-.118.299-.033.598-.073.896-.119.352-.054.578-.513.474-.834-.124-.383-.457-.531-.834-.473-.466.074-.96.108-1.382.146-1.177.08-2.358.082-3.536.006a22.228 22.228 0 01-1.157-.107c-.086-.01-.18-.025-.258-.036-.243-.036-.484-.08-.724-.13-.111-.027-.111-.185 0-.212h.005c.277-.06.557-.108.838-.147h.002c.131-.009.263-.032.394-.048a25.076 25.076 0 013.426-.12c.674.019 1.347.067 2.017.144l.228.031c.267.04.533.088.798.145.392.085.895.113 1.07.542.055.137.08.288.111.431l.319 1.484a.237.237 0 01-.199.284h-.003c-.037.006-.075.01-.112.015a36.704 36.704 0 01-4.743.295 37.059 37.059 0 01-4.699-.304c-.14-.017-.293-.042-.417-.06-.326-.048-.649-.108-.973-.161-.393-.065-.768-.032-1.123.161-.29.16-.527.404-.675.701-.154.316-.199.66-.267 1-.069.34-.176.707-.135 1.056.087.753.613 1.365 1.37 1.502a39.69 39.69 0 0011.343.376.483.483 0 01.535.53l-.071.697-1.018 9.907c-.041.41-.047.832-.125 1.237-.122.637-.553 1.028-1.182 1.171-.577.131-1.165.2-1.756.205-.656.004-1.31-.025-1.966-.022-.699.004-1.556-.06-2.095-.58-.475-.458-.54-1.174-.605-1.793l-.731-7.013-.322-3.094c-.037-.351-.286-.695-.678-.678-.336.015-.718.3-.678.679l.228 2.185.949 9.112c.147 1.344 1.174 2.068 2.446 2.272.742.12 1.503.144 2.257.156.966.016 1.942.053 2.892-.122 1.408-.258 2.465-1.198 2.616-2.657.34-3.332.683-6.663 1.024-9.995l.215-2.087a.484.484 0 01.39-.426c.402-.078.787-.212 1.074-.518.455-.488.546-1.124.385-1.766zm-1.478.772c-.145.137-.363.201-.578.233-2.416.359-4.866.54-7.308.46-1.748-.06-3.477-.254-5.207-.498-.17-.024-.353-.055-.47-.18-.22-.236-.111-.71-.054-.995.052-.26.152-.609.463-.646.484-.057 1.046.148 1.526.22.577.088 1.156.159 1.737.212 2.48.226 5.002.19 7.472-.14.45-.06.899-.13 1.345-.21.399-.072.84-.206 1.08.206.166.281.188.657.162.974a.544.544 0 01-.169.364zm-6.159 3.9c-.862.37-1.84.788-3.109.788a5.884 5.884 0 01-1.569-.217l.877 9.004c.065.78.717 1.38 1.5 1.38 0 0 1.243.065 1.658.065.447 0 1.786-.065 1.786-.065.783 0 1.434-.6 1.499-1.38l.94-9.95a3.996 3.996 0 00-1.322-.238c-.826 0-1.491.284-2.26.613z"></path>
+            </svg>
+            Buy me a coffee
+          </a>
+        </div>
+
+        <button type="button" class="btn btn-primary btn-small" id="winModalDismiss">Got it</button>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import '../scripts/windows.js';
+</script>

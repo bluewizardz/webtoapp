@@ -36,6 +36,7 @@ const defaultStructuredData = structuredData || {
 const pathname = Astro.url.pathname;
 const isHome = pathname === '/' || pathname === '/index';
 const isAndroid = pathname.startsWith('/android');
+const isWindows = pathname.startsWith('/windows');
 const isAbout = pathname.startsWith('/about');
 const isFaq = pathname.startsWith('/faq');
 const isPrivacy = pathname.startsWith('/privacy');
@@ -120,6 +121,7 @@ const isPrivacy = pathname.startsWith('/privacy');
           <nav class="nav-links" aria-label="Secondary navigation">
             <a href="/" class={isHome ? "active" : ""}>Overview</a>
             <a href="/android" class={isAndroid ? "active" : ""}>Android APK</a>
+            <a href="/windows" class={isWindows ? "active" : ""}>Windows EXE</a>
             <span class="nav-disabled">iOS (Soon)</span>
           </nav>
 
