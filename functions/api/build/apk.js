@@ -43,6 +43,7 @@ export async function onRequestPost(context) {
     appId: body.appId || "com.example.app",
     appVersion: body.appVersion || "1.0.0",
     pullToRefresh: String(body.pullToRefresh !== false),
+    allowZoom: String(body.allowZoom === true),
     showSpinner: String(body.showSpinner !== false),
     showSplash: String(body.showSplash !== false),
     splashDuration: String(body.splashDuration || "2000"),

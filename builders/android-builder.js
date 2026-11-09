@@ -11,7 +11,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function buildAPK(params) {
   if (params && params.siteUrl) {
-    let raw = String(params.siteUrl).trim();
+    // Strip zero-width / bidi-invisible characters (e.g. U+2060) that break URLs pasted from chat apps
+    let raw = String(params.siteUrl).replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u2064\uFEFF]/g, '').trim();
     if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(raw)) {
       raw = 'https://' + raw;
     }
@@ -20,7 +21,8 @@ export async function buildAPK(params) {
   return await executeAndroidBuild(params);
 }
 
-async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, autoFetchIcon = true, showSpinner = true, pullToRefresh = true, showSplash = true, splashDuration = 2000, fullScreen = false, customUserAgent = null, buildId, buildsDir }) {
+async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, autoFetchIcon = true, showSpinner = true, pullToRefresh = true, allowZoom = false, showSplash = true, splashDuration = 2000, fullScreen = false, customUserAgent = null, buildId, buildsDir }) {
+  const enableZoom = allowZoom === true || allowZoom === 'true';
   const buildDir = path.join(buildsDir, buildId, 'android');
   const sanitizedThemeName = appName.replace(/[^a-zA-Z0-9]/g, '') || 'App';
   
@@ -236,6 +238,8 @@ dependencies {
   fs.writeFileSync(path.join(appDir, 'build.gradle'), buildGradleContent);
 
   // Create AndroidManifest.xml
+  // Cleartext HTTP is only permitted when the wrapped site itself is served over HTTP.
+  const allowCleartext = /^http:\/\//i.test(siteUrl);
   const manifestContent = `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:versionCode="1"
@@ -244,9 +248,19 @@ dependencies {
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <application
         android:allowBackup="true"
+        android:usesCleartextTraffic="${allowCleartext}"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -377,7 +391,15 @@ dependencies {
   const mainActivityContent = `package ${appId};
 
 import android.app.Activity;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.CookieManager;
+import android.webkit.GeolocationPermissions;
+import android.webkit.PermissionRequest;
+import android.webkit.ValueCallback;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -385,9 +407,26 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.widget.ProgressBar;
 
 public class MainActivity extends Activity {
+    private static final int REQ_FILE_CHOOSER = 1001;
+    private static final int REQ_PERMISSIONS = 1002;
+    // Identity providers that refuse to run their sign-in flow inside an embedded WebView
+    private static final String[] EXTERNAL_AUTH_HOSTS = {
+        "accounts.google.com",
+        "accounts.youtube.com",
+        "appleid.apple.com",
+        "login.microsoftonline.com",
+        "login.live.com",
+        "id.atlassian.com"
+    };
+
     private WebView webView;
     private SwipeRefreshLayout swipeRefresh;
     private ProgressBar progressBar;
+    private String siteHost = "";
+    private ValueCallback<Uri[]> filePathCallback;
+    private PermissionRequest pendingPermissionRequest;
+    private GeolocationPermissions.Callback pendingGeoCallback;
+    private String pendingGeoOrigin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -441,6 +480,19 @@ public class MainActivity extends Activity {
             webSettings.setUserAgentString(customUA);
         }
 
+        final boolean allowZoom = ${enableZoom};
+        webSettings.setSupportZoom(allowZoom);
+        webSettings.setBuiltInZoomControls(allowZoom);
+        webSettings.setDisplayZoomControls(false);
+
+        // Third-party cookies are off by default for apps targeting Lollipop or newer
+        CookieManager cookieManager = CookieManager.getInstance();
+        cookieManager.setAcceptCookie(true);
+        cookieManager.setAcceptThirdPartyCookies(webView, true);
+
+        Uri siteUri = Uri.parse("${siteUrl}");
+        siteHost = siteUri.getHost() == null ? "" : siteUri.getHost().toLowerCase();
+
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
@@ -474,8 +526,60 @@ public class MainActivity extends Activity {
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
+                return handleNavigation(url);
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
+                return handleNavigation(request.getUrl().toString());
+            }
+        });
+
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (filePathCallback != null) {
+                    filePathCallback.onReceiveValue(null);
+                }
+                filePathCallback = callback;
+                try {
+                    startActivityForResult(params.createIntent(), REQ_FILE_CHOOSER);
+                } catch (Exception e) {
+                    filePathCallback = null;
+                    return false;
+                }
                 return true;
+            }
+
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                java.util.ArrayList<String> missing = new java.util.ArrayList<>();
+                for (String resource : request.getResources()) {
+                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)
+                            && checkSelfPermission(android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                        missing.add(android.Manifest.permission.CAMERA);
+                    } else if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)
+                            && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                        missing.add(android.Manifest.permission.RECORD_AUDIO);
+                    }
+                }
+                if (!missing.isEmpty()) {
+                    pendingPermissionRequest = request;
+                    requestPermissions(missing.toArray(new String[0]), REQ_PERMISSIONS);
+                    return;
+                }
+                request.grant(request.getResources());
+            }
+
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    callback.invoke(origin, true, false);
+                } else {
+                    pendingGeoCallback = callback;
+                    pendingGeoOrigin = origin;
+                    requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQ_PERMISSIONS);
+                }
             }
         });
 
@@ -499,6 +603,107 @@ public class MainActivity extends Activity {
                     }
                 }
             }, splashDuration);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == REQ_PERMISSIONS) {
+            if (pendingPermissionRequest != null) {
+                PermissionRequest request = pendingPermissionRequest;
+                pendingPermissionRequest = null;
+                java.util.ArrayList<String> granted = new java.util.ArrayList<>();
+                for (String resource : request.getResources()) {
+                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)
+                            && checkSelfPermission(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                        granted.add(resource);
+                    } else if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)
+                            && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                        granted.add(resource);
+                    }
+                }
+                if (granted.isEmpty()) {
+                    request.deny();
+                } else {
+                    request.grant(granted.toArray(new String[0]));
+                }
+            }
+            if (pendingGeoCallback != null) {
+                GeolocationPermissions.Callback callback = pendingGeoCallback;
+                String origin = pendingGeoOrigin;
+                pendingGeoCallback = null;
+                pendingGeoOrigin = null;
+                callback.invoke(origin, checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED, false);
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == REQ_FILE_CHOOSER) {
+            if (filePathCallback != null) {
+                filePathCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
+                filePathCallback = null;
+            }
+            return;
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private boolean isSameSite(String host) {
+        if (host == null || host.isEmpty() || siteHost.isEmpty()) {
+            return false;
+        }
+        return host.equals(siteHost) || host.endsWith("." + siteHost);
+    }
+
+    private boolean isExternalAuthHost(String host) {
+        if (host == null) {
+            return false;
+        }
+        for (String authHost : EXTERNAL_AUTH_HOSTS) {
+            if (host.equals(authHost) || host.endsWith("." + authHost)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void openExternally(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            // No installed app can handle this link, so there is nothing to open.
+        }
+    }
+
+    private boolean handleNavigation(String url) {
+        try {
+            Uri uri = Uri.parse(url);
+            String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+            if (!scheme.equals("http") && !scheme.equals("https")) {
+                if (scheme.equals("intent")) {
+                    try {
+                        startActivity(Intent.parseUri(url, Intent.URI_INTENT_SCHEME));
+                    } catch (Exception e) {
+                        // Unresolvable intent link: drop it instead of crashing.
+                    }
+                    return true;
+                }
+                openExternally(url);
+                return true;
+            }
+            String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
+            if (!isSameSite(host) && isExternalAuthHost(host)) {
+                // Google and other providers block OAuth inside embedded WebViews
+                openExternally(url);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            return false;
         }
     }
 

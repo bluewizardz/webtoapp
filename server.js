@@ -162,7 +162,7 @@ app.get('/api/favicon', async (req, res) => {
 // Generate APK
 app.post('/api/build/apk', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon, autoFetchIcon, showSpinner, pullToRefresh, showSplash, splashDuration, fullScreen, customUserAgent } = req.body;
+    const { siteUrl, appName, appId, appVersion, icon, autoFetchIcon, showSpinner, pullToRefresh, allowZoom, showSplash, splashDuration, fullScreen, customUserAgent } = req.body;
     const buildId = uuidv4();
 
     if (!siteUrl || !appName || !appId) {
@@ -184,6 +184,7 @@ app.post('/api/build/apk', compilerLimiter, async (req, res) => {
         autoFetchIcon: autoFetchIcon !== false,
         showSpinner: showSpinner !== false,
         pullToRefresh: pullToRefresh !== false,
+        allowZoom: allowZoom === true,
         showSplash: showSplash !== false,
         splashDuration: splashDuration || 2000,
         fullScreen: fullScreen === true,
@@ -416,7 +417,7 @@ app.get('/api/download/:buildId', (req, res) => {
 // Batch build endpoint (individual polling per platform)
 app.post('/api/build/batch', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon, platforms, showSpinner, pullToRefresh } = req.body;
+    const { siteUrl, appName, appId, appVersion, icon, platforms, showSpinner, pullToRefresh, allowZoom } = req.body;
 
     if (!siteUrl || !appName || !appId || !platforms || platforms.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -437,6 +438,7 @@ app.post('/api/build/batch', compilerLimiter, async (req, res) => {
         icon, 
         showSpinner: showSpinner !== false, 
         pullToRefresh: pullToRefresh !== false, 
+        allowZoom: allowZoom === true, 
         buildId, 
         buildsDir: BUILDS_DIR 
       })
@@ -530,7 +532,7 @@ app.post('/api/build/batch', compilerLimiter, async (req, res) => {
 // Combined build endpoint — builds all selected platforms into one ZIP
 app.post('/api/build/combined', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon, platforms, showSpinner, pullToRefresh, showSplash, splashDuration, fullScreen, customUserAgent } = req.body;
+    const { siteUrl, appName, appId, appVersion, icon, platforms, showSpinner, pullToRefresh, allowZoom, showSplash, splashDuration, fullScreen, customUserAgent } = req.body;
 
     if (!siteUrl || !appName || !appId || !platforms || platforms.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -559,6 +561,7 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
               ...baseConfig, 
               showSpinner: showSpinner !== false, 
               pullToRefresh: pullToRefresh !== false, 
+              allowZoom: allowZoom === true, 
               showSplash: showSplash !== false,
               splashDuration: splashDuration || 2000,
               fullScreen: fullScreen === true,

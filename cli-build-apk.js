@@ -16,8 +16,9 @@ const showSplash = process.argv[8] === 'true';
 const splashDuration = parseInt(process.argv[9] || '2000', 10);
 const fullScreen = process.argv[10] === 'true';
 const customUserAgent = process.argv[11] || null;
+const allowZoom = process.argv[12] === 'true';
 
-const buildId = process.argv[12] || 'latest';
+const buildId = process.argv[13] || 'latest';
 const buildsDir = path.resolve('./builds-cli');
 
 console.log('--- SiteToApp CLI Build ---');
@@ -31,6 +32,7 @@ console.log('Show Splash Screen:', showSplash);
 console.log('Splash Duration:', splashDuration, 'ms');
 console.log('Full Screen Mode:', fullScreen);
 console.log('Custom User Agent:', customUserAgent);
+console.log('Allow Zoom:', allowZoom);
 console.log('---------------------------');
 
 buildAPK({
@@ -42,6 +44,7 @@ buildAPK({
   autoFetchIcon: true,
   showSpinner,
   pullToRefresh,
+  allowZoom,
   showSplash,
   splashDuration,
   fullScreen,

@@ -24,6 +24,11 @@ on:
         type: boolean
         required: true
         default: true
+      allowZoom:
+        description: 'Enable Pinch-to-Zoom'
+        type: boolean
+        required: true
+        default: false
       showSpinner:
         description: 'Enable Horizontal Load Progress Line'
         type: boolean
@@ -120,6 +125,7 @@ jobs:
             "${{ github.event.inputs.splashDuration }}" \
             "${{ github.event.inputs.fullScreen }}" \
             "${{ github.event.inputs.customUserAgent }}" \
+            "${{ github.event.inputs.allowZoom }}" \
             "${{ github.event.inputs.buildId }}"
 
       - name: Locate Built APK and Upload Artifact
