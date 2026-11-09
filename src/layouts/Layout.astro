@@ -56,6 +56,9 @@ const isPrivacy = pathname.startsWith('/privacy');
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <!-- Start the Buy Me a Coffee wordmark font before CSS is parsed, so the
+         header button never paints in its fallback font -->
+    <link rel="preload" href="/fonts/cookie-latin-400.woff2" as="font" type="font/woff2" crossorigin />
     
     <!-- Core SEO Meta Tags -->
     <title>{title}</title>
