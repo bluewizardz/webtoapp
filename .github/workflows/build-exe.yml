@@ -123,10 +123,11 @@ jobs:
           path: 'builds-cli/${{ github.event.inputs.buildId }}/*.exe'
           if-no-files-found: error
 
-      # The release asset is what the browser downloads: a public CDN URL,
-      # so the Cloudflare function can just redirect instead of proxying a
-      # ~100MB installer through the Worker.
-      - name: Publish Installer as Release Asset
+      # The installer is stored on a DRAFT release: it gives us a direct CDN
+      # download (via a signed asset URL) without cluttering the public
+      # Releases section. The Cloudflare function resolves the draft with the
+      # GITHUB_PAT (which needs Contents access) and redirects the browser.
+      - name: Publish Installer as Draft Release Asset
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -136,4 +137,4 @@ jobs:
             --repo "${{ github.repository }}" \
             --title "Windows build $TAG" \
             --notes "Automated Windows EXE for ${{ github.event.inputs.siteUrl }}" \
-            --latest=false
+            --draft
