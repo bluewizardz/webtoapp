@@ -18,22 +18,48 @@ const {
   structuredData
 } = Astro.props;
 
-// Construct default structured data if none provided
-const defaultStructuredData = structuredData || {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  "name": "SiteToApp",
-  "url": "https://sitetoapp.dev/",
-  "logo": "https://sitetoapp.dev/favicon.png",
-  "image": "https://sitetoapp.dev/brand-banner.png",
-  "operatingSystem": "Android",
-  "applicationCategory": "DeveloperApplication",
-  "offers": {
-    "@type": "Offer",
-    "price": "0.00",
-    "priceCurrency": "USD"
+// Site-wide entity graph (Organization + WebSite + SoftwareApplication).
+// Page-specific structured data (e.g. FAQPage) is merged in alongside it.
+const ORG_ID = "https://sitetoapp.dev/#org";
+const siteGraph = [
+  {
+    "@type": "Organization",
+    "@id": ORG_ID,
+    "name": "SiteToApp",
+    "url": "https://sitetoapp.dev/",
+    "logo": "https://sitetoapp.dev/favicon.png",
+    "description": "Free, open-source website-to-app converter. Build native Android (APK) and Windows (EXE) wrapper apps from any website URL — no coding, no login, no fees."
   },
-  "description": "Convert website URLs into native Android wrapper apps (APK) instantly with zero coding."
+  {
+    "@type": "WebSite",
+    "@id": "https://sitetoapp.dev/#website",
+    "url": "https://sitetoapp.dev/",
+    "name": "SiteToApp",
+    "publisher": { "@id": ORG_ID },
+    "inLanguage": "en"
+  },
+  {
+    "@type": "SoftwareApplication",
+    "name": "SiteToApp",
+    "url": "https://sitetoapp.dev/",
+    "logo": "https://sitetoapp.dev/favicon.png",
+    "image": "https://sitetoapp.dev/og-image.jpg",
+    "operatingSystem": "Android, Windows",
+    "applicationCategory": "DeveloperApplication",
+    "offers": {
+      "@type": "Offer",
+      "price": "0.00",
+      "priceCurrency": "USD"
+    },
+    "publisher": { "@id": ORG_ID },
+    "description": "Convert any website URL into fully functional native wrapper apps — Android APK and Windows EXE — instantly, with zero coding. Lightweight WebView wrappers, 100% free, no login required."
+  }
+];
+
+const structuredDataGraph = structuredData ? [structuredData] : [];
+const defaultStructuredData = {
+  "@context": "https://schema.org",
+  "@graph": [...siteGraph, ...structuredDataGraph]
 };
 
 const pathname = Astro.url.pathname;
@@ -41,6 +67,7 @@ const isHome = pathname === '/' || pathname === '/index';
 const isAndroid = pathname.startsWith('/android');
 const isWindows = pathname.startsWith('/windows');
 const isAbout = pathname.startsWith('/about');
+const isGuide = pathname.startsWith('/guides');
 const isFaq = pathname.startsWith('/faq');
 const isPrivacy = pathname.startsWith('/privacy');
 ---
@@ -59,6 +86,7 @@ const isPrivacy = pathname.startsWith('/privacy');
     </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preload" as="image" href="/brand-banner.webp" fetchpriority="high" type="image/webp" />
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <!-- Start the Buy Me a Coffee wordmark font before CSS is parsed, so the
@@ -77,9 +105,10 @@ const isPrivacy = pathname.startsWith('/privacy');
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:site_name" content="SiteToApp" />
-    <meta property="og:image" content="https://sitetoapp.dev/brand-banner.png" />
-    <meta property="og:image:width" content="800" />
-    <meta property="og:image:height" content="251" />
+    <meta property="og:image" content="https://sitetoapp.dev/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:alt" content="SiteToApp — website to app" />
 
     <!-- Twitter -->
@@ -87,7 +116,7 @@ const isPrivacy = pathname.startsWith('/privacy');
     <meta property="twitter:url" content={canonicalUrl} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content="https://sitetoapp.dev/brand-banner.png" />
+    <meta property="twitter:image" content="https://sitetoapp.dev/og-image.jpg" />
 
     <!-- Schema.org JSON-LD Structured Data -->
     <script type="application/ld+json" is:inline set:html={JSON.stringify(defaultStructuredData)} />
@@ -119,7 +148,7 @@ const isPrivacy = pathname.startsWith('/privacy');
     <header class="navbar" aria-label="Main navigation">
       <div class="navbar-container">
         <a href="/" class="brand" aria-label="SiteToApp Homepage">
-          <img class="brand-logo" src="/brand-banner.png" alt="SiteToApp" width="800" height="251" />
+          <img class="brand-logo" src="/brand-banner.webp" alt="SiteToApp" width="800" height="251" fetchpriority="high" />
         </a>
         
           <nav class="nav-links" aria-label="Secondary navigation">
@@ -163,9 +192,10 @@ const isPrivacy = pathname.startsWith('/privacy');
 
     <footer class="footer" aria-label="Footer">
       <div class="footer-container">
-        <img class="footer-logo" src="/brand-wordmark.png" alt="SiteToApp" width="600" height="131" loading="lazy" />
+        <img class="footer-logo" src="/brand-wordmark.webp" alt="SiteToApp" width="600" height="131" loading="lazy" />
         <div class="footer-links">
           <a href="/about" class={isAbout ? "active" : ""}>About Us</a>
+          <a href="/guides/publish-to-play-store" class={isGuide ? "active" : ""}>Publish Guide</a>
           <a href="/faq" class={isFaq ? "active" : ""}>FAQ</a>
           <a href="/privacy" class={isPrivacy ? "active" : ""}>Privacy Policy</a>
           <a href="mailto:discovereverything123@gmail.com">Contact Support</a>

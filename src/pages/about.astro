@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 
 const pageTitle = "About SiteToApp - Free Open-Source WebView Wrapper Project";
-const pageDescription = "Learn about our mission to democratize website-to-app conversions. We build secure, tracking-free, and lightweight native Android wrapper wrappers at zero cost.";
+const pageDescription = "Learn about the SiteToApp mission: free, secure, tracking-free website-to-app conversion into lightweight native Android (APK) and Windows (EXE) wrapper apps at zero cost.";
 ---
 
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page">
@@ -10,16 +10,34 @@ const pageDescription = "Learn about our mission to democratize website-to-app c
     <article class="content-panel">
       <h1>About SiteToApp</h1>
       <p>SiteToApp was born out of a simple goal: to make website-to-app packaging fully accessible, secure, and developer-friendly without charging fees or adding bloat.</p>
-      
-      <h2>Our Mission</h2>
-      <p>Typically, packaging a web application for mobile distribution involves setting up heavy developer environments like Android Studio, Gradle, and managing nested package structures. The other alternative is using subscription-based services that bundle tracking scripts, advertisements, or slow, outdated engines.</p>
-      <p>We believe in democratizing application compiles. By delivering clean, boilerplate native Java wrapper projects featuring standard WebView clients, you get compile-ready codebases that conform to standard Android guidelines, with absolutely zero dependency on third-party frameworks.</p>
 
-      <h2>Zero Server Costs</h2>
-      <p>SiteToApp runs compiles using secure, automated processes. We compile standard projects on our platform, but we also include fully configured <strong>GitHub Actions</strong> pipelines directly inside your downloaded ZIP package. This allows you to deploy and build release configurations on GitHub's secure infrastructure completely for free.</p>
+      <h2>Our Mission</h2>
+      <p>Typically, packaging a web application for mobile distribution involves standing up heavy developer environments like Android Studio, Gradle, and managing nested package structures. The other alternative is subscription-based services that bundle tracking scripts, advertisements, or slow, outdated rendering engines behind a paywall.</p>
+      <p>We believe in democratizing application compiles. By delivering clean, boilerplate native Java wrapper projects featuring standard WebView clients, you get compile-ready codebases that conform to standard Android guidelines — with absolutely zero dependency on third-party frameworks.</p>
+
+      <h2>How SiteToApp Works</h2>
+      <p>Enter your website URL and a few details (app name, icon, and features) into our <a href="/android">Android</a> or <a href="/windows">Windows</a> builder. Our build pipeline then generates a complete native project on the fly: for Android, a standard Java WebView wrapper compiled into an APK; for Windows, an Electron or Tauri desktop application packaged as an NSIS installer or portable EXE. You download the finished app (and, if you want, the full source workspace) in minutes — no signup, no install, no local toolchain.</p>
+      <p>Because every wrapper simply loads your live website in a native WebView, content changes on your site show up in the app instantly. You only need to rebuild when you change the app name, icon, package ID, or native features.</p>
+
+      <h2>What You Get</h2>
+      <ul>
+        <li><strong>A ready-to-install app</strong> — a signed or signable APK / Windows EXE you can install on any device immediately.</li>
+        <li><strong>The full source ZIP</strong> — the complete Java/Gradle (Android) or Electron/Tauri (Windows) project, with your icon, splash screen, and feature settings applied.</li>
+        <li><strong>CI/CD pre-configured</strong> — every workspace ships with GitHub Actions workflows, so you can rebuild and ship new versions on GitHub's secure infrastructure completely for free.</li>
+        <li><strong>Full ownership</strong> — the compiled code is yours. No licenses, no seat limits, no attribution required.</li>
+      </ul>
+
+      <h2>Who It's For</h2>
+      <p>SiteToApp is built for small businesses, creators, and indie developers who have a website and want an app on every store — without hiring an app developer or learning a native toolchain. It also works well for teams who need a quick, standards-compliant wrapper to prototype or ship behind a native shell, then iterate locally with the downloaded source.</p>
 
       <h2>Security First</h2>
-      <p>Your source code remains your own. We do not inject telemetry, analytics SDKs, or background services into your wrapper. Everything matches standard native Android Java structures, ensuring lightweight, high-performance execution on any device.</p>
+      <p>Your source code remains your own. We do not inject telemetry, analytics SDKs, or background services into your wrapper, and we never see your site credentials — you only ever give us a public URL and a logo. Everything matches standard native Android Java / desktop app structures, ensuring lightweight, high-performance execution on any device. Read the details on our <a href="/privacy">Privacy Policy</a> page.</p>
+
+      <h2>Zero Server Costs, Forever Free</h2>
+      <p>We keep compiles cheap by leaning on free infrastructure: builds run through GitHub Actions, and the generated workspace includes its own Actions pipeline so future builds cost nothing at all. There are no tiers, no credits, and no surprise invoices — SiteToApp is 100% free, forever.</p>
+
+      <h2>Open Source</h2>
+      <p>The builder, templates, and build workflows are an open project. You can inspect exactly what lands inside your app, contribute improvements, or fork the pipeline for your own needs. Generated wrappers are yours to use, modify, and publish — including on the Google Play Store, as explained in our <a href="/guides/publish-to-play-store">publishing guide</a>.</p>
 
       <h2>Support & Bug Reporting</h2>
       <p>For any inquiries, configuration help, or bug reports, please email our support team at <a href="mailto:discovereverything123@gmail.com">discovereverything123@gmail.com</a>. We aim to respond to queries promptly.</p>
