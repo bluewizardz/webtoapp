@@ -153,10 +153,9 @@ button, input {
 }
 
 .brand-logo {
-  color: #6366f1;
-}
-.light-theme .brand-logo {
-  color: #4f46e5;
+  display: block;
+  height: 40px;
+  width: auto;
 }
 
 .theme-toggle {
@@ -580,6 +579,13 @@ button, input {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+}
+
+.footer-logo {
+  display: block;
+  height: 26px;
+  width: auto;
+  margin-bottom: 20px;
 }
 
 .footer-links {
@@ -2056,6 +2062,10 @@ input[type="file"]::file-selector-button:active {
     gap: 6px;
   }
 
+  .brand-logo {
+    height: 34px;
+  }
+
   .nav-links {
     margin-left: 12px;
     gap: 4px;
@@ -2151,12 +2161,12 @@ input[type="file"]::file-selector-button:active {
     padding: 4px 8px;
   }
 
-  .hero-title {
-    font-size: 1.7rem;
+  .brand-logo {
+    height: 28px;
   }
 
-  .brand-text {
-    font-size: 0.95rem;
+  .hero-title {
+    font-size: 1.7rem;
   }
 
   .hero-subtitle {

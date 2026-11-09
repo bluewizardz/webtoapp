@@ -23,6 +23,9 @@ const defaultStructuredData = structuredData || {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   "name": "SiteToApp",
+  "url": "https://sitetoapp.dev/",
+  "logo": "https://sitetoapp.dev/favicon.png",
+  "image": "https://sitetoapp.dev/brand-banner.png",
   "operatingSystem": "Android",
   "applicationCategory": "DeveloperApplication",
   "offers": {
@@ -56,7 +59,8 @@ const isPrivacy = pathname.startsWith('/privacy');
     </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <!-- Start the Buy Me a Coffee wordmark font before CSS is parsed, so the
          header button never paints in its fallback font -->
     <link rel="preload" href="/fonts/cookie-latin-400.woff2" as="font" type="font/woff2" crossorigin />
@@ -73,12 +77,17 @@ const isPrivacy = pathname.startsWith('/privacy');
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:site_name" content="SiteToApp" />
+    <meta property="og:image" content="https://sitetoapp.dev/brand-banner.png" />
+    <meta property="og:image:width" content="800" />
+    <meta property="og:image:height" content="251" />
+    <meta property="og:image:alt" content="SiteToApp — website to app" />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={canonicalUrl} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content="https://sitetoapp.dev/brand-banner.png" />
 
     <!-- Schema.org JSON-LD Structured Data -->
     <script type="application/ld+json" is:inline set:html={JSON.stringify(defaultStructuredData)} />
@@ -110,12 +119,7 @@ const isPrivacy = pathname.startsWith('/privacy');
     <header class="navbar" aria-label="Main navigation">
       <div class="navbar-container">
         <a href="/" class="brand" aria-label="SiteToApp Homepage">
-          <svg class="brand-logo" viewBox="0 0 24 24" style="width: 20px; height: 20px;" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
-            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-            <path d="M12 18h.01"></path>
-            <path d="M9 6h6"></path>
-          </svg>
-          <span class="brand-text">SiteToApp</span>
+          <img class="brand-logo" src="/brand-banner.png" alt="SiteToApp" width="800" height="251" />
         </a>
         
           <nav class="nav-links" aria-label="Secondary navigation">
@@ -159,6 +163,7 @@ const isPrivacy = pathname.startsWith('/privacy');
 
     <footer class="footer" aria-label="Footer">
       <div class="footer-container">
+        <img class="footer-logo" src="/brand-wordmark.png" alt="SiteToApp" width="600" height="131" loading="lazy" />
         <div class="footer-links">
           <a href="/about" class={isAbout ? "active" : ""}>About Us</a>
           <a href="/faq" class={isFaq ? "active" : ""}>FAQ</a>
