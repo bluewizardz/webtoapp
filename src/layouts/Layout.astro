@@ -56,10 +56,14 @@ const siteGraph = [
   }
 ];
 
-const structuredDataGraph = structuredData ? [structuredData] : [];
+const pageGraph = !structuredData
+  ? []
+  : Array.isArray(structuredData)
+    ? structuredData
+    : (structuredData["@graph"] ? structuredData["@graph"] : [structuredData]);
 const defaultStructuredData = {
   "@context": "https://schema.org",
-  "@graph": [...siteGraph, ...structuredDataGraph]
+  "@graph": [...siteGraph, ...pageGraph]
 };
 
 const pathname = Astro.url.pathname;
@@ -68,6 +72,7 @@ const isAndroid = pathname.startsWith('/android');
 const isWindows = pathname.startsWith('/windows');
 const isAbout = pathname.startsWith('/about');
 const isGuide = pathname.startsWith('/guides');
+const isUpdates = pathname.startsWith('/updates');
 const isFaq = pathname.startsWith('/faq');
 const isPrivacy = pathname.startsWith('/privacy');
 ---
@@ -89,9 +94,11 @@ const isPrivacy = pathname.startsWith('/privacy');
     <link rel="preload" as="image" href="/brand-banner.webp" fetchpriority="high" type="image/webp" />
     <link rel="icon" type="image/png" sizes="512x512" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin />
     <!-- Start the Buy Me a Coffee wordmark font before CSS is parsed, so the
          header button never paints in its fallback font -->
     <link rel="preload" href="/fonts/cookie-latin-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/geist-variable.woff2" as="font" type="font/woff2" crossorigin />
     
     <!-- Core SEO Meta Tags -->
     <title>{title}</title>
@@ -121,14 +128,7 @@ const isPrivacy = pathname.startsWith('/privacy');
     <!-- Schema.org JSON-LD Structured Data -->
     <script type="application/ld+json" is:inline set:html={JSON.stringify(defaultStructuredData)} />
 
-    <!-- Font Preloading for Web Performance -->
-    <link
-      rel="preload"
-      href="/fonts/geist-variable.woff2"
-      as="font"
-      type="font/woff2"
-      crossorigin="anonymous"
-    />
+    <!-- Font Preloading for Web Performance (<link rel="preload"> above) -->
 
     <!-- Theme Inline Script to prevent FOUC -->
     <script is:inline>
@@ -195,7 +195,8 @@ const isPrivacy = pathname.startsWith('/privacy');
         <img class="footer-logo" src="/brand-wordmark.webp" alt="SiteToApp" width="600" height="131" loading="lazy" />
         <div class="footer-links">
           <a href="/about" class={isAbout ? "active" : ""}>About Us</a>
-          <a href="/guides/publish-to-play-store" class={isGuide ? "active" : ""}>Publish Guide</a>
+          <a href="/guides" class={isGuide ? "active" : ""}>Guides</a>
+          <a href="/updates" class={isUpdates ? "active" : ""}>Updates</a>
           <a href="/faq" class={isFaq ? "active" : ""}>FAQ</a>
           <a href="/privacy" class={isPrivacy ? "active" : ""}>Privacy Policy</a>
           <a href="mailto:discovereverything123@gmail.com">Contact Support</a>

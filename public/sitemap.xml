@@ -1,34 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://sitetoapp.dev/</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://sitetoapp.dev/og-image.jpg</image:loc>
+      <image:title>SiteToApp — website to app</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://sitetoapp.dev/android</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://sitetoapp.dev/og-image.jpg</image:loc>
+      <image:title>SiteToApp Android APK builder</image:title>
+    </image:image>
   </url>
   <url>
     <loc>https://sitetoapp.dev/windows</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://sitetoapp.dev/og-image.jpg</image:loc>
+      <image:title>SiteToApp Windows EXE builder</image:title>
+    </image:image>
   </url>
   <url>
-    <loc>https://sitetoapp.dev/faq</loc>
+    <loc>https://sitetoapp.dev/guides</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>https://sitetoapp.dev/guides/publish-to-play-store</loc>
     <lastmod>2026-11-09</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://sitetoapp.dev/guides/sign-apk</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sitetoapp.dev/guides/website-to-desktop-windows</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sitetoapp.dev/guides/webview-vs-electron-vs-tauri</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sitetoapp.dev/updates</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://sitetoapp.dev/faq</loc>
+    <lastmod>2026-11-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://sitetoapp.dev/about</loc>

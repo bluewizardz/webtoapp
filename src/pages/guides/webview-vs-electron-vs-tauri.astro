@@ -1,0 +1,55 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const pageTitle = "WebView vs Electron vs Tauri: Which Wrapper Should You Use?";
+const pageDescription = "Compare the three ways to turn a website into a native app: Android WebView, Electron, and Tauri. App size, performance, ecosystem, and when SiteToApp picks each for you.";
+
+const breadcrumb = {
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sitetoapp.dev/" },
+    { "@type": "ListItem", "position": 2, "name": "Guides", "item": "https://sitetoapp.dev/guides" },
+    { "@type": "ListItem", "position": 3, "name": "WebView vs Electron vs Tauri: Which Wrapper Should You Use?" }
+  ]
+};
+
+const compareSchema = { "@graph": [{
+  "@type": "Article",
+  "headline": "WebView vs Electron vs Tauri: Which Wrapper Should You Use?",
+  "author": { "@type": "Organization", "@id": "https://sitetoapp.dev/#org", "name": "SiteToApp" },
+  "publisher": { "@type": "Organization", "@id": "https://sitetoapp.dev/#org", "name": "SiteToApp", "logo": { "@type": "ImageObject", "url": "https://sitetoapp.dev/favicon.png" } },
+  "description": "A practical comparison of Android WebView, Electron, and Tauri for wrapping a website into a native app: size, performance, feature access, and ecosystem.",
+  "about": { "@type": "Thing", "name": "Website app wrapper technology" }
+}, breadcrumb]};
+---
+
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={compareSchema}>
+  <main class="shell">
+    <article class="content-panel">
+      <h1>WebView vs Electron vs Tauri: Which Wrapper Should You Use?</h1>
+      <p>Every "website to app" tool is really a <em>wrapper</em>: a native shell that renders your website using a system browser engine. The three shells that matter — Android WebView, Electron, and Tauri — differ a lot in size, speed, and capability. Here's how to think about them, and how SiteToApp picks the right one for each platform.</p>
+
+      <h2>Android WebView (APK wrappers)</h2>
+      <p>On Android, the wrapper is a tiny native Java <code>Activity</code> hosting a <code>WebView</code> — the same WebKit engine Chrome uses, already installed on every device. The result is an APK of roughly <strong>30–60 KB</strong> (plus your assets), with pull-to-refresh, splash screens, and full access to Android APIs. Because the engine is shared with the OS, apps are fast to download, fast to start, and trivially pass Play Store policy review. This is what SiteToApp's <a href="/android">Android builder</a> generates.</p>
+
+      <h2>Electron (Windows EXE wrappers)</h2>
+      <p>Electron bundles a full Chromium + Node.js runtime with your app. The upside is maximal power: native file system access, background workers, auto-updates, and a massive plugin ecosystem — any website feature you can imagine works. The downside is size: <strong>~65–90 MB</strong> per app, and slower cold starts while Chromium boots. It's the safest choice when your app needs Node.js or exotic native APIs. This is SiteToApp's default <a href="/windows">Windows EXE</a> engine.</p>
+
+      <h2>Tauri (Windows EXE wrappers)</h2>
+      <p>Tauri takes the opposite approach: a small Rust shell that reuses the system's WebView (Edge WebView2 on Windows). Installers shrink to <strong>~5–10 MB</strong>, memory use drops to a fraction of Electron's, and cold starts are near-instant. The trade-off is a smaller ecosystem and no Node.js runtime, so some native integrations need Rust or OS-level glue code. SiteToApp offers Tauri as a one-click alternative in the <a href="/windows">Windows builder</a> — pick it when size and speed matter most.</p>
+
+      <h2>Head-to-head</h2>
+      <ul>
+        <li><strong>App size:</strong> WebView (~0.05 MB) &lt; Tauri (~5–10 MB) &lt; Electron (~65–90 MB)</li>
+        <li><strong>Cold start:</strong> WebView and Tauri are near-instant; Electron pays a Chromium boot cost.</li>
+        <li><strong>Native features:</strong> Electron has the most; Tauri and WebView cover the standard API surface.</li>
+        <li><strong>Ecosystem:</strong> Electron has the largest; Tauri is growing fast; WebView is platform-native.</li>
+      </ul>
+
+      <h2>Which should you choose?</h2>
+      <p>If your users are on Android, WebView is the obvious pick — it's what SiteToApp builds in the <a href="/android">APK builder</a>. For Windows, ask two questions: <em>does the app need Node.js or obscure native APIs?</em> → Electron. <em>Is a lean, fast, modern installer more important?</em> → Tauri. When in doubt, the <a href="/windows">Windows builder</a> shows both size estimates side by side so you can decide with real numbers.</p>
+
+      <p>Ready to build? Start with the <a href="/android">Android APK builder</a> or the <a href="/windows">Windows EXE builder</a>, then ship it with our <a href="/guides/publish-to-play-store">Play Store publishing guide</a>.</p>
+    </article>
+  </main>
+</Layout>

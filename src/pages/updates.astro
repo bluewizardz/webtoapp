@@ -1,0 +1,63 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const pageTitle = "SiteToApp Updates & Changelog";
+const pageDescription = "What's new in SiteToApp: Tauri build engine for tiny Windows EXEs, draft-release publishing, redesigned builder previews, new brand assets, SEO upgrades, and more. Free forever.";
+
+const updatesSchema = {
+  "@context": "https://schema.org",
+  "@type": "Blog",
+  "name": "SiteToApp Updates",
+  "url": "https://sitetoapp.dev/updates",
+  "inLanguage": "en",
+  "publisher": { "@type": "Organization", "@id": "https://sitetoapp.dev/#org", "name": "SiteToApp" },
+  "blogPost": [
+    {
+      "@type": "BlogPosting",
+      "headline": "Tauri Engine + Draft Releases",
+      "datePublished": "2026-11-09",
+      "inLanguage": "en",
+      "description": "Windows builds now offer a Tauri engine (~5–10 MB vs ~70–90 MB) alongside Electron, and EXE builds publish to draft releases so they no longer clutter GitHub Releases."
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Brand Refresh + SEO Upgrade",
+      "datePublished": "2026-11-09",
+      "inLanguage": "en",
+      "description": "New brand assets (navbar banner, favicon, social card), full SEO pass: structured graphs, sitemap, guides hub, and performance improvements (WebP, fetchpriority, cache headers)."
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Windows EXE Builder Launch",
+      "datePublished": "2026-10-15",
+      "inLanguage": "en",
+      "description": "Convert websites into Windows desktop apps: Electron-powered NSIS installers and portable EXEs with a live preview and GitHub Actions CI included."
+    }
+  ]
+};
+---
+
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={updatesSchema}>
+  <main class="shell">
+    <article class="content-panel">
+      <h1>Updates &amp; Changelog</h1>
+      <p>What's new in SiteToApp. Everything below is free forever — no tiers, no credits.</p>
+
+      <h2>November 2026 — Tauri Engine + Draft Releases</h2>
+      <p>Windows EXE builds now let you pick a <strong>Tauri engine</strong> (~5–10 MB) alongside the classic Electron engine (~65–90 MB). EXE builds also publish to <strong>draft releases</strong>, so finished installers no longer clutter the repository's public Releases section — direct CDN downloads still work via signed URLs. Builder previews were redesigned to match the Android page, and metadata now never truncates long app names or IDs.</p>
+
+      <h2>November 2026 — Brand Refresh + SEO Upgrade</h2>
+      <p>New brand identity: navbar banner, WebP-optimized wordmark, favicon, and a 1200×630 social card. Under the hood: Organization/WebSite/FAQ/HowTo structured data on every page, a complete sitemap, security headers, immutable caching, and preloaded fonts for faster loads.</p>
+      <p>New content: the <a href="/guides">guides hub</a> with step-by-step tutorials — <a href="/guides/publish-to-play-store">publishing to the Google Play Store</a>, <a href="/guides/sign-apk">signing your APK</a>, <a href="/guides/website-to-desktop-windows">building Windows desktop apps</a>, and <a href="/guides/webview-vs-electron-vs-tauri">WebView vs Electron vs Tauri</a>.</p>
+
+      <h2>October 2026 — Windows EXE Builder Launch</h2>
+      <p>Convert websites into Windows desktop apps: Electron-powered NSIS installers and portable EXEs, with engine selection, a live device preview, and a ready-made GitHub Actions workflow inside every workspace ZIP. Start at the <a href="/windows">Windows builder</a>.</p>
+
+      <h2>Earlier — Android APK Builder</h2>
+      <p>The original release: free website-to-APK conversion with a native Java WebView wrapper (~30–60 KB APK), pull-to-refresh, splash screen, offline fallback, and a workspace ZIP with CI/CD. Start at the <a href="/android">Android builder</a>.</p>
+
+      <h2>Stay in the loop</h2>
+      <p>Questions about any release? Check the <a href="/faq">FAQ</a> or email support at <a href="mailto:discovereverything123@gmail.com">discovereverything123@gmail.com</a>.</p>
+    </article>
+  </main>
+</Layout>

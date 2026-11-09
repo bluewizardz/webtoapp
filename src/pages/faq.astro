@@ -70,6 +70,24 @@ const faqSchema = {
       <h2>How do I publish the app to the Google Play Store?</h2>
       <p>Follow our step-by-step <a href="/guides/publish-to-play-store">Play Store publishing guide</a>: it covers building and testing your APK, creating a Play Console developer account, uploading the release, completing the store listing, and submitting for review.</p>
 
+      <h2>How much does it cost to publish my app?</h2>
+      <p>SiteToApp itself is <strong>free forever</strong> — no subscriptions, no fees, no limits on builds. The only costs are the platforms': Google Play Console charges a one-time <strong>$25 USD</strong> developer registration. The Microsoft Store has its own registration fee. See the <a href="/guides/publish-to-play-store">publishing guide</a> for the full checklist.</p>
+
+      <h2>Is it legal to convert my website into an app?</h2>
+      <p>Yes — wrapping your own website (or one you have rights to distribute) in a native app shell is legal and common. You must own the rights to the site's content and comply with the platform's developer policies (Google Play, Microsoft Store). The generated wrapper itself contains no third-party code, so there are no licensing surprises.</p>
+
+      <h2>How big is the app I get?</h2>
+      <p>The Android wrapper compiles to roughly <strong>30–60 KB</strong> because it reuses the system WebView. For Windows, pick the <strong>Tauri engine (~5–10 MB)</strong> for a lean installer or the <strong>Electron engine (~65–90 MB)</strong> for maximum Node.js compatibility — see our <a href="/guides/webview-vs-electron-vs-tauri">WebView vs Electron vs Tauri comparison</a> for the trade-offs.</p>
+
+      <h2>Can I add ads or push notifications?</h2>
+      <p>The generated wrapper is a clean WebView with no ad SDKs or tracking code — that's by design. If you need ads or push notifications, download the full source workspace and add your preferred SDKs in Android Studio or your Electron/Tauri project. The wrapper gives you a standards-compliant starting point, not a locked box.</p>
+
+      <h2>Do I need Android Studio or any software installed?</h2>
+      <p>No. Builds run on our CI (GitHub Actions), so you get a finished APK download in minutes from any browser. Android Studio is only needed if you want to customize the generated source code locally — which is exactly why every download includes the full workspace ZIP.</p>
+
+      <h2>How is the Windows EXE different from the Android APK?</h2>
+      <p>The Windows builder wraps your site in a desktop shell instead of a mobile one. You choose between Electron (max compatibility) and Tauri (small, fast), then pick an NSIS installer or a portable EXE. Walk through it in our <a href="/guides/website-to-desktop-windows">website-to-Windows-desktop guide</a>.</p>
+
       <h2>Still have questions or found a bug?</h2>
       <p>If you have any further questions, need assistance, or want to report a bug, please contact our support team at <a href="mailto:discovereverything123@gmail.com">discovereverything123@gmail.com</a>.</p>
     </article>

@@ -267,6 +267,26 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
       </aside>
     </div>
 
+    <!-- SEO content -->
+    <article class="content-panel" style="margin-top: 40px;">
+      <h2>Convert a website to a Windows desktop app</h2>
+      <p>Turn any website into a standalone desktop application — no coding, no local toolchain. The <a href="/windows">Windows builder</a> compiles a native wrapper around your site in about a minute and hands you a signed installer or portable EXE plus the full source workspace.</p>
+
+      <h2>Choosing between Tauri and Electron</h2>
+      <p>Two engines are available, with size estimates shown right in the builder:</p>
+      <ul>
+        <li><strong>Tauri (~5–10 MB)</strong> — a lightweight Rust shell around the Windows WebView2 engine. Fast cold start, tiny install. Pick this for most sites.</li>
+        <li><strong>Electron (~65–90 MB)</strong> — a full Chromium + Node.js runtime. Maximum compatibility and plugin support. Pick this when your site needs Node features or exotic native APIs.</li>
+      </ul>
+      <p>See the full breakdown in our <a href="/guides/webview-vs-electron-vs-tauri">WebView vs Electron vs Tauri comparison</a>.</p>
+
+      <h2>How to install the EXE</h2>
+      <p>Choose the <strong>NSIS installer</strong> for a standard setup wizard (recommended for distributing to customers) or the <strong>portable</strong> build for a single EXE that runs from anywhere. If Windows SmartScreen warns that the installer is unsigned, click <strong>More info → Run anyway</strong> — the app is a clean wrapper around your website with no malware or trackers (see our <a href="/privacy">privacy policy</a>).</p>
+
+      <h2>Converting a website to a Windows desktop app, step by step</h2>
+      <p>Our <a href="/guides/website-to-desktop-windows">complete guide to building Windows desktop apps from websites</a> walks through engine selection, packaging choice, building, and distribution — including how to ship through the Microsoft Store.</p>
+    </article>
+
     <!-- SmartScreen notice (shown when a download starts) -->
     <div class="notice-overlay" id="winModal" hidden>
       <div class="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="winModalTitle" aria-describedby="winModalText">

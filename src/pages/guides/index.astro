@@ -1,0 +1,40 @@
+---
+import Layout from '../../layouts/Layout.astro';
+
+const pageTitle = "Guides - Website to App Tutorials & Publishing Checklists";
+const pageDescription = "Step-by-step guides for SiteToApp users: publish your APK to the Google Play Store, sign your app for release, convert sites to Windows EXE apps, and compare WebView, Electron, and Tauri.";
+
+const guidesSchema = {
+  "@context": "https://schema.org",
+  "@type": "CollectionPage",
+  "name": "SiteToApp Guides",
+  "about": { "@type": "Thing", "name": "Website to app tutorials" },
+  "hasPart": [
+    { "@type": "Article", "name": "How to Publish Your Website App to the Google Play Store", "url": "https://sitetoapp.dev/guides/publish-to-play-store" },
+    { "@type": "Article", "name": "How to Sign an APK for Google Play Store Publishing", "url": "https://sitetoapp.dev/guides/sign-apk" },
+    { "@type": "Article", "name": "How to Convert a Website to a Windows Desktop App (EXE)", "url": "https://sitetoapp.dev/guides/website-to-desktop-windows" },
+    { "@type": "Article", "name": "WebView vs Electron vs Tauri: Which Wrapper Should You Use?", "url": "https://sitetoapp.dev/guides/webview-vs-electron-vs-tauri" }
+  ]
+};
+---
+
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={guidesSchema}>
+  <main class="shell">
+    <article class="content-panel">
+      <h1>Guides</h1>
+      <p>Practical, step-by-step tutorials for turning your website into a native app — and shipping it. Start from the <a href="/android">Android</a> or <a href="/windows">Windows</a> builders, then follow the guides for publishing, signing, and picking the right engine.</p>
+
+      <h2><a href="/guides/publish-to-play-store">Publish Your Website App to the Google Play Store</a></h2>
+      <p>From a finished APK to a live Play Store listing: build, test, create a Play Console account, upload the release, complete your store listing, and submit for review. Free and no-code.</p>
+
+      <h2><a href="/guides/sign-apk">Sign an APK for Play Store Publishing</a></h2>
+      <p>Generate a keystore, sign the release build with apksigner, verify the signature, and upload — the signing walkthrough that unblocks Play Console submissions.</p>
+
+      <h2><a href="/guides/website-to-desktop-windows">Convert a Website to a Windows Desktop App (EXE)</a></h2>
+      <p>Build a standalone Windows app from any website: choose the Electron or Tauri engine, pick an NSIS installer or portable EXE, and distribute it to your users.</p>
+
+      <h2><a href="/guides/webview-vs-electron-vs-tauri">WebView vs Electron vs Tauri: Which Wrapper Should You Use?</a></h2>
+      <p>App size, performance, features, and ecosystem — a practical comparison of the three wrapper technologies, and how to pick between them for your project.</p>
+    </article>
+  </main>
+</Layout>

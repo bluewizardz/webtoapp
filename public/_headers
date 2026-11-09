@@ -1,3 +1,12 @@
+# Security headers for every response (static + API)
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; connect-src 'self' https://www.googletagmanager.com https://www.google-analytics.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
 # Static assets — cache aggressively (filenames are content-hashed by the
 # build or stable brand owns long-lived reuse).
 /_astro/*
@@ -22,5 +31,4 @@
   Cache-Control: public, max-age=86400
 
 # Pages should revalidate; static shell can stay fresh.
-/
-  Cache-Control: public, max-age=0, must-revalidate
+/  Cache-Control: public, max-age=0, must-revalidate
