@@ -673,7 +673,7 @@
       pullToRefresh: els.pullToRefresh.checked,
       allowZoom: els.allowZoom.checked,
       showSplash: els.showSplash.checked,
-      splashDuration: parseInt(els.splashDuration.value, 10) || 2000,
+      splashDuration: Math.min(10000, Math.max(500, parseInt(els.splashDuration.value, 10) || 2000)),
       fullScreen: els.fullScreen.checked,
       customUserAgent: els.customUserAgent.value
     };
