@@ -22,6 +22,8 @@ export function tryExec(cmd, options = {}) {
   } catch (e) {
     console.log(`[build-utils] Command failed: ${cmd}`);
     console.log(`[build-utils] Error: ${e.message}`);
+    if (e.stdout) console.log(`[build-utils] stdout:\n${e.stdout.toString().trim()}`);
+    if (e.stderr) console.log(`[build-utils] stderr:\n${e.stderr.toString().trim()}`);
     return false;
   }
 }
@@ -357,7 +359,7 @@ export async function tryBuildElectron(buildDir, target, platform, extension) {
     console.log(`[build-utils] Running electron-builder ${platform} ${target}...`);
     const localBuilder = path.join(buildDir, 'node_modules', '.bin', 'electron-builder');
     const builderCmd = fs.existsSync(localBuilder)
-      ? localBuilder
+      ? `"${localBuilder}"`
       : 'npx --no-install electron-builder';
     if (!tryExec(`${builderCmd} ${platform} ${target} --publish never`, { cwd: buildDir, timeout: 600000 })) {
       return null;

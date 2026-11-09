@@ -3,6 +3,7 @@ node_modules/
 
 # Local build artifacts
 builds/
+builds-cli/
 
 # Environment files
 .env

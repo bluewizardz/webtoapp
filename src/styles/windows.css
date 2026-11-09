@@ -482,7 +482,7 @@
   place-items: center;
   width: 18px;
   height: 18px;
-  border-radius: 4px;
+  border-radius: 50%;
   overflow: hidden;
   background: var(--win-accent);
   color: #ffffff;
@@ -543,7 +543,7 @@
   place-items: center;
   width: 56px;
   height: 56px;
-  border-radius: 12px;
+  border-radius: 50%;
   overflow: hidden;
   background: var(--win-accent);
   color: #ffffff;
@@ -594,7 +594,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  border-radius: 6px;
+  border-radius: 50%;
   overflow: hidden;
   background: var(--win-accent-tint);
   border: 1px solid var(--win-accent-border);

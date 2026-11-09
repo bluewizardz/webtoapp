@@ -1145,7 +1145,7 @@ button:not(:has(svg)):not(.theme-toggle)::before {
 .splash-icon {
   width: 56px;
   height: 56px;
-  border-radius: 16px;
+  border-radius: 50%;
   background: var(--primary-color);
   display: grid;
   place-items: center;
@@ -1167,7 +1167,7 @@ button:not(:has(svg)):not(.theme-toggle)::before {
 .screen img {
   width: 54px;
   height: 54px;
-  border-radius: 14px;
+  border-radius: 50%;
 }
 
 .screen span {
@@ -1416,7 +1416,7 @@ button:not(:has(svg)):not(.theme-toggle)::before {
 .icon-preview-wrapper {
   width: 48px;
   height: 48px;
-  border-radius: 10px;
+  border-radius: 50%;
   border: 1px solid var(--accents-3);
   display: grid;
   place-items: center;

@@ -79,6 +79,13 @@ jobs:
           restore-keys: |
             electron-win-
 
+      - name: Cache shared Electron dependencies
+        if: ${{ github.event.inputs.engine != 'tauri' }}
+        uses: actions/cache@v4
+        with:
+          path: builds-cli/cache/electron-shared/node_modules
+          key: electron-node-modules-win-node22-${{ hashFiles('builders/windows-builder.js', 'builders/build-utils.js') }}
+
       # Tauri compiles the wrapper in Rust, so it needs the toolchain. It is
       # preinstalled on windows-latest but we pin stable explicitly to avoid drift.
       - name: Set up Rust (Tauri)

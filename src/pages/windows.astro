@@ -34,17 +34,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
             <span>Build engine</span>
             <div class="engine-options" role="radiogroup" aria-label="Build engine">
               <label class="engine-option">
-                <input type="radio" name="winEngine" value="electron" checked>
-                <span class="engine-body">
-                  <span class="engine-head">
-                    <strong>Electron</strong>
-                    <span class="engine-size">~70–90 MB</span>
-                  </span>
-                  <small>Bundles Chromium. Fully self-contained and works offline.</small>
-                </span>
-              </label>
-              <label class="engine-option">
-                <input type="radio" name="winEngine" value="tauri">
+                <input type="radio" name="winEngine" value="tauri" checked>
                 <span class="engine-body">
                   <span class="engine-head">
                     <strong>Tauri</strong>
@@ -53,10 +43,20 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
                   <small>Uses the system WebView2. Tiny download, needs Windows 10/11.</small>
                 </span>
               </label>
+              <label class="engine-option">
+                <input type="radio" name="winEngine" value="electron">
+                <span class="engine-body">
+                  <span class="engine-head">
+                    <strong>Electron</strong>
+                    <span class="engine-size">~70–90 MB</span>
+                  </span>
+                  <small>Bundles Chromium. Fully self-contained and works offline.</small>
+                </span>
+              </label>
             </div>
           </div>
 
-          <p class="defaults-hint" id="winDefaultsHint">Defaults: version 1.0.0 · 1200×800 window · NSIS installer · Electron · auto favicon</p>
+          <p class="defaults-hint" id="winDefaultsHint">Defaults: version 1.0.0 · 1200×800 window · NSIS installer · Tauri · auto favicon</p>
         </div>
 
         <details class="advanced-panel" id="winAdvanced">

@@ -78,7 +78,7 @@ function createWindow() {
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#0b0f16',
-    icon: path.join(__dirname, '..', 'assets', 'icon.ico'),
+    icon: path.join(process.resourcesPath, 'icon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -174,6 +174,7 @@ contextBridge.exposeInMainWorld('api', {
       productName: appName,
       artifactName: `${safeName}.exe`,
       files: ['src/**/*', 'package.json'],
+      extraResources: [{ from: 'assets/icon.ico', to: 'icon.ico' }],
       // Ship only the source and the Electron runtime: no dev deps, no native
       // rebuild, and maximum compression keep the installer as small as possible.
       compression: 'maximum',
@@ -183,14 +184,6 @@ contextBridge.exposeInMainWorld('api', {
       // Bundling every Chromium locale adds ~10-15 MB for a WebView wrapper that
       // never shows Chromium UI. English is enough.
       electronLanguages: ['en-US'],
-      // Disable unused Electron capabilities; this removes a little size and
-      // tightens security without affecting the wrapped website.
-      electronFuses: {
-        runAsNode: false,
-        enableNodeOptionsEnvironmentVariable: false,
-        enableNodeCliInspectArguments: false,
-        onlyLoadAppFromAsar: true
-      },
       directories: {
         output: 'dist',
         buildResources: 'assets'

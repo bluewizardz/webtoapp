@@ -55,7 +55,7 @@
   const DEFAULTS = {
     appVersion: "1.0.0",
     installerType: "nsis",
-    engine: "electron",
+    engine: "tauri",
     windowWidth: 1200,
     windowHeight: 800,
     fullScreen: false,
@@ -403,6 +403,7 @@
   function loadImage(src) {
     return new Promise((resolve, reject) => {
       const img = new Image();
+      img.crossOrigin = "anonymous";
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error("favicon-unavailable"));
       img.src = src;
@@ -554,7 +555,13 @@
 
   // === Build ===
 
-  function readConfig() {
+  async function readConfig() {
+    if (!uploadedIcon && els.autoIcon && els.autoIcon.checked && !fetchedIcon) {
+      if (faviconTimer) clearTimeout(faviconTimer);
+      faviconTimer = null;
+      await refreshFavicon();
+    }
+
     const url = normalizeUrl(els.url.value);
     const name = String(els.name.value || "").trim() || deriveName(url);
     return {
@@ -652,10 +659,10 @@
 
   // === Listeners ===
 
-  els.form.addEventListener("submit", (event) => {
+  els.form.addEventListener("submit", async (event) => {
     event.preventDefault();
     try {
-      const config = readConfig();
+      const config = await readConfig();
       runBuild(config);
     } catch (error) {
       setStatus(error.message, "error");
