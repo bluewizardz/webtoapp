@@ -30,6 +30,9 @@
     splashDuration: document.querySelector("#splashDuration"),
     fullScreen: document.querySelector("#fullScreen"),
     customUserAgent: document.querySelector("#customUserAgent"),
+    advancedPanel: document.querySelector("#advancedPanel"),
+    advancedBadge: document.querySelector("#advancedBadge"),
+    resetDefaultsButton: document.querySelector("#resetDefaultsButton"),
     
     // Progress Bar
     buildProgress: document.querySelector("#buildProgress"),
@@ -67,6 +70,7 @@
   };
 
   let packageWasEdited = false;
+  let nameWasEdited = false;
   let base64Icon = null;
 
   const javaKeywords = new Set([
@@ -172,9 +176,18 @@
     return /^\d+\.\d+\.\d+([-.][a-z0-9.-]+)?$/i.test(version) ? version : "1.0.0";
   }
 
+  function deriveAppName(urlValue) {
+    try {
+      const hostname = new URL(normalizeUrl(urlValue)).hostname.replace(/^www\./i, "");
+      return titleCaseFromSlug(slugify(hostname.split(".")[0], "site-app"));
+    } catch (error) {
+      return "Site App";
+    }
+  }
+
   function getAppConfig() {
     const url = normalizeUrl(els.siteUrl.value);
-    const name = String(els.appName.value || "").trim() || titleCaseFromSlug(slugify(new URL(url).hostname, "site-app"));
+    const name = String(els.appName.value || "").trim() || deriveAppName(url);
     const version = normalizeVersion(els.appVersion.value);
     const appId = normalizePackageId(els.appId.value || derivePackageId(url, name));
     return {
@@ -488,9 +501,14 @@
   }
 
   function updatePreview() {
+    const hasUrl = String(els.siteUrl.value || "").trim().length > 0;
     try {
+      // The name is derived from the URL until the user types their own
+      if (!nameWasEdited) {
+        els.appName.value = hasUrl ? deriveAppName(els.siteUrl.value) : "";
+      }
       if (!packageWasEdited) {
-        els.appId.value = derivePackageId(els.siteUrl.value, els.appName.value);
+        els.appId.value = hasUrl ? derivePackageId(els.siteUrl.value, els.appName.value) : "";
       }
       const app = getAppConfig();
       els.previewName.textContent = app.name;
@@ -502,7 +520,7 @@
     } catch (error) {
       els.previewName.textContent = els.appName.value || "Site App";
       els.previewUrl.textContent = els.siteUrl.value || "https://example.com";
-      setMessage(error.message, "error");
+      setMessage(hasUrl ? error.message : "Ready", hasUrl ? "error" : "ok");
     }
 
     // Icon Preview Handling
@@ -519,6 +537,7 @@
     }
 
     updatePhonePreview();
+    updateAdvancedBadge();
   }
 
   // === Phone Preview ===
@@ -662,6 +681,105 @@
     }
   }
 
+  // === Simple vs Advanced Settings ===
+
+  const ADVANCED_STORAGE_KEY = "siteapp_advanced_settings";
+  const ADVANCED_OPEN_KEY = "siteapp_advanced_open";
+
+  const DEFAULTS = {
+    appVersion: "1.0.0",
+    showSpinner: true,
+    pullToRefresh: true,
+    allowZoom: false,
+    showSplash: true,
+    splashDuration: 2000,
+    fullScreen: false,
+    customUserAgent: ""
+  };
+
+  function getAdvancedState() {
+    return {
+      appVersion: els.appVersion.value,
+      showSpinner: els.showSpinner.checked,
+      pullToRefresh: els.pullToRefresh.checked,
+      allowZoom: els.allowZoom.checked,
+      showSplash: els.showSplash.checked,
+      splashDuration: String(els.splashDuration.value),
+      fullScreen: els.fullScreen.checked,
+      customUserAgent: els.customUserAgent.value
+    };
+  }
+
+  function applyAdvancedState(state) {
+    if (!state) return;
+    if (typeof state.appVersion === "string" && state.appVersion) {
+      els.appVersion.value = state.appVersion;
+    }
+    if (typeof state.showSpinner === "boolean") els.showSpinner.checked = state.showSpinner;
+    if (typeof state.pullToRefresh === "boolean") els.pullToRefresh.checked = state.pullToRefresh;
+    if (typeof state.allowZoom === "boolean") els.allowZoom.checked = state.allowZoom;
+    if (typeof state.showSplash === "boolean") els.showSplash.checked = state.showSplash;
+    if (state.splashDuration != null) els.splashDuration.value = state.splashDuration;
+    if (typeof state.fullScreen === "boolean") els.fullScreen.checked = state.fullScreen;
+    if (typeof state.customUserAgent === "string") els.customUserAgent.value = state.customUserAgent;
+    els.splashDurationField.style.display = els.showSplash.checked ? "block" : "none";
+  }
+
+  function countCustomOptions() {
+    const state = getAdvancedState();
+    let count = 0;
+    if (normalizeVersion(state.appVersion) !== DEFAULTS.appVersion) count += 1;
+    if (state.showSpinner !== DEFAULTS.showSpinner) count += 1;
+    if (state.pullToRefresh !== DEFAULTS.pullToRefresh) count += 1;
+    if (state.allowZoom !== DEFAULTS.allowZoom) count += 1;
+    if (state.showSplash !== DEFAULTS.showSplash) count += 1;
+    if ((parseInt(state.splashDuration, 10) || DEFAULTS.splashDuration) !== DEFAULTS.splashDuration) count += 1;
+    if (state.fullScreen !== DEFAULTS.fullScreen) count += 1;
+    if (String(state.customUserAgent || "").trim() !== DEFAULTS.customUserAgent) count += 1;
+    return count;
+  }
+
+  function updateAdvancedBadge() {
+    if (!els.advancedBadge) return;
+    const count = countCustomOptions();
+    els.advancedBadge.hidden = count === 0;
+    els.advancedBadge.textContent = count > 0 ? count + " custom" : "";
+  }
+
+  function persistAdvanced() {
+    try {
+      localStorage.setItem(ADVANCED_STORAGE_KEY, JSON.stringify(getAdvancedState()));
+      localStorage.setItem(ADVANCED_OPEN_KEY, els.advancedPanel && els.advancedPanel.open ? "1" : "0");
+    } catch {}
+  }
+
+  function restoreAdvanced() {
+    try {
+      const raw = localStorage.getItem(ADVANCED_STORAGE_KEY);
+      if (raw) applyAdvancedState(JSON.parse(raw));
+      if (els.advancedPanel) els.advancedPanel.open = localStorage.getItem(ADVANCED_OPEN_KEY) === "1";
+    } catch {}
+  }
+
+  function resetAdvancedDefaults() {
+    els.appVersion.value = DEFAULTS.appVersion;
+    els.showSpinner.checked = DEFAULTS.showSpinner;
+    els.pullToRefresh.checked = DEFAULTS.pullToRefresh;
+    els.allowZoom.checked = DEFAULTS.allowZoom;
+    els.showSplash.checked = DEFAULTS.showSplash;
+    els.splashDuration.value = DEFAULTS.splashDuration;
+    els.fullScreen.checked = DEFAULTS.fullScreen;
+    els.customUserAgent.value = DEFAULTS.customUserAgent;
+    els.splashDurationField.style.display = "block";
+    els.autoFetchIcon.checked = true;
+    base64Icon = null;
+    els.appIcon.value = "";
+    packageWasEdited = false;
+    updateIconUploadState();
+    updatePreview();
+    persistAdvanced();
+  }
+
   // === Event Listeners ===
 
   els.form.addEventListener("submit", async (event) => {
@@ -763,18 +881,46 @@
     updatePhonePreview();
   });
 
-  [
-    els.siteUrl,
-    els.appName,
-    els.appVersion
-  ].forEach((el) => {
+  [els.siteUrl, els.appVersion].forEach((el) => {
     el.addEventListener("input", updatePreview);
     el.addEventListener("change", updatePreview);
   });
 
+  els.appName.addEventListener("input", () => {
+    nameWasEdited = true;
+    updatePreview();
+  });
+
+  els.appName.addEventListener("change", () => {
+    // Clearing the field hands the label back to the URL-derived name
+    if (!String(els.appName.value || "").trim()) {
+      nameWasEdited = false;
+      updatePreview();
+    }
+  });
+
+  if (els.advancedPanel) {
+    els.advancedPanel.addEventListener("toggle", persistAdvanced);
+
+    const advancedBody = els.advancedPanel.querySelector(".advanced-body");
+    if (advancedBody) {
+      ["input", "change"].forEach((eventName) => {
+        advancedBody.addEventListener(eventName, () => {
+          updateAdvancedBadge();
+          persistAdvanced();
+        });
+      });
+    }
+  }
+
+  if (els.resetDefaultsButton) {
+    els.resetDefaultsButton.addEventListener("click", resetAdvancedDefaults);
+  }
+
   // === Init ===
-  els.siteUrl.value = "https://example.com";
-  els.appName.value = "Site App";
+  els.siteUrl.value = "";
+  els.appName.value = "";
+  restoreAdvanced();
   updatePreview();
   renderHistory();
 

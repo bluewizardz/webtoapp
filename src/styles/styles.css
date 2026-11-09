@@ -1338,6 +1338,96 @@ button, input {
   letter-spacing: 0.08em;
 }
 
+/* === Simple Zone & Advanced Panel === */
+.simple-zone {
+  margin-bottom: 8px;
+}
+
+.defaults-hint {
+  margin: -8px 0 24px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--accents-5);
+}
+
+.advanced-panel {
+  border: 1px solid var(--accents-3);
+  border-radius: 12px;
+  background: var(--accents-1);
+  margin-bottom: 28px;
+}
+
+.advanced-summary {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--accents-5);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  list-style: none;
+  transition: var(--transition);
+}
+
+.advanced-summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced-summary:hover {
+  color: var(--foreground);
+}
+
+.advanced-summary:focus-visible {
+  outline: 2px solid #6366f1;
+  outline-offset: -2px;
+}
+
+.advanced-summary::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  margin-left: auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.advanced-panel[open] .advanced-summary::after {
+  transform: rotate(-135deg);
+}
+
+.advanced-label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.advanced-badge {
+  margin-left: 8px;
+  padding: 3px 8px;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.08);
+  color: #6366f1;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.advanced-body {
+  padding: 20px 20px 22px;
+  border-top: 1px solid var(--accents-3);
+}
+
+.advanced-body > .features-fieldset:last-of-type {
+  margin-bottom: 20px;
+}
+
 .check-row {
   display: flex;
   align-items: flex-start;
