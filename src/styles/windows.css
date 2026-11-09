@@ -1,11 +1,14 @@
 /* === Windows builder theme ===
    Scoped to .windows-page so the Android builder and landing page keep their
-   own palette. Accent values follow the Windows 11 system accent. */
+   own palette. Accent values follow Windows 11 system accent blue consistently. */
 
 .windows-page {
   --win-accent: #0078d4;
   --win-accent-hover: #106ebe;
   --win-accent-pressed: #005a9e;
+  --win-accent-tint: rgba(0, 120, 212, 0.08);
+  --win-accent-border: rgba(0, 120, 212, 0.35);
+  --win-accent-ring: rgba(0, 120, 212, 0.22);
   --win-titlebar: #1f1f1f;
   --win-titlebar-text: #f3f3f3;
   --win-body-bg: #141414;
@@ -16,6 +19,12 @@
 
 .light-theme .windows-page,
 :root.light-theme .windows-page {
+  --win-accent: #0067b8;
+  --win-accent-hover: #005da6;
+  --win-accent-pressed: #004f8c;
+  --win-accent-tint: rgba(0, 103, 184, 0.08);
+  --win-accent-border: rgba(0, 103, 184, 0.35);
+  --win-accent-ring: rgba(0, 103, 184, 0.2);
   --win-titlebar: #f3f3f3;
   --win-titlebar-text: #1b1b1b;
   --win-body-bg: #fafafa;
@@ -24,16 +33,20 @@
   --win-muted: #6b6b6b;
 }
 
-/* Accent only inside the Windows builder */
+/* === Primary & Secondary Buttons === */
 .windows-page .btn-primary {
   background: var(--win-accent);
   color: #ffffff;
-  box-shadow: none;
+  border: none;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
 }
 
 .windows-page .btn-primary:hover {
   background: var(--win-accent-hover);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .windows-page .btn-primary:active {
@@ -41,17 +54,19 @@
   transform: translateY(0);
 }
 
-.windows-page .progress-fill {
-  background: var(--win-accent);
+.windows-page .btn-secondary:hover {
+  border-color: var(--win-accent);
+  color: var(--win-accent);
 }
 
-.windows-page .status-pill {
-  color: var(--win-accent);
-  border-color: rgba(0, 120, 212, 0.35);
-}
-
-.windows-page .advanced-summary:hover .advanced-label {
-  color: var(--win-accent);
+/* === Text Inputs & Controls Focus States === */
+.windows-page .field input:focus,
+.windows-page input[type="text"]:focus,
+.windows-page input[type="number"]:focus,
+.windows-page input[type="url"]:focus {
+  border-color: var(--win-accent) !important;
+  box-shadow: 0 0 0 3px var(--win-accent-ring) !important;
+  outline: none;
 }
 
 .windows-page select {
@@ -70,7 +85,7 @@
 .windows-page select:focus-visible {
   outline: none;
   border-color: var(--win-accent);
-  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.18);
+  box-shadow: 0 0 0 3px var(--win-accent-ring);
 }
 
 .windows-page input[type="number"] {
@@ -83,14 +98,194 @@
   gap: 12px;
 }
 
-/* === Preview === */
+/* === Toggle Switches & Checkmarks in Windows Blue === */
+.windows-page input[type="checkbox"]:checked + .toggle-switch {
+  background: var(--win-accent);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.15);
+}
 
+.windows-page input[type="checkbox"]:focus-visible + .toggle-switch {
+  outline: 2px solid var(--win-accent);
+  outline-offset: 2px;
+}
+
+.windows-page input[type="checkbox"]:checked + .check-mark {
+  background: var(--win-accent);
+  border-color: var(--win-accent);
+  box-shadow: none;
+}
+
+.windows-page input[type="checkbox"]:focus-visible + .check-mark {
+  outline: 2px solid var(--win-accent);
+  outline-offset: 2px;
+}
+
+/* === Progress Fill & Status Pill === */
+.windows-page .progress-fill {
+  background: var(--win-accent);
+}
+
+.windows-page .status-pill {
+  color: var(--win-accent);
+  border-color: var(--win-accent-border);
+}
+
+.windows-page .status-pill::before {
+  background-color: var(--win-accent);
+}
+
+/* === Advanced Panel Accordion === */
+.windows-page .advanced-summary:hover .advanced-label {
+  color: var(--win-accent);
+}
+
+.windows-page .advanced-badge {
+  border-color: var(--win-accent-border);
+  background: var(--win-accent-tint);
+  color: var(--win-accent);
+}
+
+/* === Info Banner & Success Banner === */
+.windows-page .info-banner {
+  border-color: var(--win-accent-border);
+  background: var(--win-accent-tint);
+}
+
+.windows-page .info-banner svg {
+  color: var(--win-accent);
+}
+
+.windows-page .build-success {
+  color: var(--win-accent);
+  border-color: var(--win-accent-border);
+  background: var(--win-accent-tint);
+}
+
+.windows-page .build-success svg {
+  color: var(--win-accent);
+}
+
+.windows-page .retry-link,
+.windows-page .build-retry a {
+  color: var(--win-accent);
+}
+
+.windows-page .retry-link:hover,
+.windows-page .build-retry a:hover {
+  color: var(--win-accent-hover);
+}
+
+/* === Dialog Modal === */
+.windows-page .notice-dialog {
+  border-color: var(--win-accent-border);
+}
+
+.windows-page .notice-dialog .btn-primary {
+  background: var(--win-accent);
+}
+
+.windows-page .notice-dialog .btn-primary:hover {
+  background: var(--win-accent-hover);
+}
+
+/* === Links === */
+.windows-page a:not(.btn) {
+  color: var(--win-accent);
+}
+
+.windows-page a:not(.btn):hover {
+  color: var(--win-accent-hover);
+}
+
+/* === Build Engine Selector === */
+.windows-page .engine-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+
+.windows-page .engine-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--accents-3);
+  border-radius: 12px;
+  background: var(--accents-1);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.windows-page .engine-option:hover {
+  border-color: var(--win-accent);
+}
+
+.windows-page .engine-option:has(input:checked) {
+  border-color: var(--win-accent);
+  background: var(--win-accent-tint);
+  box-shadow: inset 0 0 0 1px var(--win-accent);
+}
+
+.windows-page .engine-option input[type="radio"] {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: var(--win-accent);
+  cursor: pointer;
+}
+
+.windows-page .engine-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.windows-page .engine-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.windows-page .engine-head strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.windows-page .engine-size {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--win-accent);
+  background: var(--win-accent-tint);
+  border: 1px solid var(--win-accent-border);
+  white-space: nowrap;
+}
+
+.windows-page .engine-size--small {
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.windows-page .engine-body small {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--accents-5);
+}
+
+/* === Desktop Window Preview === */
 .win-preview-wrap {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 32px 20px;
-  margin-bottom: 28px;
+  padding: 24px 16px;
+  margin-bottom: 24px;
   background-color: var(--accents-2);
   border: 1px solid var(--accents-3);
   border-radius: 16px;
@@ -98,16 +293,16 @@
 
 .win-frame {
   width: 100%;
-  max-width: 460px;
+  max-width: 480px;
   border: 1px solid var(--win-border);
   border-radius: 10px;
   overflow: hidden;
   background: var(--win-body-bg);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 .light-theme .win-frame {
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 .win-titlebar {
@@ -118,6 +313,7 @@
   padding-left: 12px;
   background: var(--win-titlebar);
   color: var(--win-titlebar-text);
+  border-bottom: 1px solid var(--win-border);
 }
 
 .win-title-left {
@@ -128,7 +324,7 @@
 }
 
 .win-title-text {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -138,13 +334,13 @@
 .win-app-icon {
   display: grid;
   place-items: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
   overflow: hidden;
   background: var(--win-accent);
   color: #ffffff;
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 800;
   flex: 0 0 auto;
 }
@@ -168,19 +364,19 @@
   display: grid;
   place-items: center;
   width: 44px;
-  font-size: 0.62rem;
+  font-size: 0.65rem;
   opacity: 0.85;
 }
 
 .win-ctrl-close {
-  font-size: 0.6rem;
+  font-size: 0.65rem;
 }
 
 .win-body {
   position: relative;
-  height: 250px;
+  height: 240px;
   background:
-    radial-gradient(circle at 30% 20%, rgba(0, 120, 212, 0.16), transparent 55%),
+    radial-gradient(circle at 30% 20%, var(--win-accent-tint), transparent 60%),
     var(--win-body-bg);
 }
 
@@ -199,18 +395,19 @@
 .win-page-icon {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 56px;
+  height: 56px;
   border-radius: 12px;
   overflow: hidden;
-  background: linear-gradient(135deg, #0078d4, #004e8c);
+  background: var(--win-accent);
   color: #ffffff;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 800;
+  box-shadow: var(--shadow-sm);
 }
 
 .win-page-name {
-  font-size: 0.92rem;
+  font-size: 0.95rem;
   font-weight: 700;
   color: var(--foreground);
 }
@@ -218,7 +415,7 @@
 .win-page-url {
   max-width: 92%;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--win-muted);
   word-break: break-all;
   overflow-wrap: anywhere;
@@ -249,20 +446,20 @@
 .win-tile {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
   overflow: hidden;
-  background: rgba(0, 120, 212, 0.16);
-  border: 1px solid rgba(0, 120, 212, 0.5);
+  background: var(--win-accent-tint);
+  border: 1px solid var(--win-accent-border);
   color: var(--foreground);
-  font-size: 0.6rem;
+  font-size: 0.65rem;
   font-weight: 800;
 }
 
 .win-clock {
   margin-left: auto;
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: var(--win-muted);
 }
 
@@ -272,7 +469,7 @@
 }
 
 .win-frame.is-fullscreen .win-body {
-  height: 330px;
+  height: 318px;
 }
 
 @media (max-width: 520px) {
@@ -281,112 +478,6 @@
   }
 
   .win-preview-wrap {
-    padding: 24px 8px;
+    padding: 20px 8px;
   }
-}
-
-/* === Build engine selector === */
-.windows-page .engine-options {
-  display: grid;
-  gap: 10px;
-}
-
-.windows-page .engine-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--accents-3);
-  border-radius: 10px;
-  background: var(--accents-1);
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.windows-page .engine-option:hover {
-  border-color: var(--win-accent);
-}
-
-.windows-page .engine-option:has(input:checked) {
-  border-color: var(--win-accent);
-  background: rgba(0, 120, 212, 0.08);
-  box-shadow: inset 0 0 0 1px var(--win-accent);
-}
-
-.windows-page .engine-option input[type="radio"] {
-  flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
-  margin-top: 3px;
-  accent-color: var(--win-accent);
-  cursor: pointer;
-}
-
-.windows-page .engine-body {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-.windows-page .engine-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.windows-page .engine-head strong {
-  font-size: 0.92rem;
-  font-weight: 800;
-  color: var(--foreground);
-}
-
-.windows-page .engine-size {
-  flex: 0 0 auto;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--win-accent);
-  background: rgba(0, 120, 212, 0.14);
-  white-space: nowrap;
-}
-
-.windows-page .engine-size--small {
-  color: #10b981;
-  background: rgba(16, 185, 129, 0.14);
-}
-
-.windows-page .engine-body small {
-  font-size: 0.8rem;
-  line-height: 1.45;
-  color: var(--accents-5);
-}
-
-/* Secondary button — Windows-accented outline style */
-.windows-page .btn-secondary {
-  border-color: rgba(0, 120, 212, 0.4);
-  color: var(--win-accent);
-}
-
-.windows-page .btn-secondary:hover {
-  border-color: var(--win-accent);
-  background: rgba(0, 120, 212, 0.08);
-  color: var(--win-accent);
-}
-
-/* Input focus rings */
-.windows-page input[type="text"]:focus-visible,
-.windows-page input[type="number"]:focus-visible,
-.windows-page textarea:focus-visible {
-  border-color: var(--win-accent);
-  box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.18);
-  outline: none;
-}
-
-/* Engine radio option selected accent */
-.windows-page .engine-option input:checked + .engine-body {
-  border-color: rgba(0, 120, 212, 0.4);
-  background: rgba(0, 120, 212, 0.07);
 }

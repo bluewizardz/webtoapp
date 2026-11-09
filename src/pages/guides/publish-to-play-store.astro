@@ -31,59 +31,206 @@ const guideSchema = {
 
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={guideSchema}>
   <main class="shell">
-    <article class="content-panel">
-      <h1>How to Publish Your Website App to the Google Play Store</h1>
-      <p>You've built your Android wrapper APK with SiteToApp — now let's get it live on the Play Store. This guide walks every step, from testing on a real device to hitting <strong>Start rollout</strong> in Play Console. No coding required. If you haven't built your app yet, start at the <a href="/android">Android builder</a>.</p>
+    <header class="page-hero">
+      <nav class="page-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li aria-current="page">Play Store Publishing</li>
+        </ol>
+      </nav>
+      <p class="page-eyebrow">Android Publishing Guide</p>
+      <h1>How to Publish Your Website App to Google Play</h1>
+      <p class="page-lede">A comprehensive, step-by-step walkthrough taking you from a website URL to a live app listing on the Google Play Store — zero coding required.</p>
+    </header>
 
-      <h2>Before you start: a quick checklist</h2>
-      <ul>
-        <li>Your APK downloaded and tested on at least one real Android device</li>
-        <li>An app icon (512×512 PNG) and a feature graphic (1024×500 PNG)</li>
-        <li>At least two phone screenshots captured from the device preview</li>
-        <li>A short description (≤80 chars) and a full description of your app</li>
-        <li>A link to your privacy policy page — every Play Store app needs one (<a href="/privacy">use ours as a reference</a>)</li>
-      </ul>
+    <div class="guide-layout">
+      <!-- Sticky Navigation & Overview Sidebar -->
+      <aside class="guide-sidebar" aria-label="Guide overview and navigation">
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a Glance</h2>
+          <div class="guide-meta-box">
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Time</span>
+              <span class="guide-meta-val">9 min read</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Level</span>
+              <span class="guide-meta-val">No Code</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Platform</span>
+              <span class="guide-meta-val">Android</span>
+            </div>
+            <div class="guide-meta-item">
+              <span class="guide-meta-label">Cost</span>
+              <span class="guide-meta-val">$25 (Google)</span>
+            </div>
+          </div>
+        </div>
 
-      <h2>Step 1 — Build and download your APK</h2>
-      <p>Open the <a href="/android">Android builder</a>, enter your website URL, app name, package ID (e.g. <code>com.yourbrand.app</code>), and icon. Enable the features you need — pull-to-refresh, splash screen, loading spinner, fullscreen mode — then click <em>Build Android APK</em>. After a short compile, download the APK directly or grab the full workspace ZIP if you want to build and sign it yourself in Android Studio.</p>
-      <p><strong>Pro tip:</strong> choose a memorable, all-lowercase package ID like <code>com.coffeeshop.app</code>. You can never change it after publishing.</p>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Step Navigation</h2>
+          <nav class="guide-toc-nav" aria-label="Table of contents">
+            <a href="#step-1" class="guide-toc-link"><span class="guide-toc-num">01</span> Build APK</a>
+            <a href="#step-2" class="guide-toc-link"><span class="guide-toc-num">02</span> Device Testing</a>
+            <a href="#step-3" class="guide-toc-link"><span class="guide-toc-num">03</span> Play Console</a>
+            <a href="#step-4" class="guide-toc-link"><span class="guide-toc-num">04</span> Upload Release</a>
+            <a href="#step-5" class="guide-toc-link"><span class="guide-toc-num">05</span> Store Listing</a>
+            <a href="#step-6" class="guide-toc-link"><span class="guide-toc-num">06</span> Submit Review</a>
+            <a href="#maintenance" class="guide-toc-link"><span class="guide-toc-num">07</span> Maintenance</a>
+          </nav>
+        </div>
 
-      <h2>Step 2 — Test on a real device</h2>
-      <p>Before submitting, install the APK on your Android phone: go to <strong>Settings → Security</strong> and enable <strong>Install unknown apps</strong> for your browser or file manager, then tap the downloaded APK. Run through these checks:</p>
-      <ul>
-        <li>Does the site load correctly and quickly?</li>
-        <li>Does the splash screen appear and dismiss cleanly?</li>
-        <li>Does pull-to-refresh work?</li>
-        <li>Does the back button behave as expected?</li>
-      </ul>
-      <p>If anything looks off, fix it in the builder and recompile — it takes under a minute.</p>
+        <div class="guide-sidebar-card">
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Need an APK?</h2>
+          <p style="font-size: 0.86rem; color: var(--accents-6); line-height: 1.5; margin: 0 0 12px;">Generate your free Android APK with native pull-to-refresh and splash screen.</p>
+          <a href="/android" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;">Open Android Builder</a>
+        </div>
+      </aside>
 
-      <h2>Step 3 — Create a Google Play Console developer account</h2>
-      <p>Go to <a href="https://play.google.com/console" target="_blank" rel="noopener noreferrer">play.google.com/console</a> and register. There is a one-time <strong>$25 USD fee</strong> (charged by Google, not SiteToApp). You'll need a valid payment method, identity verification, and a contact email. Approval typically arrives within one to two business days.</p>
+      <!-- Main Guide Stepper Body -->
+      <div class="guide-content">
+        
+        <div class="callout callout-info" style="margin-top: 0;">
+          <div class="callout-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <div>
+            <strong>Overview:</strong> SiteToApp compiles your website into a standards-compliant native Android Java wrapper APK in minutes. Follow these 6 steps to release your app on the Google Play Store without hiring a developer.
+          </div>
+        </div>
 
-      <h2>Step 4 — Create the app and upload your release</h2>
-      <p>Inside Play Console, click <strong>Create app</strong>. Choose your app's name, default language, type (App, not Game), and pricing (Free). Then navigate to <strong>Production → Releases → Create new release → Upload</strong> and add your APK. Play Console will flag the target API level — the SiteToApp wrapper follows current Android guidelines, so this step is straightforward.</p>
-      <p>Write clear release notes — even a first release benefits from a short sentence like <em>"Initial release."</em></p>
+        <!-- Step 1 -->
+        <article class="guide-step-card" id="step-1">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 01</span>
+            <h2>Build your app APK with SiteToApp</h2>
+          </div>
+          <p>On the <a href="/android">Android builder</a>, enter your website URL, app name, package ID, and icon. Enable the features you need — pull-to-refresh, splash screen, loading indicator, and fullscreen mode — then click <strong>Build &amp; Download APK</strong>.</p>
+          <p>After a short compilation (roughly 1.5–2 minutes), download the APK directly, or grab the full workspace ZIP containing the Gradle project, assets, and GitHub Actions CI/CD workflows.</p>
+          
+          <div class="callout callout-tip">
+            <div class="callout-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+            </div>
+            <div>
+              <strong>Pro Tip:</strong> Choose an Package ID formatted as <code>com.yourbrand.appname</code>. Google Play uses this permanent identifier forever — make sure it reflects your brand domain accurately.
+            </div>
+          </div>
+        </article>
 
-      <h2>Step 5 — Complete the store listing</h2>
-      <p>This is the section most people spend the most time on — and rightly so, it directly affects discoverability. You'll need:</p>
-      <ul>
-        <li>A <strong>short description</strong> (80 characters max) — your elevator pitch</li>
-        <li>A <strong>full description</strong> — describe what the app does, who it's for, and what makes it unique</li>
-        <li>At least <strong>2 phone screenshots</strong> — use the device preview on the builder page to capture them</li>
-        <li>A <strong>1024×500 feature graphic</strong> — shown in search results</li>
-        <li>Your <strong>512×512 app icon</strong></li>
-        <li>Content rating questionnaire answers</li>
-        <li>Data safety form — a SiteToApp wrapper collects no personal data, which simplifies this considerably</li>
-      </ul>
+        <!-- Step 2 -->
+        <article class="guide-step-card" id="step-2">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 02</span>
+            <h2>Test the APK on a physical Android device</h2>
+          </div>
+          <p>Before submitting anything to Google, install the compiled APK on a real phone or tablet to verify performance and usability:</p>
+          <ol style="color: var(--accents-6); padding-left: 20px; line-height: 1.7; margin-bottom: 16px;">
+            <li>Transfer the downloaded <code>.apk</code> file to your device via USB, Google Drive, or email.</li>
+            <li>Enable <strong>Settings &rarr; Security &rarr; Install unknown apps</strong> for your file browser.</li>
+            <li>Tap the APK to install and launch it.</li>
+          </ol>
+          <p>Check that your website renders smoothly, images load, pull-to-refresh operates intuitively, and the splash screen displays properly. If you need any tweaks, reconfigure in the builder and recompile.</p>
+        </article>
 
-      <h2>Step 6 — Submit for review and go live</h2>
-      <p>Run Play Console's built-in <strong>pre-launch report</strong> to catch crashes on test devices, then click <strong>Submit for review</strong>. Most wrapper apps clear review within a few hours to a couple of days. Once approved, click <strong>Start rollout to production</strong> and your app goes live on the Play Store worldwide.</p>
+        <!-- Step 3 -->
+        <article class="guide-step-card" id="step-3">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 03</span>
+            <h2>Create a Google Play Console developer account</h2>
+          </div>
+          <p>Visit <a href="https://play.google.com/console" target="_blank" rel="noopener noreferrer">play.google.com/console</a> and register a developer account. Google charges a one-time registration fee of <strong>$25 USD</strong> (SiteToApp itself is completely free).</p>
+          <p>You will need:</p>
+          <ul style="color: var(--accents-6); padding-left: 20px; line-height: 1.7;">
+            <li>A standard Google Account with two-step verification enabled.</li>
+            <li>A valid payment method to pay Google's $25 verification fee.</li>
+            <li>Official identification details to complete Google's developer verification.</li>
+          </ul>
+        </article>
 
-      <h2>Keeping your app fresh — without rebuilding</h2>
-      <p>Because the wrapper loads your live website inside a WebView, any content change on your site shows up in the app automatically — no new APK needed. You only need to recompile when you change the app name, icon, package ID, or native features like splash screen or pull-to-refresh.</p>
+        <!-- Step 4 -->
+        <article class="guide-step-card" id="step-4">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 04</span>
+            <h2>Create your app &amp; upload the production release</h2>
+          </div>
+          <p>Once inside your Google Play Console dashboard, select <strong>Create app</strong>:</p>
+          <ul style="color: var(--accents-6); padding-left: 20px; line-height: 1.7; margin-bottom: 16px;">
+            <li><strong>App name:</strong> Enter your application's public title.</li>
+            <li><strong>Default language:</strong> Select your target audience's primary language.</li>
+            <li><strong>App type:</strong> Select <em>App</em> (not Game) and choose <em>Free</em>.</li>
+          </ul>
+          <p>Navigate to <strong>Release &rarr; Production &rarr; Create new release</strong>. Upload your compiled APK or signed Android App Bundle. (See our guide on <a href="/guides/sign-apk">how to sign your APK</a> if you're using a release keystore).</p>
+        </article>
 
-      <p>Ready to build? <a href="/android"><strong>Open the free Android builder</strong></a>, or check the <a href="/faq">FAQ</a> for answers on Play Protect warnings, signing, and publishing costs.</p>
-    </article>
+        <!-- Step 5 -->
+        <article class="guide-step-card" id="step-5">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 05</span>
+            <h2>Complete the store listing &amp; data safety declarations</h2>
+          </div>
+          <p>Fill out the required listing details in Google Play Console:</p>
+          <ul style="color: var(--accents-6); padding-left: 20px; line-height: 1.7; margin-bottom: 16px;">
+            <li><strong>Short Description:</strong> Up to 80 characters summarizing your core value.</li>
+            <li><strong>Full Description:</strong> Detailed overview of features and functionality.</li>
+            <li><strong>Screenshots:</strong> At least 2 phone screenshots (you can capture these directly from the live preview in our builder).</li>
+            <li><strong>Feature Graphic:</strong> 1024 &times; 500 px promotional image.</li>
+            <li><strong>Privacy Policy URL:</strong> Link your public privacy policy. (Reference our <a href="/privacy">Privacy Policy</a> to see what a clean, tracker-free wrapper looks like).</li>
+          </ul>
+          <div class="callout callout-tip">
+            <div class="callout-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <div>
+              <strong>Data Safety Note:</strong> Because SiteToApp wrappers do not inject any telemetry SDKs, analytics tracking, or advertising identifiers, completing Google's Data Safety questionnaire is simple: state that the application itself does not collect personal data.
+            </div>
+          </div>
+        </article>
+
+        <!-- Step 6 -->
+        <article class="guide-step-card" id="step-6">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Step 06</span>
+            <h2>Submit for Google review and roll out</h2>
+          </div>
+          <p>Review the automated <strong>Pre-launch report</strong> in Play Console to confirm there are no layout or crash warnings on test devices. Click <strong>Review and roll out</strong> and submit your application for Google's review.</p>
+          <p>Most clean WebView wrapper applications pass review in anywhere from 12 hours to a few days. Once approved, enable <strong>Start rollout to Production</strong> to make your app publicly accessible to billions of Android users worldwide!</p>
+        </article>
+
+        <!-- Maintenance -->
+        <article class="guide-step-card" id="maintenance">
+          <div class="guide-step-header">
+            <span class="guide-step-badge">Info</span>
+            <h2>Keeping your app up to date</h2>
+          </div>
+          <p>Because the wrapper loads your live website in a high-performance native WebView, content updates, blog posts, product listings, and styling changes made on your server appear in your mobile app <strong>instantly</strong> without requiring a new APK compile or store resubmission.</p>
+          <p>You only need to compile and submit an update if you change your native app name, icon, splash screen duration, or package ID.</p>
+        </article>
+
+        <!-- Next Actions Card -->
+        <section class="guides-cta" style="margin-top: 32px;" aria-labelledby="playstore-next-title">
+          <div>
+            <h2 id="playstore-next-title">Ready to compile your Android app?</h2>
+            <p>Generate your production APK or download the full Gradle source project in under 2 minutes.</p>
+          </div>
+          <div class="guides-cta-actions">
+            <a href="/android" class="btn btn-primary">Launch Android Builder</a>
+            <a href="/guides/sign-apk" class="btn btn-secondary">Learn How to Sign APK</a>
+          </div>
+        </section>
+
+      </div>
+    </div>
   </main>
 </Layout>

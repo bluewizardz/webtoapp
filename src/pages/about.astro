@@ -3,44 +3,143 @@ import Layout from '../layouts/Layout.astro';
 
 const pageTitle = "About SiteToApp - Free Open-Source WebView Wrapper Project";
 const pageDescription = "Learn about the SiteToApp mission: free, secure website-to-app conversion into lightweight Android APK and Windows EXE wrapper apps at zero cost.";
+
+const aboutSchema = {
+  "@graph": [
+    {
+      "@type": "AboutPage",
+      "@id": "https://sitetoapp.dev/about#webpage",
+      "url": "https://sitetoapp.dev/about",
+      "name": pageTitle,
+      "description": pageDescription,
+      "isPartOf": { "@id": "https://sitetoapp.dev/#website" }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sitetoapp.dev/" },
+        { "@type": "ListItem", "position": 2, "name": "About Us", "item": "https://sitetoapp.dev/about" }
+      ]
+    }
+  ]
+};
 ---
 
-<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page">
+<Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={aboutSchema}>
   <main class="shell">
-    <article class="content-panel">
+    <header class="page-hero">
+      <nav class="page-breadcrumbs" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li aria-current="page">About Us</li>
+        </ol>
+      </nav>
+      <p class="page-eyebrow">Our Mission &amp; Architecture</p>
       <h1>About SiteToApp</h1>
-      <p>SiteToApp was born out of a simple goal: to make website-to-app packaging fully accessible, secure, and developer-friendly without charging fees or adding bloat.</p>
+      <p class="page-lede">Making website-to-app packaging fully accessible, secure, and developer-friendly — 100% free with zero coding required.</p>
+    </header>
 
-      <h2>Our Mission</h2>
-      <p>Typically, packaging a web application for mobile distribution involves standing up heavy developer environments like Android Studio, Gradle, and managing nested package structures. The other alternative is subscription-based services that bundle tracking scripts, advertisements, or slow, outdated rendering engines behind a paywall.</p>
-      <p>We believe in democratizing application compiles. By delivering clean, boilerplate native Java wrapper projects featuring standard WebView clients, you get compile-ready codebases that conform to standard Android guidelines — with absolutely zero dependency on third-party frameworks.</p>
+    <!-- Key Metrics Grid -->
+    <div class="about-stats-grid" aria-label="Key highlights">
+      <div class="about-stat-card">
+        <span class="about-stat-val" style="color: #3ddc84;">100% Free</span>
+        <span class="about-stat-desc">Zero subscription fees, hidden costs, or compile limits.</span>
+      </div>
+      <div class="about-stat-card">
+        <span class="about-stat-val" style="color: #0070f3;">No Accounts</span>
+        <span class="about-stat-desc">Start building immediately without sign-up or login friction.</span>
+      </div>
+      <div class="about-stat-card">
+        <span class="about-stat-val" style="color: #10b981;">Zero Telemetry</span>
+        <span class="about-stat-desc">No tracking scripts, advertising SDKs, or injected code.</span>
+      </div>
+      <div class="about-stat-card">
+        <span class="about-stat-val" style="color: #f59e0b;">Full Source</span>
+        <span class="about-stat-desc">Downloadable native Java and Electron/Tauri workspace ZIP.</span>
+      </div>
+    </div>
 
-      <h2>How SiteToApp Works</h2>
-      <p>Enter your website URL and a few details (app name, icon, and features) into our <a href="/android">Android</a> or <a href="/windows">Windows</a> builder. Our build pipeline then generates a complete native project on the fly: for Android, a standard Java WebView wrapper compiled into an APK; for Windows, an Electron or Tauri desktop application packaged as an NSIS installer or portable EXE. You download the finished app (and, if you want, the full source workspace) in minutes — no signup, no install, no local toolchain.</p>
-      <p>Because every wrapper simply loads your live website in a native WebView, content changes on your site show up in the app instantly. You only need to rebuild when you change the app name, icon, package ID, or native features.</p>
+    <!-- Responsive 2-Column Content Layout -->
+    <div class="about-columns">
+      
+      <!-- Main Content Column -->
+      <article class="content-panel" style="margin: 0;">
+        <h2>Our Mission</h2>
+        <p>Typically, packaging a web application for mobile distribution involves standing up heavy developer environments like Android Studio, Gradle, and managing nested package structures. The other alternative is subscription-based services that bundle tracking scripts, advertisements, or slow, outdated rendering engines behind a paywall.</p>
+        <p>We believe in democratizing application compiles. By delivering clean, boilerplate native Java wrapper projects featuring standard WebView clients, you get compile-ready codebases that conform to standard Android guidelines — with absolutely zero dependency on third-party frameworks.</p>
 
-      <h2>What You Get</h2>
-      <ul>
-        <li><strong>A ready-to-install app</strong> — a signed or signable APK / Windows EXE you can install on any device immediately.</li>
-        <li><strong>The full source ZIP</strong> — the complete Java/Gradle (Android) or Electron/Tauri (Windows) project, with your icon, splash screen, and feature settings applied.</li>
-        <li><strong>CI/CD pre-configured</strong> — every workspace ships with GitHub Actions workflows, so you can rebuild and ship new versions on GitHub's secure infrastructure completely for free.</li>
-        <li><strong>Full ownership</strong> — the compiled code is yours. No licenses, no seat limits, no attribution required.</li>
-      </ul>
+        <h2>How SiteToApp Works</h2>
+        <p>Enter your website URL and a few details (app name, icon, and features) into our <a href="/android">Android</a> or <a href="/windows">Windows</a> builder. Our build pipeline then generates a complete native project on the fly: for Android, a standard Java WebView wrapper compiled into an APK; for Windows, an Electron or Tauri desktop application packaged as an NSIS installer or portable EXE. You download the finished app (and, if you want, the full source workspace) in minutes — no signup, no install, no local toolchain.</p>
+        <p>Because every wrapper simply loads your live website in a native WebView, content changes on your site show up in the app instantly. You only need to rebuild when you change the app name, icon, package ID, or native features.</p>
 
-      <h2>Who It's For</h2>
-      <p>SiteToApp is built for small businesses, creators, and indie developers who have a website and want an app on every store — without hiring an app developer or learning a native toolchain. It also works well for teams who need a quick, standards-compliant wrapper to prototype or ship behind a native shell, then iterate locally with the downloaded source.</p>
+        <h2>What You Get</h2>
+        <ul>
+          <li><strong>A ready-to-install app</strong> — a signed or signable APK / Windows EXE you can install on any device immediately.</li>
+          <li><strong>The full source ZIP</strong> — the complete Java/Gradle (Android) or Electron/Tauri (Windows) project, with your icon, splash screen, and feature settings applied.</li>
+          <li><strong>CI/CD pre-configured</strong> — every workspace ships with GitHub Actions workflows, so you can rebuild and ship new versions on GitHub's secure infrastructure completely for free.</li>
+          <li><strong>Full ownership</strong> — the compiled code is yours. No licenses, no seat limits, no attribution required.</li>
+        </ul>
 
-      <h2>Security First</h2>
-      <p>Your source code remains your own. We do not inject telemetry, analytics SDKs, or background services into your wrapper, and we never see your site credentials — you only ever give us a public URL and a logo. Everything matches standard native Android Java / desktop app structures, ensuring lightweight, high-performance execution on any device. Read the details on our <a href="/privacy">Privacy Policy</a> page.</p>
+        <h2>Who It's For</h2>
+        <p>SiteToApp is built for small businesses, creators, and indie developers who have a website and want an app on every store — without hiring an app developer or learning a native toolchain. It also works well for teams who need a quick, standards-compliant wrapper to prototype or ship behind a native shell, then iterate locally with the downloaded source.</p>
 
-      <h2>Zero Server Costs, Forever Free</h2>
-      <p>We keep compiles cheap by leaning on free infrastructure: builds run through GitHub Actions, and the generated workspace includes its own Actions pipeline so future builds cost nothing at all. There are no tiers, no credits, and no surprise invoices — SiteToApp is 100% free, forever.</p>
+        <h2>Security First</h2>
+        <p>Your source code remains your own. We do not inject telemetry, analytics SDKs, or background services into your wrapper, and we never see your site credentials — you only ever give us a public URL and a logo. Everything matches standard native Android Java / desktop app structures, ensuring lightweight, high-performance execution on any device. Read the details on our <a href="/privacy">Privacy Policy</a> page.</p>
 
-      <h2>Open Source</h2>
-      <p>The builder, templates, and build workflows are an open project. You can inspect exactly what lands inside your app, contribute improvements, or fork the pipeline for your own needs. Generated wrappers are yours to use, modify, and publish — including on the Google Play Store, as explained in our <a href="/guides/publish-to-play-store">publishing guide</a>.</p>
+        <h2>Zero Server Costs, Forever Free</h2>
+        <p>We keep compiles cheap by leaning on free infrastructure: builds run through GitHub Actions, and the generated workspace includes its own Actions pipeline so future builds cost nothing at all. There are no tiers, no credits, and no surprise invoices — SiteToApp is 100% free, forever.</p>
 
-      <h2>Support & Bug Reporting</h2>
-      <p>For any inquiries, configuration help, or bug reports, please email our support team at <a href="mailto:discovereverything123@gmail.com">discovereverything123@gmail.com</a>. We aim to respond to queries promptly.</p>
-    </article>
+        <h2>Open Source</h2>
+        <p>The builder, templates, and build workflows are an open project. You can inspect exactly what lands inside your app, contribute improvements, or fork the pipeline for your own needs. Generated wrappers are yours to use, modify, and publish — including on the Google Play Store, as explained in our <a href="/guides/publish-to-play-store">publishing guide</a>.</p>
+      </article>
+
+      <!-- Sidebar Column -->
+      <aside class="guide-sidebar" aria-label="Builder shortcuts and support">
+        <div class="about-sidebar-card">
+          <h3 class="guide-sidebar-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            Start Building
+          </h3>
+          <p style="font-size: 0.88rem; color: var(--accents-6); line-height: 1.5; margin: 0;">Convert your website into an app in seconds with zero code.</p>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <a href="/android" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;">Build Android APK</a>
+            <a href="/windows" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">Build Windows EXE</a>
+          </div>
+        </div>
+
+        <div class="about-sidebar-card">
+          <h3 class="guide-sidebar-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            Our Guarantees
+          </h3>
+          <ul style="font-size: 0.86rem; color: var(--accents-6); padding-left: 18px; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+            <li>Zero analytics injected</li>
+            <li>No account required</li>
+            <li>Native WebKit / WebView2</li>
+            <li>Complete code ownership</li>
+            <li>100% Free forever</li>
+          </ul>
+        </div>
+
+        <div class="about-sidebar-card">
+          <h3 class="guide-sidebar-title">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Support &amp; Feedback
+          </h3>
+          <p style="font-size: 0.88rem; color: var(--accents-6); line-height: 1.5; margin: 0;">Have a question, configuration issue, or feature request?</p>
+          <a href="mailto:discovereverything123@gmail.com" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">
+            Contact Support Team
+          </a>
+        </div>
+      </aside>
+
+    </div>
   </main>
 </Layout>
