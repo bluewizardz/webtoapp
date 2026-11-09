@@ -185,6 +185,10 @@ button, input {
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
   margin-right: 12px;
+  flex-shrink: 0;
+  min-width: 40px;
+  min-height: 40px;
+  line-height: 1;
 }
 
 .theme-toggle:hover {
@@ -254,8 +258,12 @@ button, input {
 .nav-links a {
   color: var(--accents-6);
   font-weight: 600;
-  padding: 6px 14px;
+  padding: 8px 16px;
   border-radius: 16px;
+  white-space: nowrap;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
 }
 
 .nav-links a:hover,
@@ -270,7 +278,11 @@ button, input {
   cursor: not-allowed;
   font-size: 0.85rem;
   font-weight: 500;
-  padding: 6px 14px;
+  padding: 8px 16px;
+  white-space: nowrap;
+  line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
 }
 
 .nav-actions {
@@ -1560,7 +1572,7 @@ body.modal-open {
   margin: -8px 0 24px;
   font-size: 0.78rem;
   line-height: 1.5;
-  color: var(--accents-5);
+  color: var(--accents-6);
 }
 
 .advanced-panel {
@@ -1582,6 +1594,8 @@ body.modal-open {
   letter-spacing: 0.08em;
   list-style: none;
   transition: var(--transition);
+  border: 1px solid var(--accents-4);
+  border-radius: 8px;
 }
 
 .advanced-summary::-webkit-details-marker {
@@ -2105,11 +2119,18 @@ input[type="file"]::file-selector-button:active {
 @media (max-width: 600px) {
   .navbar-container {
     padding: 0 12px;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
-  
+  .navbar-container::-webkit-scrollbar {
+    display: none;
+  }
+
   .brand {
     font-size: 1.1rem;
     gap: 6px;
+    flex-shrink: 0;
   }
 
   .brand-logo {
@@ -2117,18 +2138,34 @@ input[type="file"]::file-selector-button:active {
   }
 
   .nav-links {
-    margin-left: 12px;
+    margin-left: 8px;
     gap: 4px;
     padding: 2px;
+    flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .nav-links::-webkit-scrollbar {
+    display: none;
   }
 
   .nav-links a {
     font-size: 0.8rem;
-    padding: 4px 10px;
+    padding: 6px 12px;
+    white-space: nowrap;
   }
 
   .nav-disabled {
     display: none;
+  }
+
+  .nav-actions {
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
+  .theme-toggle {
+    margin-right: 0;
   }
 
   .nav-actions .btn-small {
@@ -2198,21 +2235,16 @@ input[type="file"]::file-selector-button:active {
   .brand {
     font-size: 0.95rem;
     gap: 4px;
-  }
-
-  .nav-links {
-    margin-left: 6px;
-    gap: 2px;
-    padding: 2px;
-  }
-
-  .nav-links a {
-    font-size: 0.72rem;
-    padding: 4px 8px;
+    flex-shrink: 0;
   }
 
   .brand-logo {
     height: 36px;
+  }
+
+  .theme-toggle {
+    flex-shrink: 0;
+    margin-right: 0;
   }
 
   .hero-title {
@@ -3485,3 +3517,133 @@ input[type="file"]::file-selector-button:active {
   margin-top: 0;
 }
 
+
+/* === Header Fit Overrides === */
+.navbar {
+  height: auto;
+  min-height: 64px;
+}
+
+.navbar-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 8px;
+  gap: 8px;
+  height: auto;
+  min-height: 64px;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 640px) {
+  .navbar-container {
+    padding: 8px 16px;
+  }
+}
+
+.brand {
+  flex-shrink: 0;
+}
+
+.nav-links {
+  margin-left: 24px;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  overflow: visible;
+}
+
+.nav-links a,
+.nav-disabled {
+  text-align: center;
+  white-space: normal;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+@media (min-width: 480px) {
+  .nav-links a,
+  .nav-disabled {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 640px) {
+  .nav-links a,
+  .nav-disabled {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+@media (min-width: 960px) {
+  .nav-links a,
+  .nav-disabled {
+    padding: 8px 16px;
+    font-size: 15px;
+  }
+}
+
+.theme-toggle {
+  flex-shrink: 0;
+  padding: 6px;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.nav-actions {
+  flex-shrink: 0;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .navbar-container {
+    justify-content: center;
+  }
+  .brand {
+    flex-basis: 100%;
+    justify-content: center;
+    margin-bottom: 8px;
+  }
+  .nav-links {
+    margin-left: 0;
+    justify-content: center;
+  }
+  .nav-actions {
+    margin-left: 0;
+    justify-content: center;
+  }
+}
+
+@media (min-width: 1024px) {
+  .navbar {
+    min-height: 80px;
+  }
+  .navbar-container {
+    min-height: 80px;
+    padding: 12px 24px;
+  }
+  .brand-logo {
+    height: 64px;
+  }
+  .nav-links a,
+  .nav-disabled {
+    padding: 10px 20px;
+    font-size: 16px;
+  }
+  .theme-toggle {
+    padding: 10px 14px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .btn-small {
+    padding: 10px 18px;
+    font-size: 0.95rem;
+  }
+}

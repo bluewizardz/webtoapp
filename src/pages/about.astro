@@ -13,13 +13,6 @@ const aboutSchema = {
       "name": pageTitle,
       "description": pageDescription,
       "isPartOf": { "@id": "https://sitetoapp.dev/#website" }
-    },
-    {
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sitetoapp.dev/" },
-        { "@type": "ListItem", "position": 2, "name": "About Us", "item": "https://sitetoapp.dev/about" }
-      ]
     }
   ]
 };
@@ -28,36 +21,9 @@ const aboutSchema = {
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={aboutSchema}>
   <main class="shell">
     <header class="page-hero">
-      <nav class="page-breadcrumbs" aria-label="Breadcrumb">
-        <ol>
-          <li><a href="/">Home</a></li>
-          <li aria-current="page">About Us</li>
-        </ol>
-      </nav>
-      <p class="page-eyebrow">Our Mission &amp; Architecture</p>
       <h1>About SiteToApp</h1>
       <p class="page-lede">Making website-to-app packaging fully accessible, secure, and developer-friendly — 100% free with zero coding required.</p>
     </header>
-
-    <!-- Key Metrics Grid -->
-    <div class="about-stats-grid" aria-label="Key highlights">
-      <div class="about-stat-card">
-        <span class="about-stat-val" style="color: #3ddc84;">100% Free</span>
-        <span class="about-stat-desc">Zero subscription fees, hidden costs, or compile limits.</span>
-      </div>
-      <div class="about-stat-card">
-        <span class="about-stat-val" style="color: #0070f3;">No Accounts</span>
-        <span class="about-stat-desc">Start building immediately without sign-up or login friction.</span>
-      </div>
-      <div class="about-stat-card">
-        <span class="about-stat-val" style="color: #10b981;">Zero Telemetry</span>
-        <span class="about-stat-desc">No tracking scripts, advertising SDKs, or injected code.</span>
-      </div>
-      <div class="about-stat-card">
-        <span class="about-stat-val" style="color: #f59e0b;">Full Source</span>
-        <span class="about-stat-desc">Downloadable native Java and Electron/Tauri workspace ZIP.</span>
-      </div>
-    </div>
 
     <!-- Responsive 2-Column Content Layout -->
     <div class="about-columns">

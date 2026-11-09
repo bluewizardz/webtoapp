@@ -189,11 +189,11 @@
 }
 
 /* === Links === */
-.windows-page a:not(.btn) {
+.windows-page main a:not(.btn) {
   color: var(--win-accent);
 }
 
-.windows-page a:not(.btn):hover {
+.windows-page main a:not(.btn):hover {
   color: var(--win-accent-hover);
 }
 
@@ -276,7 +276,10 @@
 .windows-page .engine-body small {
   font-size: 0.82rem;
   line-height: 1.45;
-  color: var(--accents-5);
+  color: var(--accents-6);
+  text-transform: none;
+  font-variant: normal;
+  letter-spacing: normal;
 }
 
 /* === Desktop Window Preview === */
@@ -293,7 +296,7 @@
 
 .win-frame {
   width: 100%;
-  max-width: 480px;
+  max-width: 600px;
   border: 1px solid var(--win-border);
   border-radius: 10px;
   overflow: hidden;
@@ -480,4 +483,28 @@
   .win-preview-wrap {
     padding: 20px 8px;
   }
+}
+
+
+/* === Layout refinements === */
+.windows-page .workspace {
+  align-items: start;
+  grid-auto-rows: min-content;
+}
+
+.windows-page .builder-panel,
+.windows-page .preview-panel {
+  height: auto;
+  align-self: start;
+}
+
+.windows-page .output-meta {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.windows-page .build-info {
+  margin-top: 24px;
+  padding-top: 24px;
 }

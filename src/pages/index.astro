@@ -22,8 +22,20 @@ const pageDescription = "Convert any website URL into a fully functional native 
           Instantly package and compile any website URL into a native Android wrapper app (APK). Get a lightweight, high-performance mobile application with pull-to-refresh, loading indicators, and offline fallback—<strong>100% free, no login required, no cost</strong>.
         </p>
         <div class="hero-ctas">
-          <a href="/android" class="btn btn-primary">Build Android App</a>
-          <a href="#features" class="btn btn-secondary">Learn More</a>
+          <a href="#platforms" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            </svg>
+            Build Your App Now
+          </a>
+          <a href="#how-it-works" class="btn btn-secondary">
+            Learn More
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
         </div>
       </div>
     </section>
@@ -44,9 +56,28 @@ const pageDescription = "Convert any website URL into a fully functional native 
               </span>
               <span class="badge badge-success">Active</span>
             </div>
-            <h3 class="card-title">Android App Wrapper</h3>
+            <h3 class="card-title">Turn Website into an Android App</h3>
             <p class="card-description">
-              Convert your website into a high-performance native Android wrapper. Generates a clean Gradle project compiling to a lightweight APK.
+              Convert any website into a high-performance native Android container. Generates a clean Gradle project compiling into a lightweight APK in minutes.
+            </p>
+            <div class="card-footer">
+              <span class="cta-link">Start Building &rarr;</span>
+            </div>
+          </a>
+
+          <!-- Windows Card (Active) -->
+          <a href="/windows" class="platform-card active-card" aria-label="Configure Windows app">
+            <div class="card-header">
+              <span class="platform-icon windows-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px; color: #0078d7;">
+                  <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.8 1.95L24 0v11.55H10.8V1.95zM10.8 12.45H24v11.55l-13.2-1.95v-9.6z"/>
+                </svg>
+              </span>
+              <span class="badge badge-success">Active</span>
+            </div>
+            <h3 class="card-title">Turn Website into a Windows App</h3>
+            <p class="card-description">
+              Transform any website into a native Windows desktop program. Generates professional NSIS installers (.exe) and portable apps with full system integration.
             </p>
             <div class="card-footer">
               <span class="cta-link">Start Building &rarr;</span>
@@ -63,30 +94,14 @@ const pageDescription = "Convert any website URL into a fully functional native 
               </span>
               <span class="badge badge-neutral">Coming Soon</span>
             </div>
-            <h3 class="card-title">macOS Desktop</h3>
+            <h3 class="card-title">Turn Website into a macOS App</h3>
             <p class="card-description">
-              Electron framework wrapper packaging website into high performance DMG and ZIP packages for macOS.
-            </p>
-          </div>
-
-          <!-- Windows Card (Active) -->
-          <a href="/windows" class="platform-card active-card" aria-label="Configure Windows app">
-            <div class="card-header">
-              <span class="platform-icon windows-icon">
-                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px; color: #0078d7;">
-                  <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.8 1.95L24 0v11.55H10.8V1.95zM10.8 12.45H24v11.55l-13.2-1.95v-9.6z"/>
-                </svg>
-              </span>
-              <span class="badge badge-success">Active</span>
-            </div>
-            <h3 class="card-title">Windows Installer</h3>
-            <p class="card-description">
-              Produce professional NSIS installers (.exe) and portable Windows apps with direct system integration.
+              Package any website into a desktop-ready macOS application. Generates optimized DMG installers and standalone ZIP packages built on Electron.
             </p>
             <div class="card-footer">
-              <span class="cta-link">Start Building &rarr;</span>
+              <span class="cta-link">Coming Soon &rarr;</span>
             </div>
-          </a>
+          </div>
 
           <!-- Linux Card (Coming Soon) -->
           <div class="platform-card disabled-card">
@@ -99,10 +114,13 @@ const pageDescription = "Convert any website URL into a fully functional native 
               </span>
               <span class="badge badge-neutral">Coming Soon</span>
             </div>
-            <h3 class="card-title">Linux Packages</h3>
+            <h3 class="card-title">Turn Website into a Linux App</h3>
             <p class="card-description">
-              Generate AppImage and debian packages (.deb) ready for deployment on Ubuntu, Debian, and Linux Mint.
+              Package any website for Linux desktop environments. Generates universal AppImage binaries and native .deb packages ready for Ubuntu, Debian, and Mint.
             </p>
+            <div class="card-footer">
+              <span class="cta-link">Coming Soon &rarr;</span>
+            </div>
           </div>
 
         </div>
@@ -145,48 +163,6 @@ const pageDescription = "Convert any website URL into a fully functional native 
             </h3>
             <p class="feature-desc">
               Get your APK or EXE plus the full source workspace with CI/CD. Then follow our <a href="/guides/publish-to-play-store">Play Store publishing guide</a> to ship it.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="features-section" id="features" aria-label="Platform advantages">
-      <div class="section-container">
-        <div class="features-grid">
-          <div class="feature-item">
-            <h4 class="feature-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: #0070f3; display: inline-block; vertical-align: text-bottom; margin-right: 8px;">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-              </svg>
-              Zero Server Costs
-            </h4>
-            <p class="feature-desc">
-              Download the fully generated workspace ZIP pre-configured with **GitHub Actions**. Compile your apps completely for free using GitHub's runners.
-            </p>
-          </div>
-          <div class="feature-item">
-            <h4 class="feature-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: #f5a623; display: inline-block; vertical-align: text-bottom; margin-right: 8px;">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-              </svg>
-              High Performance
-            </h4>
-            <p class="feature-desc">
-              By extending standard native Activity classes instead of bulky appcompat libraries, the final APK compiles to a tiny 31 KB bundle.
-            </p>
-          </div>
-          <div class="feature-item">
-            <h4 class="feature-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: #a3aaae; display: inline-block; vertical-align: text-bottom; margin-right: 8px;">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-              </svg>
-              Workspace Access
-            </h4>
-            <p class="feature-desc">
-              Get full source code access. Build locally with Gradle, customize the layouts, and compile debug or release configurations.
             </p>
           </div>
         </div>
