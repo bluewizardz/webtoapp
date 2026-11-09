@@ -25,11 +25,11 @@ const aboutSchema = {
       <p class="page-lede">Making website-to-app packaging fully accessible, secure, and developer-friendly — 100% free with zero coding required.</p>
     </header>
 
-    <!-- Responsive 2-Column Content Layout -->
+    <!-- Single-column About content -->
     <div class="about-columns">
       
       <!-- Main Content Column -->
-      <article class="content-panel" style="margin: 0;">
+      <article class="content-panel about-article" style="margin: 0;">
         <h2>Our Mission</h2>
         <p>Typically, packaging a web application for mobile distribution involves standing up heavy developer environments like Android Studio, Gradle, and managing nested package structures. The other alternative is subscription-based services that bundle tracking scripts, advertisements, or slow, outdated rendering engines behind a paywall.</p>
         <p>We believe in democratizing application compiles. By delivering clean, boilerplate native Java wrapper projects featuring standard WebView clients, you get compile-ready codebases that conform to standard Android guidelines — with absolutely zero dependency on third-party frameworks.</p>
@@ -60,7 +60,7 @@ const aboutSchema = {
       </article>
 
       <!-- Sidebar Column -->
-      <aside class="guide-sidebar" aria-label="Builder shortcuts and support">
+      <aside class="guide-sidebar about-sidebar" aria-label="Builder shortcuts and support">
         <div class="about-sidebar-card">
           <h3 class="guide-sidebar-title">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -69,9 +69,20 @@ const aboutSchema = {
             Start Building
           </h3>
           <p style="font-size: 0.88rem; color: var(--accents-6); line-height: 1.5; margin: 0;">Convert your website into an app in seconds with zero code.</p>
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <a href="/android" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;">Build Android APK</a>
-            <a href="/windows" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">Build Windows EXE</a>
+          <div class="about-build-actions">
+            <a href="/android" class="btn btn-primary btn-small about-build-link about-build-link--android">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <rect x="6" y="2" width="12" height="20" rx="2"></rect>
+                <line x1="10" y1="18" x2="14" y2="18"></line>
+              </svg>
+              <span>Build Android APK</span>
+            </a>
+            <a href="/windows" class="btn btn-secondary btn-small about-build-link about-build-link--windows">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false">
+                <path d="M3 5.2 10.7 4v7H3V5.2Zm9.1-1.4L21 2.4V11h-8.9V3.8ZM3 12.6h7.7v7L3 18.4v-5.8Zm9.1 0H21v8.6l-8.9-1.4v-7.2Z"></path>
+              </svg>
+              <span>Build Windows EXE</span>
+            </a>
           </div>
         </div>
 

@@ -57,6 +57,23 @@
   outline: none;
 }
 
+.android-page select {
+  color-scheme: inherit;
+  appearance: none;
+  padding-right: 40px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--android-accent) 50%),
+    linear-gradient(135deg, var(--android-accent) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px;
+}
+
+.android-page select option {
+  background: var(--accents-1);
+  color: var(--foreground);
+}
+
 /* Engine radio option selected accent */
 .android-page .engine-option input:checked + .engine-body {
   border-color: var(--android-accent-border);

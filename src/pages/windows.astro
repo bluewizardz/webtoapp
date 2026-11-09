@@ -124,13 +124,45 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
             <fieldset class="features-fieldset">
               <legend>Installer &amp; Window</legend>
 
-              <label class="field">
-                <span>Installer type</span>
-                <select id="winInstaller">
-                  <option value="nsis" selected>NSIS installer (.exe)</option>
-                  <option value="portable">Portable app (.exe)</option>
-                </select>
-              </label>
+              <div class="field">
+                <span id="winInstallerLabel">Installer type</span>
+                <div class="windows-select" id="winInstallerControl">
+                  <select id="winInstaller" class="windows-select-native">
+                    <option value="nsis" selected>NSIS installer (.exe)</option>
+                    <option value="portable">Portable app (.exe)</option>
+                  </select>
+                  <button
+                    type="button"
+                    class="windows-select-trigger"
+                    id="winInstallerTrigger"
+                    role="combobox"
+                    aria-haspopup="listbox"
+                    aria-expanded="false"
+                    aria-controls="winInstallerListbox"
+                    aria-labelledby="winInstallerLabel winInstallerValue"
+                    hidden
+                  >
+                    <span id="winInstallerValue">NSIS installer (.exe)</span>
+                    <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                      <path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path>
+                    </svg>
+                  </button>
+                  <div class="windows-select-listbox" id="winInstallerListbox" role="listbox" aria-labelledby="winInstallerLabel" hidden>
+                    <div class="windows-select-option" id="winInstallerOptionNsis" role="option" data-installer-value="nsis" aria-selected="true">
+                      <span>NSIS installer (.exe)</span>
+                      <svg class="windows-select-option-check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="m3 8 3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                      </svg>
+                    </div>
+                    <div class="windows-select-option" id="winInstallerOptionPortable" role="option" data-installer-value="portable" aria-selected="false">
+                      <span>Portable app (.exe)</span>
+                      <svg class="windows-select-option-check" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="m3 8 3.2 3.2L13 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div class="win-size-grid">
                 <label class="field">

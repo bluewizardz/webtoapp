@@ -70,22 +70,165 @@
 }
 
 .windows-page select {
+  --select-arrow: var(--win-accent);
   width: 100%;
   padding: 11px 12px;
+  padding-right: 40px;
   border: 1px solid var(--accents-3);
   border-radius: 8px;
   background: var(--accents-2);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--select-arrow) 50%),
+    linear-gradient(135deg, var(--select-arrow) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 50%, calc(100% - 11px) 50%;
+  background-repeat: no-repeat;
+  background-size: 5px 5px;
   color: var(--foreground);
+  color-scheme: inherit;
+  appearance: none;
   font-family: inherit;
   font-size: 0.9rem;
   cursor: pointer;
   transition: var(--transition);
 }
 
+.windows-page select option {
+  background: var(--accents-1);
+  color: var(--foreground);
+}
+
 .windows-page select:focus-visible {
   outline: none;
   border-color: var(--win-accent);
   box-shadow: 0 0 0 3px var(--win-accent-ring);
+}
+
+.windows-select {
+  position: relative;
+  width: 100%;
+}
+
+.windows-select.is-enhanced .windows-select-native {
+  display: none;
+}
+
+.windows-select-trigger[hidden],
+.windows-select-listbox[hidden] {
+  display: none;
+}
+
+.windows-select-trigger {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--accents-3);
+  border-radius: 9px;
+  background: var(--accents-2);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.windows-select-trigger > span {
+  min-width: 0;
+  color: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.windows-select-trigger > svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--win-accent);
+  transition: transform 0.18s ease;
+}
+
+.windows-select-trigger[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+
+.windows-select-trigger:hover {
+  border-color: var(--win-accent);
+}
+
+.windows-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--win-accent);
+  box-shadow: 0 0 0 3px var(--win-accent-ring);
+}
+
+.windows-select-listbox {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: min(240px, 40vh);
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid var(--accents-3);
+  border-radius: 12px;
+  background: var(--accents-1);
+  box-shadow: var(--shadow-lg);
+}
+
+.windows-select-option {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.windows-select-option > span {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.windows-select-option:hover,
+.windows-select-option[data-active="true"] {
+  background: var(--accents-2);
+}
+
+.windows-select-option[aria-selected="true"] {
+  background: var(--win-accent-tint);
+  color: var(--win-accent);
+  font-weight: 700;
+}
+
+.windows-select-option-check {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  color: var(--win-accent);
+  visibility: hidden;
+}
+
+.windows-select-option[aria-selected="true"] .windows-select-option-check {
+  visibility: visible;
 }
 
 .windows-page input[type="number"] {

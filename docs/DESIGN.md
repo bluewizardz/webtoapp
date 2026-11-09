@@ -108,11 +108,12 @@ Tone is confident, clear, and benefit-led. Headlines use short declarative sente
 - **Mobile & Tablets (< 992px):** Single column stack with tight, balanced gaps (`24px`).
 
 ### 5.3 Responsive Content Pages
-- **About (`/about`):** Metric cards grid (`.about-stats-grid`) + 2-column desktop layout (`minmax(0, 1.25fr) minmax(0, 0.75fr)`).
+- **About (`/about`):** Unframed long-form article with divider-separated sidebar groups; the article and sidebar stack below 960px.
 - **FAQ (`/faq`):** Responsive auto-fit 2-column / 3-column card grid (`minmax(440px, 1fr)`).
-- **Privacy Policy (`/privacy`):** Responsive layout with sticky section jump-links + expansive policy section cards.
+- **Privacy Policy (`/privacy`):** Ruled principles grid and divider-led policy sections; section navigation and inquiries sit in a desktop sidebar, hidden below 560px.
 - **Guides Hub (`/guides`):** Responsive fluid grid (`repeat(auto-fill, minmax(360px, 1fr))`) expanding across wide screens.
 - **Guide Detail Pages (`/guides/*`):** Responsive two-column desktop layout with sticky TOC & summary sidebar (`280px`) + step-by-step reading flow (`minmax(0, 1fr)`).
+- **Header:** At 641–810px, the logo is centered in its own first row, with navigation and actions below; it returns to one row above that range.
 
 ---
 

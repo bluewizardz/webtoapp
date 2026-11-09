@@ -11,6 +11,11 @@
     appId: document.querySelector("#winAppId"),
     resetId: document.querySelector("#winResetId"),
     installer: document.querySelector("#winInstaller"),
+    installerControl: document.querySelector("#winInstallerControl"),
+    installerTrigger: document.querySelector("#winInstallerTrigger"),
+    installerValue: document.querySelector("#winInstallerValue"),
+    installerListbox: document.querySelector("#winInstallerListbox"),
+    installerOptions: document.querySelectorAll("#winInstallerListbox [data-installer-value]"),
     width: document.querySelector("#winWidth"),
     height: document.querySelector("#winHeight"),
     fullScreen: document.querySelector("#winFullScreen"),
@@ -65,6 +70,124 @@
   let faviconToken = 0;
   let downloadUrl = "";
   let noticeReturnFocus = null;
+  let activeInstallerIndex = 0;
+
+  function syncInstallerDropdown() {
+    if (!els.installer || !els.installerValue) return;
+    const selectedOption = Array.from(els.installer.options).find((option) => option.value === els.installer.value);
+    if (selectedOption) els.installerValue.textContent = selectedOption.textContent.trim();
+    els.installerOptions.forEach((option) => {
+      option.setAttribute("aria-selected", String(option.dataset.installerValue === els.installer.value));
+    });
+  }
+
+  function setActiveInstallerOption(index) {
+    const options = Array.from(els.installerOptions);
+    if (!options.length || !els.installerTrigger) return;
+    activeInstallerIndex = Math.max(0, Math.min(index, options.length - 1));
+    options.forEach((option) => delete option.dataset.active);
+    const activeOption = options[activeInstallerIndex];
+    activeOption.dataset.active = "true";
+    els.installerTrigger.setAttribute("aria-activedescendant", activeOption.id);
+    activeOption.scrollIntoView({ block: "nearest" });
+  }
+
+  function closeInstallerDropdown() {
+    if (!els.installerListbox || !els.installerTrigger) return;
+    els.installerListbox.hidden = true;
+    els.installerTrigger.setAttribute("aria-expanded", "false");
+    els.installerTrigger.removeAttribute("aria-activedescendant");
+    els.installerOptions.forEach((option) => delete option.dataset.active);
+  }
+
+  function openInstallerDropdown() {
+    if (!els.installer || !els.installerListbox || !els.installerTrigger) return;
+    els.installerListbox.hidden = false;
+    els.installerTrigger.setAttribute("aria-expanded", "true");
+    const selectedIndex = Array.from(els.installerOptions).findIndex((option) => option.dataset.installerValue === els.installer.value);
+    setActiveInstallerOption(selectedIndex < 0 ? 0 : selectedIndex);
+  }
+
+  function chooseInstallerOption(index) {
+    const option = Array.from(els.installerOptions)[index];
+    if (!option || !els.installer) return;
+    els.installer.value = option.dataset.installerValue;
+    els.installer.dispatchEvent(new Event("change", { bubbles: true }));
+    closeInstallerDropdown();
+    els.installerTrigger.focus();
+  }
+
+  function initInstallerDropdown() {
+    if (!els.installer || !els.installerControl || !els.installerTrigger || !els.installerListbox) return;
+    els.installerControl.classList.add("is-enhanced");
+    els.installer.tabIndex = -1;
+    els.installer.setAttribute("aria-hidden", "true");
+    els.installerTrigger.hidden = false;
+    syncInstallerDropdown();
+
+    els.installer.addEventListener("change", syncInstallerDropdown);
+    els.installerTrigger.addEventListener("click", () => {
+      if (els.installerListbox.hidden) openInstallerDropdown();
+      else closeInstallerDropdown();
+    });
+    els.installerTrigger.addEventListener("keydown", (event) => {
+      const options = Array.from(els.installerOptions);
+      const isOpen = !els.installerListbox.hidden;
+
+      if (event.altKey && event.key === "ArrowUp") {
+        event.preventDefault();
+        closeInstallerDropdown();
+        return;
+      }
+      if (event.altKey && event.key === "ArrowDown") {
+        event.preventDefault();
+        openInstallerDropdown();
+        return;
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (!isOpen) openInstallerDropdown();
+        else setActiveInstallerOption(activeInstallerIndex + (event.key === "ArrowDown" ? 1 : -1));
+        return;
+      }
+      if (event.key === "Home" || event.key === "End") {
+        event.preventDefault();
+        if (!isOpen) openInstallerDropdown();
+        setActiveInstallerOption(event.key === "Home" ? 0 : options.length - 1);
+        return;
+      }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        if (!isOpen) openInstallerDropdown();
+        else chooseInstallerOption(activeInstallerIndex);
+        return;
+      }
+      if (event.key === "Escape" && isOpen) {
+        event.preventDefault();
+        closeInstallerDropdown();
+        return;
+      }
+      if (event.key === "Tab") {
+        closeInstallerDropdown();
+        return;
+      }
+      if (event.key.length === 1 && /^[a-z0-9]$/i.test(event.key)) {
+        const index = options.findIndex((option) => option.textContent.trim().toLowerCase().startsWith(event.key.toLowerCase()));
+        if (index >= 0) {
+          event.preventDefault();
+          chooseInstallerOption(index);
+        }
+      }
+    });
+
+    els.installerOptions.forEach((option, index) => {
+      option.addEventListener("pointermove", () => setActiveInstallerOption(index));
+      option.addEventListener("click", () => chooseInstallerOption(index));
+    });
+    document.addEventListener("pointerdown", (event) => {
+      if (!els.installerControl.contains(event.target)) closeInstallerDropdown();
+    });
+  }
 
   // === URL & naming ===
 
@@ -341,6 +464,7 @@
     if (typeof state.appVersion === "string" && state.appVersion) els.version.value = state.appVersion;
     if (state.installerType === "portable" || state.installerType === "nsis") {
       els.installer.value = state.installerType;
+      syncInstallerDropdown();
     }
     if (state.engine === "tauri" || state.engine === "electron") {
       setEngine(state.engine);
@@ -393,6 +517,7 @@
   function resetAdvancedDefaults() {
     els.version.value = DEFAULTS.appVersion;
     els.installer.value = DEFAULTS.installerType;
+    syncInstallerDropdown();
     setEngine(DEFAULTS.engine);
     els.width.value = DEFAULTS.windowWidth;
     els.height.value = DEFAULTS.windowHeight;
@@ -635,5 +760,6 @@
   els.url.value = "";
   els.name.value = "";
   restoreAdvanced();
+  initInstallerDropdown();
   updatePreview();
 })();

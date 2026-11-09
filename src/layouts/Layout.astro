@@ -13,7 +13,7 @@ interface Props {
 const {
   title,
   description,
-  canonicalUrl = `https://sitetoapp.dev${Astro.url.pathname === '/' ? '' : Astro.url.pathname}`,
+  canonicalUrl = `https://sitetoapp.dev${Astro.url.pathname === '/' ? '/' : Astro.url.pathname.replace(/\/+$/, '')}`,
   bodyClass = 'landing-page',
   structuredData
 } = Astro.props;

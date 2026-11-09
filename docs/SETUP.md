@@ -3,7 +3,7 @@
 ## Installation
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 22.12+ and npm
 - (Optional) Android SDK for building real APKs
 - (Optional) macOS for building real DMGs
 - (Optional) Windows or Wine for building real EXEs
