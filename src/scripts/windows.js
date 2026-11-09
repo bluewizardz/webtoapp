@@ -29,15 +29,9 @@
     progressFill: document.querySelector("#winProgressFill"),
     progressText: document.querySelector("#winProgressText"),
     message: document.querySelector("#winMessage"),
-    status: document.querySelector("#winStatus"),
     success: document.querySelector("#winSuccess"),
     retry: document.querySelector("#winRetry"),
     retryLink: document.querySelector("#winRetryLink"),
-    previewName: document.querySelector("#winPreviewName"),
-    metaFormat: document.querySelector("#winMetaFormat"),
-    metaEstimate: document.querySelector("#winMetaEstimate"),
-    metaSize: document.querySelector("#winMetaSize"),
-    metaId: document.querySelector("#winMetaId"),
     frame: document.querySelector("#winFrame"),
     titleIcon: document.querySelector("#winTitleIcon"),
     titleName: document.querySelector("#winTitleName"),
@@ -164,21 +158,9 @@
     });
   }
 
-  function estimateSize(engine, installer) {
-    if (engine === "tauri") {
-      return installer === "portable" ? "≈4–8 MB" : "≈5–10 MB";
-    }
-    return installer === "portable" ? "≈80–95 MB" : "≈65–85 MB";
-  }
-
   // === Status helpers ===
 
   function setStatus(text, kind) {
-    if (els.status) {
-      els.status.textContent = text;
-      els.status.style.color = kind === "error" ? "#ef4444" : "";
-      els.status.style.borderColor = kind === "error" ? "rgba(239,68,68,0.4)" : "";
-    }
     if (els.message) {
       els.message.textContent = kind === "error" ? text : "";
     }
@@ -265,23 +247,9 @@
 
     const displayName = String(els.name.value || "").trim() || "My Desktop App";
     const displayUrl = String(els.url.value || "").trim() || "https://example.com";
-    const engine = getEngine();
-    const engineLabel = engine === "tauri" ? "Tauri" : "Electron";
-    const format = (els.installer.value === "portable" ? "Portable app" : "NSIS installer");
-    const width = clamp(els.width.value, 800, 3840, DEFAULTS.windowWidth);
-    const height = clamp(els.height.value, 600, 2160, DEFAULTS.windowHeight);
-    const appId = String(els.appId.value || "").trim() || deriveAppId(displayUrl, displayName);
-
-    els.previewName.textContent = displayName;
     els.titleName.textContent = displayName;
     els.pageName.textContent = displayName;
     els.pageUrl.textContent = displayUrl;
-    els.metaFormat.textContent = engineLabel + " · " + format;
-    if (els.metaEstimate) {
-      els.metaEstimate.textContent = estimateSize(engine, els.installer.value);
-    }
-    els.metaSize.textContent = width + " × " + height;
-    els.metaId.textContent = appId;
 
     paintIcon(els.titleIcon, displayName);
     paintIcon(els.pageIcon, displayName);

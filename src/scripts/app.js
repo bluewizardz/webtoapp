@@ -207,9 +207,11 @@
 
   function setMessage(message, kind) {
     els.validationMessage.textContent = kind === "error" ? message : "";
-    els.statusPill.textContent = message;
-    els.statusPill.style.color = kind === "error" ? "#ff0000" : "#0070f3";
-    els.statusPill.style.borderColor = kind === "error" ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 112, 243, 0.3)";
+    if (els.statusPill) {
+      els.statusPill.textContent = message;
+      els.statusPill.style.color = kind === "error" ? "#ff0000" : "#0070f3";
+      els.statusPill.style.borderColor = kind === "error" ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 112, 243, 0.3)";
+    }
   }
 
   function showProgress(text, percent) {
@@ -545,9 +547,9 @@
       const app = getAppConfig();
       els.previewName.textContent = app.name;
       els.previewUrl.textContent = app.url;
-      els.outputAppName.textContent = app.name;
-      els.outputAppId.textContent = app.appId;
-      els.artifactSummary.textContent = "Android APK";
+      if (els.outputAppName) els.outputAppName.textContent = app.name;
+      if (els.outputAppId) els.outputAppId.textContent = app.appId;
+      if (els.artifactSummary) els.artifactSummary.textContent = "Android APK";
       setMessage("Ready", "ok");
     } catch (error) {
       els.previewName.textContent = els.appName.value || "Site App";
