@@ -517,6 +517,7 @@
   overflow: hidden;
   background: var(--win-body-bg);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  transition: transform 180ms ease, box-shadow 180ms ease;
 }
 
 .light-theme .win-frame {
@@ -592,7 +593,10 @@
 
 .win-body {
   position: relative;
-  height: 240px;
+  height: auto;
+  aspect-ratio: var(--preview-aspect, 3 / 2);
+  max-height: 340px;
+  overflow: hidden;
   background:
     radial-gradient(circle at 30% 20%, var(--win-accent-tint), transparent 60%),
     var(--win-body-bg);
@@ -637,6 +641,41 @@
   color: var(--win-muted);
   word-break: break-all;
   overflow-wrap: anywhere;
+}
+
+/* Mock website shown in the app window while the preview is idle. */
+.win-page.win-sample {
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 16px 18px 14px;
+  text-align: left;
+  color: var(--foreground);
+}
+.win-sample-topbar { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.windows-page .win-sample .win-page-icon { width: 22px; height: 22px; border-radius: 50%; font-size: 10px; }
+.windows-page .win-sample .win-page-name { min-width: 0; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.win-sample-nav { display: flex; flex: 0 0 auto; gap: 10px; margin-left: auto; }
+.win-sample-nav i { font-style: normal; font-size: 9px; font-weight: 600; color: var(--win-muted); }
+.win-sample-nav i:first-child { color: var(--win-accent); }
+.win-sample-hero { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; padding: 12px 14px; border: 1px solid color-mix(in srgb, var(--win-accent) 22%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--win-accent) 9%, var(--win-surface)); }
+.win-sample-hero b { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; }
+.win-sample-hero p { font-size: 10px; line-height: 1.45; color: var(--win-muted); }
+.win-sample-url { font-family: var(--font-mono); font-size: 8.5px; color: var(--win-muted); }
+.win-sample-cta { margin-top: 2px; padding: 4px 10px; border-radius: 5px; background: var(--win-accent); color: #ffffff; font-size: 9px; font-weight: 700; }
+.win-sample-cards { display: grid; flex: 1; min-height: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.win-sample-card { display: flex; min-height: 0; flex-direction: column; gap: 4px; padding: 9px; overflow: hidden; border: 1px solid var(--win-border); border-radius: 7px; background: var(--win-surface); }
+.win-sample-thumb { width: 100%; min-height: 16px; flex: 1 1 auto; border-radius: 5px; background: color-mix(in srgb, var(--win-accent) 14%, var(--win-surface)); }
+.win-sample-thumb.is-circle { width: 34px; height: 34px; flex: 0 0 auto; align-self: center; border-radius: 50%; }
+.win-sample-thumb.is-square { width: 34px; height: 34px; flex: 0 0 auto; align-self: center; border-radius: 8px; background: color-mix(in srgb, var(--win-accent) 26%, var(--win-surface)); }
+.win-sample-card b { font-size: 9.5px; font-weight: 700; }
+.win-sample-card small { font-size: 8.5px; line-height: 1.4; color: var(--win-muted); }
+@media (max-width: 640px) {
+  .win-page.win-sample { gap: 8px; padding: 12px 12px 10px; }
+  .win-sample-hero { padding: 10px 12px; }
+  .win-sample-hero b { font-size: 13px; }
+  .win-sample-cards { gap: 8px; }
+  .win-sample-card { gap: 3px; padding: 7px; }
 }
 
 .win-taskbar {
@@ -687,8 +726,14 @@
 }
 
 .win-frame.is-fullscreen .win-body {
-  height: 318px;
+  height: auto;
+  max-height: 390px;
 }
+
+.windows-page .preview-panel { flex-direction: column; align-items: stretch; gap: 10px; }
+.windows-page .preview-note { align-self: center; }
+.win-preview-empty { color: var(--win-muted); background: var(--win-body-bg); }
+@media (prefers-reduced-motion: reduce) { .win-frame { transition: none; } }
 
 @media (max-width: 520px) {
   .win-size-grid {

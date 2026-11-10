@@ -42,12 +42,14 @@
     historyList: document.querySelector("#winHistoryList"),
     clearHistory: document.querySelector("#winClearHistory"),
     frame: document.querySelector("#winFrame"),
+    previewStatus: document.querySelector("#winPreviewStatus"),
     titleIcon: document.querySelector("#winTitleIcon"),
     titleName: document.querySelector("#winTitleName"),
     pageIcon: document.querySelector("#winPageIcon"),
     pageName: document.querySelector("#winPageName"),
-    pageUrl: document.querySelector("#winPageUrl"),
     taskbarTile: document.querySelector("#winTaskbarTile"),
+    sampleHeading: document.querySelector("#winSampleHeading"),
+    sampleUrl: document.querySelector("#winSampleUrl"),
     modal: document.querySelector("#winModal"),
     modalClose: document.querySelector("#winModalClose"),
     modalDismiss: document.querySelector("#winModalDismiss")
@@ -489,6 +491,27 @@
     if (label) label.classList.toggle("disabled", hasUploadedIcon);
   }
 
+  function sampleDomain(rawValue) {
+    try {
+      return new URL(normalizeUrl(rawValue)).hostname.replace(/^www\./, "");
+    } catch (error) {
+      return "example.com";
+    }
+  }
+
+  // Install-time options can't change the app's UI, so the preview line under
+  // the window reports them live instead.
+  function previewSummary() {
+    const engine = getEngine() === "electron" ? "Electron" : "Tauri";
+    const width = clamp(els.width.value, 800, 3840, DEFAULTS.windowWidth);
+    const height = clamp(els.height.value, 600, 2160, DEFAULTS.windowHeight);
+    const installer = els.installer.value === "portable" ? "Portable app" : "NSIS installer";
+    const parts = ["Preview", engine, width + "×" + height, installer];
+    if (els.fullScreen.checked) parts.push("Full screen");
+    if (String(els.userAgent.value || "").trim()) parts.push("Custom UA");
+    return parts.join(" · ");
+  }
+
   function updatePreview() {
     const hasUrl = String(els.url.value || "").trim().length > 0;
 
@@ -500,19 +523,23 @@
     }
 
     const displayName = String(els.name.value || "").trim() || "My Desktop App";
-    const displayUrl = String(els.url.value || "").trim() || "https://example.com";
     els.titleName.textContent = displayName;
     els.pageName.textContent = displayName;
-    els.pageUrl.textContent = displayUrl;
 
     paintIcon(els.titleIcon, displayName);
     paintIcon(els.pageIcon, displayName);
     paintIcon(els.taskbarTile, displayName);
 
+    if (els.sampleHeading) els.sampleHeading.textContent = "Welcome to " + displayName;
+    if (els.sampleUrl) els.sampleUrl.textContent = sampleDomain(els.url.value);
+    if (els.previewStatus) els.previewStatus.textContent = previewSummary();
+
     if (els.frame) {
       els.frame.classList.toggle("is-fullscreen", !!(els.fullScreen && els.fullScreen.checked));
+      const width = clamp(els.width.value, 800, 3840, DEFAULTS.windowWidth);
+      const height = clamp(els.height.value, 600, 2160, DEFAULTS.windowHeight);
+      els.frame.style.setProperty("--preview-aspect", `${width} / ${height}`);
     }
-
     updateIconPreview();
 
     if (hasUrl) {

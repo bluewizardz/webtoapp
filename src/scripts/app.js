@@ -17,6 +17,10 @@
     previewInitials: document.querySelector("#previewInitials"),
     previewName: document.querySelector("#previewName"),
     previewUrl: document.querySelector("#previewUrl"),
+    splashName: document.querySelector("#splashName"),
+    splashIconImage: document.querySelector("#splashIconImage"),
+    previewPlay: document.querySelector("#androidPreviewPlay"),
+    previewStatus: document.querySelector("#androidPreviewStatus"),
     outputAppName: document.querySelector("#outputAppName"),
     outputAppId: document.querySelector("#outputAppId"),
     artifactSummary: document.querySelector("#artifactSummary"),
@@ -65,6 +69,11 @@
     phoneNavBar: document.querySelector("#phoneNavBar"),
     phoneStatusBar: document.querySelector("#phoneStatusBar"),
     screenPullRefresh: document.querySelector("#screenPullRefresh"),
+    androidSample: document.querySelector(".android-sample"),
+    sampleLogo: document.querySelector("#sampleLogo"),
+    sampleBrand: document.querySelector("#sampleBrand"),
+    sampleHeading: document.querySelector("#sampleHeading"),
+    sampleUrl: document.querySelector("#sampleUrl"),
 
     // Icon Fetching & Previews
     autoFetchIcon: document.querySelector("#autoFetchIcon"),
@@ -554,6 +563,7 @@
 
     iconAppliedUrl = url;
     showFetchedIcon(faviconUrl);
+    updatePhonePreview();
   }
 
   function scheduleFaviconRefresh() {
@@ -592,15 +602,15 @@
         els.appId.value = hasUrl ? derivePackageId(els.siteUrl.value, els.appName.value) : "";
       }
       const app = getAppConfig();
-      els.previewName.textContent = app.name;
-      els.previewUrl.textContent = app.url;
+      if (els.previewName) els.previewName.textContent = app.name;
+      if (els.previewUrl) els.previewUrl.textContent = app.url;
       if (els.outputAppName) els.outputAppName.textContent = app.name;
       if (els.outputAppId) els.outputAppId.textContent = app.appId;
       if (els.artifactSummary) els.artifactSummary.textContent = "Android APK";
       setMessage("Ready", "ok");
     } catch (error) {
-      els.previewName.textContent = els.appName.value || "Site App";
-      els.previewUrl.textContent = els.siteUrl.value || "https://example.com";
+      if (els.previewName) els.previewName.textContent = els.appName.value || "Site App";
+      if (els.previewUrl) els.previewUrl.textContent = els.siteUrl.value || "https://example.com";
       setMessage(hasUrl ? error.message : "Ready", hasUrl ? "error" : "ok");
     }
 
@@ -623,21 +633,41 @@
 
   // === Phone Preview ===
 
+  function sampleDomain() {
+    try {
+      return new URL(normalizeUrl(els.siteUrl.value)).hostname.replace(/^www\./, "");
+    } catch (error) {
+      return "example.com";
+    }
+  }
+
+  // Version and package name never show up in the mock UI, so the line under
+  // the phone reports them live instead.
+  function androidPreviewSummary() {
+    const version = String(els.appVersion.value || "").trim() || "1.0.0";
+    const appId = String(els.appId.value || "").trim();
+    return "Preview · v" + version + (appId ? " · " + appId : "");
+  }
+
   function updatePhonePreview() {
-    // Splash screen
-    const showSplash = els.showSplash && els.showSplash.checked;
-    if (els.screenSplash) {
-      if (showSplash) {
-        els.screenSplash.classList.add("active");
-      } else {
-        els.screenSplash.classList.remove("active");
-      }
+    const name = String(els.appName.value || "").trim() || "My Website";
+    const iconSrc = els.iconPreview ? els.iconPreview.getAttribute("src") : null;
+
+    // Sample page content follows the form
+    if (els.sampleBrand) els.sampleBrand.textContent = name;
+    if (els.sampleHeading) els.sampleHeading.textContent = "Welcome to " + name;
+    if (els.sampleUrl) els.sampleUrl.textContent = sampleDomain();
+    if (els.sampleLogo) {
+      els.sampleLogo.classList.toggle("has-icon", !!iconSrc);
+      els.sampleLogo.style.backgroundImage = iconSrc ? 'url("' + iconSrc + '")' : "";
     }
 
-    // Pull-to-refresh indicator
-    const pullToRefresh = els.pullToRefresh && els.pullToRefresh.checked;
-    if (els.screenPullRefresh) {
-      els.screenPullRefresh.classList.toggle("active", pullToRefresh);
+    // Splash screen uses the same icon
+    if (els.splashName) els.splashName.textContent = name;
+    if (els.splashIconImage) {
+      els.splashIconImage.hidden = !iconSrc;
+      els.splashIconImage.src = iconSrc || "";
+      if (els.splashInitials) els.splashInitials.hidden = !!iconSrc;
     }
 
     // Full screen — hide status bar and nav bar
@@ -649,25 +679,126 @@
       els.phoneNavBar.classList.toggle("hidden", fullScreen);
     }
 
-    // Progress indicator — simulate a loading line
-    if (els.screenProgress) {
+    if (els.previewStatus) els.previewStatus.textContent = androidPreviewSummary();
+  }
+
+  // === Preview playback ===
+  // The phone plays itself: the progress line runs once, the page fades in,
+  // then pull-to-refresh and zoom demonstrate themselves without interaction.
+
+  const PREVIEW_PROGRESS_MS = 1000;
+  const PREVIEW_FADE_MS = 240;
+  const PREVIEW_PULL_MS = 900;
+  const PREVIEW_ZOOM_MS = 1400;
+  let previewTimers = [];
+
+  function clearPreviewTimers() {
+    previewTimers.forEach(function (id) {
+      clearTimeout(id);
+    });
+    previewTimers = [];
+  }
+
+  function later(fn, ms) {
+    previewTimers.push(setTimeout(fn, ms));
+  }
+
+  function setPreviewLoading(loading) {
+    if (els.screenProgress) els.screenProgress.classList.toggle("active", loading);
+    if (els.androidSample) els.androidSample.classList.toggle("is-pending", loading);
+  }
+
+  function runPullDemo(done) {
+    const indicator = els.screenPullRefresh;
+    const sample = els.androidSample;
+    if (!indicator || !sample) {
+      if (done) done();
+      return;
+    }
+    indicator.classList.remove("active");
+    void indicator.offsetWidth;
+    indicator.classList.add("active");
+    sample.classList.add("is-pulling");
+    later(function () {
+      indicator.classList.remove("active");
+      sample.classList.remove("is-pulling");
+      // Refreshing reloads the page: blank screen, one progress sweep, then the page.
       if (els.showSpinner && els.showSpinner.checked) {
-        els.screenProgress.classList.add("active");
-        // Animate a quick sweep
-        els.screenProgress.style.width = "0%";
-        setTimeout(function () {
-          els.screenProgress.style.width = "60%";
-        }, 100);
-        setTimeout(function () {
-          els.screenProgress.style.width = "100%";
-        }, 600);
-        setTimeout(function () {
-          els.screenProgress.style.width = "0%";
-        }, 1000);
-      } else {
-        els.screenProgress.classList.remove("active");
-        els.screenProgress.style.width = "0%";
+        setPreviewLoading(true);
+        later(function () {
+          setPreviewLoading(false);
+          if (done) done();
+        }, PREVIEW_PROGRESS_MS);
+      } else if (done) {
+        done();
       }
+    }, PREVIEW_PULL_MS);
+  }
+
+  function runZoomDemo() {
+    const sample = els.androidSample;
+    if (!sample) return;
+    sample.classList.remove("is-zooming");
+    void sample.offsetWidth;
+    sample.classList.add("is-zooming");
+    later(function () {
+      sample.classList.remove("is-zooming");
+    }, PREVIEW_ZOOM_MS);
+  }
+
+  function runPreviewSequence() {
+    clearPreviewTimers();
+    const sample = els.androidSample;
+    if (!sample) return;
+    sample.classList.remove("is-pulling", "is-zooming");
+    if (els.screenPullRefresh) els.screenPullRefresh.classList.remove("active");
+
+    const spinnerOn = !!(els.showSpinner && els.showSpinner.checked);
+    const pullOn = !!(els.pullToRefresh && els.pullToRefresh.checked);
+    const zoomOn = !!(els.allowZoom && els.allowZoom.checked);
+
+    if (spinnerOn) {
+      setPreviewLoading(true);
+      later(function () {
+        setPreviewLoading(false);
+      }, PREVIEW_PROGRESS_MS);
+    } else {
+      setPreviewLoading(false);
+    }
+
+    const cursor = spinnerOn ? PREVIEW_PROGRESS_MS + 520 : 600;
+    if (pullOn) {
+      later(function () {
+        runPullDemo(function () {
+          if (zoomOn) later(runZoomDemo, PREVIEW_FADE_MS);
+        });
+      }, cursor);
+    } else if (zoomOn) {
+      later(runZoomDemo, cursor);
+    }
+  }
+
+  function playAndroidPreview() {
+    clearPreviewTimers();
+    const duration = Math.min(10000, Math.max(0, parseInt(els.splashDuration.value, 10) || 2000));
+    const showSplash = els.showSplash.checked;
+    const summary = androidPreviewSummary();
+    if (showSplash) {
+      els.screenSplash.classList.add("active");
+      els.previewStatus.textContent = `Splash screen · ${duration} ms`;
+      setPreviewLoading(true);
+      later(function () {
+        els.screenSplash.classList.remove("active");
+        els.previewStatus.textContent = summary;
+        runPreviewSequence();
+      }, duration);
+    } else {
+      els.screenSplash.classList.remove("active");
+      els.previewStatus.textContent = "App preview ready · no splash screen";
+      runPreviewSequence();
+      later(function () {
+        els.previewStatus.textContent = summary;
+      }, PREVIEW_ZOOM_MS + 200);
     }
   }
 
@@ -956,12 +1087,24 @@
     updatePhonePreview();
   });
 
+  els.previewPlay.addEventListener("click", playAndroidPreview);
+  els.splashDuration.addEventListener("input", updatePhonePreview);
+
+  if (els.allowZoom) {
+    els.allowZoom.addEventListener("change", function () {
+      updatePhonePreview();
+      runPreviewSequence();
+    });
+  }
+
   els.showSpinner.addEventListener("change", function () {
     updatePhonePreview();
+    runPreviewSequence();
   });
 
   els.pullToRefresh.addEventListener("change", function () {
     updatePhonePreview();
+    runPreviewSequence();
   });
 
   [els.siteUrl, els.appVersion].forEach((el) => {
@@ -1027,6 +1170,7 @@
   updatePreview();
   renderHistory();
   updateBuildButtonState();
+  runPreviewSequence();
 
   if (els.clearHistoryBtn) {
     els.clearHistoryBtn.addEventListener("click", function () {

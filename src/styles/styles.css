@@ -1157,20 +1157,26 @@ button:not(:has(svg)):not(.theme-toggle)::before {
   font-weight: 800;
   line-height: 0;
 }
+.splash-icon img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 
-.screen span svg {
+.screen > span svg {
   width: 55%;
   height: 55%;
 }
 
-.screen span,
-.screen img {
+.splash-icon svg {
+  width: 30px;
+  height: 30px;
+}
+
+.screen > span,
+.screen > img {
   width: 54px;
   height: 54px;
   border-radius: 50%;
 }
 
-.screen span {
+.screen > span {
   background: var(--primary-color);
   color: var(--primary-btn-text);
   font-size: 1.6rem;
@@ -1179,7 +1185,7 @@ button:not(:has(svg)):not(.theme-toggle)::before {
   place-items: center;
 }
 
-.screen img {
+.screen > img {
   object-fit: cover;
 }
 
@@ -2405,8 +2411,8 @@ input[type="file"]::file-selector-button:active {
     padding: 14px 10px;
   }
 
-  .screen span,
-  .screen img {
+  .screen > span,
+  .screen > img {
     width: 42px;
     height: 42px;
     border-radius: 10px;
@@ -4399,10 +4405,6 @@ body.builder-page .screen-pull-refresh {
   backdrop-filter: none;
   animation: none;
   transition: color 160ms ease, background-color 160ms ease, opacity 160ms ease;
-}
-
-body.builder-page .screen-pull-refresh.active {
-  animation: none;
 }
 
 body.builder-page .screen strong,
@@ -7138,4 +7140,134 @@ html.light-theme body.builder-page input[type="file"]::file-selector-button:hove
 html.light-theme body.builder-page input[type="file"]::-webkit-file-upload-button:hover {
   border-color: #64748b;
   background: #e5e7eb;
+}
+
+/* Builder previews: mock website screens and replay controls. */
+.splash-icon img[hidden] { display: none !important; }
+
+.screen-splash { inset: 0; border-radius: inherit; }
+.screen-splash strong { color: #fff; font-size: 13px; }
+.screen-splash:not(.active) { display: none; }
+
+.preview-play {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  align-self: center;
+  min-height: 38px;
+  padding: 0 15px;
+  border: 1px solid var(--accents-3);
+  border-radius: 999px;
+  background: var(--accents-1);
+  color: var(--foreground);
+  font: 600 12px/1 var(--font-sans, system-ui, sans-serif);
+  cursor: pointer;
+}
+.preview-play:hover { border-color: var(--primary-color); color: var(--primary-color); }
+.preview-play:focus-visible { outline: 3px solid var(--primary-color); outline-offset: 3px; }
+.preview-note { align-self: center; margin: 8px 0 0; color: var(--muted-foreground, #778196); font-size: 11px; text-align: center; }
+.device-preview { flex-direction: column; gap: 14px; }
+.phone { width: 250px; height: 440px; }
+.screen { padding: 0; display: block; }
+/* Mock website shown inside the phone while the app is idle. */
+.android-sample {
+  --sample-bg: #111113;
+  --sample-surface: #1a1b1e;
+  --sample-border: #2b2c31;
+  --sample-text: #f3f4f6;
+  --sample-muted: #a1a3ab;
+  --sample-accent: var(--android-brand, var(--primary-color));
+  --sample-accent-text: var(--android-text-contrast, #090d16);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 36px 12px 12px;
+  overflow: hidden;
+  background: var(--sample-bg);
+  color: var(--sample-text);
+  text-align: left;
+  opacity: 1;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+.android-sample.is-pending { opacity: 0; }
+.android-sample.is-pulling { transform: translateY(20px); }
+.android-sample.is-zooming { animation: sample-zoom 1.4s ease-in-out; }
+@keyframes sample-zoom {
+  0%, 100% { transform: scale(1); }
+  35%, 60% { transform: scale(1.32); }
+}
+html.light-theme .android-sample {
+  --sample-bg: #ffffff;
+  --sample-surface: #f5f6f3;
+  --sample-border: #e3e4de;
+  --sample-text: #17181b;
+  --sample-muted: #6f7276;
+}
+.sample-topbar { display: flex; align-items: center; gap: 8px; }
+.sample-logo { position: relative; width: 26px; height: 26px; flex: 0 0 auto; border-radius: 8px; background: var(--sample-accent); }
+.sample-logo::after { content: ""; position: absolute; inset: 8px 6px; border-radius: 3px; background: var(--sample-accent-text); opacity: 0.85; }
+.sample-brand { flex: 1; min-width: 0; font-size: 11px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sample-menu { display: flex; flex-direction: column; gap: 2px; flex: 0 0 auto; }
+.sample-menu i { width: 3px; height: 3px; border-radius: 50%; background: var(--sample-muted); }
+.sample-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--sample-accent) 22%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--sample-accent) 12%, var(--sample-surface));
+}
+.sample-hero b { font-size: 14px; font-weight: 800; line-height: 1.25; letter-spacing: -0.015em; }
+.sample-hero p { font-size: 9.5px; line-height: 1.45; color: var(--sample-muted); }
+.sample-cta { align-self: flex-start; margin-top: 2px; padding: 5px 10px; border-radius: 999px; background: var(--sample-accent); color: var(--sample-accent-text); font-size: 9px; font-weight: 800; }
+.sample-row { display: flex; align-items: center; gap: 9px; padding: 8px; border: 1px solid var(--sample-border); border-radius: 12px; background: var(--sample-surface); }
+.sample-thumb { position: relative; width: 34px; height: 34px; flex: 0 0 auto; border-radius: 9px; background: color-mix(in srgb, var(--sample-accent) 16%, var(--sample-surface)); }
+.sample-thumb::after { content: ""; position: absolute; inset: 11px; border-radius: 50%; background: var(--sample-accent); opacity: 0.75; }
+.sample-thumb.alt::after { inset: 9px; border-radius: 4px; }
+.sample-row-text { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.sample-row-text b { font-size: 10.5px; font-weight: 700; }
+.sample-row-text small { font-size: 9px; color: var(--sample-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sample-tabs { display: flex; gap: 6px; margin-top: auto; }
+.sample-tabs span { flex: 1; padding: 5px 0; border: 1px solid var(--sample-border); border-radius: 999px; background: var(--sample-surface); color: var(--sample-muted); font-size: 9px; font-weight: 700; text-align: center; }
+.sample-tabs span:first-child { border-color: transparent; background: color-mix(in srgb, var(--sample-accent) 18%, transparent); color: var(--sample-text); }
+.sample-url { margin-top: -3px; font-family: var(--font-mono); font-size: 8.5px; color: var(--sample-muted); }
+.sample-logo.has-icon { background-size: cover; background-position: center; background-repeat: no-repeat; }
+.sample-logo.has-icon::after { display: none; }
+.screen-pull-refresh { pointer-events: none; }
+.screen-progress { pointer-events: none; }
+.android-page .screen-progress.active { display: block; width: 38%; animation: android-progress 1s ease-in-out 1 both; }
+@keyframes android-progress { 0% { left: -38%; } 100% { left: 100%; } }
+.android-page .screen .screen-pull-refresh {
+  width: 30px;
+  height: 30px;
+  background: #26262b;
+  border-color: rgba(255, 255, 255, 0.24);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.38);
+}
+.android-page .screen .screen-pull-refresh.active { display: flex; animation: android-pull 0.9s ease-in-out 1 both; }
+@keyframes android-pull {
+  0% { transform: translateX(-50%) translateY(-30px); opacity: 0; }
+  18%, 72% { transform: translateX(-50%) translateY(6px); opacity: 1; }
+  100% { transform: translateX(-50%) translateY(-30px); opacity: 0; }
+}
+html.light-theme body.builder-page .screen-pull-refresh { background: #eef0ea; border-color: #d3d5cc; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14); }
+html.light-theme body.android-page .screen .screen-pull-refresh { background: #eef0ea; border-color: #cbcdc4; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.14); }
+.android-page .preview-panel { display: flex; flex-direction: column; }
+@media (max-width: 520px) {
+  .phone { width: min(250px, 72vw); height: min(440px, 125vw); }
+  .android-sample { gap: 6px; padding: 34px 10px 10px; }
+  .sample-hero { gap: 4px; padding: 10px; }
+  .sample-hero p { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen-pull-refresh.active { animation: none; }
+  .screen-splash { transition: none; }
+  .android-page .screen-progress.active,
+  .android-page .screen .screen-pull-refresh.active { animation: none; }
+  .android-sample { transition: none; }
+  .android-sample.is-zooming { animation: none; }
 }

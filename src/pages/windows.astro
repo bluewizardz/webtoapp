@@ -242,7 +242,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
       <!-- Windows App Preview -->
       <aside class="preview-panel" aria-label="Windows app preview">
         <!-- Device Preview Frame -->
-        <div class="win-frame" id="winFrame" aria-hidden="true">
+        <div class="win-frame" id="winFrame">
             <div class="win-titlebar">
               <div class="win-title-left">
                 <span class="win-app-icon" id="winTitleIcon">A</span>
@@ -255,10 +255,35 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
               </div>
             </div>
             <div class="win-body">
-              <div class="win-page">
-                <span class="win-page-icon" id="winPageIcon">A</span>
-                <span class="win-page-name" id="winPageName">My Desktop App</span>
-                <span class="win-page-url" id="winPageUrl">https://example.com</span>
+              <div class="win-page win-sample">
+                <div class="win-sample-topbar">
+                  <span class="win-page-icon" id="winPageIcon">A</span>
+                  <span class="win-page-name" id="winPageName">My Desktop App</span>
+                  <span class="win-sample-nav"><i>Home</i><i>About</i><i>Contact</i></span>
+                </div>
+                <div class="win-sample-hero">
+                  <b id="winSampleHeading">Welcome to My Desktop App</b>
+                  <p>Your website, running in its own window with a native install and icon.</p>
+                  <span class="win-sample-url" id="winSampleUrl">example.com</span>
+                  <span class="win-sample-cta">Open website</span>
+                </div>
+                <div class="win-sample-cards">
+                  <div class="win-sample-card">
+                    <span class="win-sample-thumb"></span>
+                    <b>Latest news</b>
+                    <small>Fresh posts from your site</small>
+                  </div>
+                  <div class="win-sample-card">
+                    <span class="win-sample-thumb is-circle"></span>
+                    <b>About the site</b>
+                    <small>What this app is about</small>
+                  </div>
+                  <div class="win-sample-card">
+                    <span class="win-sample-thumb is-square"></span>
+                    <b>Contact &amp; support</b>
+                    <small>Reach the team any time</small>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="win-taskbar">
@@ -269,6 +294,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
               <span class="win-clock">12:00</span>
             </div>
         </div>
+        <p class="preview-note" id="winPreviewStatus" aria-live="polite">Preview · Tauri · 1200×800 · NSIS installer</p>
 
       </aside>
     </div>

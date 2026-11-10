@@ -214,7 +214,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
       <aside class="preview-panel" aria-label="App preview">
         
         <!-- Device Preview Frame -->
-        <div class="device-preview" aria-hidden="true">
+        <div class="device-preview">
           <div class="phone">
             <div class="phone-frame">
               <div class="phone-camera"></div>
@@ -227,6 +227,34 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
               </div>
               <div class="screen" id="phoneScreen">
                 <div class="screen-progress" id="screenProgress"></div>
+                <div class="android-sample is-pending" aria-hidden="true">
+                  <div class="sample-topbar">
+                    <span class="sample-logo" id="sampleLogo"></span>
+                    <b class="sample-brand" id="sampleBrand">My Website</b>
+                    <span class="sample-menu"><i></i><i></i><i></i></span>
+                  </div>
+                  <span class="sample-url" id="sampleUrl">example.com</span>
+                  <div class="sample-hero">
+                    <b id="sampleHeading">Welcome to My Website</b>
+                    <p>Browse the latest pages and posts right inside the app.</p>
+                    <span class="sample-cta">Open site</span>
+                  </div>
+                  <div class="sample-row">
+                    <span class="sample-thumb"></span>
+                    <span class="sample-row-text">
+                      <b>Latest news</b>
+                      <small>Fresh posts from your website</small>
+                    </span>
+                  </div>
+                  <div class="sample-row">
+                    <span class="sample-thumb alt"></span>
+                    <span class="sample-row-text">
+                      <b>About the site</b>
+                      <small>Learn what this app is about</small>
+                    </span>
+                  </div>
+                  <div class="sample-tabs"><span>Home</span><span>News</span><span>More</span></div>
+                </div>
                 <div class="screen-pull-refresh" id="screenPullRefresh">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="23 4 23 10 17 10"></polyline>
@@ -235,6 +263,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
                 </div>
                 <div class="screen-splash" id="screenSplash">
                   <div class="splash-icon">
+                    <img id="splashIconImage" alt="" hidden>
                     <span id="splashInitials" aria-hidden="true">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="4" width="18" height="16" rx="3"></rect>
@@ -244,18 +273,8 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
                       </svg>
                     </span>
                   </div>
+                  <strong id="splashName">Site App</strong>
                 </div>
-                <span id="previewInitials" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="16" rx="3"></rect>
-                    <path d="M3 9h18"></path>
-                    <circle cx="6.4" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
-                    <circle cx="9" cy="6.5" r="0.7" fill="currentColor" stroke="none"></circle>
-                  </svg>
-                </span>
-                <img id="previewIcon" alt="App Icon" style="display: none; width: 54px; height: 54px; border-radius: 50%; object-fit: cover; box-shadow: var(--shadow-md);">
-                <strong id="previewName">Site App</strong>
-                <small id="previewUrl">https://example.com</small>
               </div>
               <div class="phone-nav-bar" id="phoneNavBar">
                 <span class="nav-pill"></span>
@@ -263,6 +282,8 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
             </div>
           </div>
         </div>
+        <button class="preview-play" id="androidPreviewPlay" type="button" aria-controls="phoneScreen"><span aria-hidden="true">▶</span> Play preview</button>
+        <p class="preview-note" id="androidPreviewStatus" aria-live="polite">Preview · v1.0.0</p>
 
         <!-- Build History -->
         <div class="build-history" id="buildHistory" style="display: none;">
