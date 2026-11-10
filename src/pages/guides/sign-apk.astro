@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icon.astro';
 
 const pageTitle = "How to Sign an APK for Google Play Store Publishing";
 const pageDescription = "Learn how to sign your SiteToApp APK: generate a keystore, sign the release, and upload to Google Play Console. Walkthrough with commands.";
@@ -37,7 +38,7 @@ const signApkSchema = { "@graph": [{
           <li aria-current="page">Sign APK</li>
         </ol>
       </nav>
-      <h1>How to Sign an APK for Google Play</h1>
+      <h1>Sign an APK for Google Play</h1>
       <p class="page-lede">Step-by-step cryptographic signing walkthrough: generate an upload keystore, sign with apksigner, verify certificates, and upload to Google Play Console.</p>
     </header>
 
@@ -45,7 +46,7 @@ const signApkSchema = { "@graph": [{
       <!-- Sticky Navigation & Overview Sidebar -->
       <aside class="guide-sidebar" aria-label="Guide overview and navigation">
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a Glance</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a glance</h2>
           <div class="guide-meta-box">
             <div class="guide-meta-item">
               <span class="guide-meta-label">Time</span>
@@ -67,7 +68,7 @@ const signApkSchema = { "@graph": [{
         </div>
 
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">Step Navigation</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">On this page</h2>
           <nav class="guide-toc-nav" aria-label="Table of contents">
             <a href="#what-signing-does" class="guide-toc-link"><span class="guide-toc-num">00</span> Why Sign?</a>
             <a href="#step-1" class="guide-toc-link"><span class="guide-toc-num">01</span> Generate Keystore</a>
@@ -79,9 +80,9 @@ const signApkSchema = { "@graph": [{
         </div>
 
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">Next Guide</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Next guide</h2>
           <p style="font-size: 0.86rem; color: var(--accents-6); line-height: 1.5; margin: 0 0 12px;">Ready to publish? Follow our complete Play Store walkthrough.</p>
-          <a href="/guides/publish-to-play-store" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">Play Store Guide</a>
+          <a href="/guides/publish-to-play-store" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;"><Icon name="book" />Play Store Guide</a>
         </div>
       </aside>
 
@@ -197,8 +198,8 @@ const signApkSchema = { "@graph": [{
             <p>Generate your Android wrapper project and download the complete workspace with GitHub Actions CI/CD included.</p>
           </div>
           <div class="guides-cta-actions">
-            <a href="/android" class="btn btn-primary">Start Android Builder</a>
-            <a href="/guides/publish-to-play-store" class="btn btn-secondary">Play Store Guide</a>
+            <a href="/android" class="btn btn-primary"><Icon name="android" />Start Android Builder</a>
+            <a href="/guides/publish-to-play-store" class="btn btn-secondary"><Icon name="book" />Play Store Guide</a>
           </div>
         </section>
 

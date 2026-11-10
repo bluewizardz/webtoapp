@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icon.astro';
 
 const pageTitle = "How to Convert a Website to a Windows Desktop App (EXE)";
 const pageDescription = "Step-by-step: turn a website into a Windows EXE with SiteToApp. Pick Electron or Tauri, choose NSIS or portable, build, and distribute. Free and no-code.";
@@ -37,15 +38,15 @@ const desktopGuideSchema = { "@graph": [{
           <li aria-current="page">Windows Desktop App</li>
         </ol>
       </nav>
-      <h1>Convert a Website to a Windows Desktop App</h1>
-      <p class="page-lede">Transform any website into a standalone Windows desktop application: choose between Electron or Tauri, configure installers, and distribute to users with zero coding.</p>
+      <h1>Convert a website to a Windows app</h1>
+      <p class="page-lede">Create a Windows installer or portable app from a website URL. Choose an engine, set the app details, and download the package.</p>
     </header>
 
     <div class="guide-layout">
       <!-- Sticky Navigation & Overview Sidebar -->
       <aside class="guide-sidebar" aria-label="Guide overview and navigation">
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a Glance</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a glance</h2>
           <div class="guide-meta-box">
             <div class="guide-meta-item">
               <span class="guide-meta-label">Time</span>
@@ -67,7 +68,7 @@ const desktopGuideSchema = { "@graph": [{
         </div>
 
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">Step Navigation</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">On this page</h2>
           <nav class="guide-toc-nav" aria-label="Table of contents">
             <a href="#why-desktop" class="guide-toc-link"><span class="guide-toc-num">00</span> Why Desktop?</a>
             <a href="#step-1" class="guide-toc-link"><span class="guide-toc-num">01</span> Add URL</a>
@@ -79,9 +80,9 @@ const desktopGuideSchema = { "@graph": [{
         </div>
 
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">Need a Windows EXE?</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Build a Windows app</h2>
           <p style="font-size: 0.86rem; color: var(--accents-6); line-height: 1.5; margin: 0 0 12px;">Compile a desktop installer or portable executable in minutes.</p>
-          <a href="/windows" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;">Open Windows Builder</a>
+          <a href="/windows" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;"><Icon name="windows" />Open Windows Builder</a>
         </div>
       </aside>
 
@@ -194,8 +195,8 @@ const desktopGuideSchema = { "@graph": [{
             <p>Compile a Tauri or Electron desktop installer from your URL in minutes. 100% free with no login required.</p>
           </div>
           <div class="guides-cta-actions">
-            <a href="/windows" class="btn btn-primary">Start Windows Builder</a>
-            <a href="/guides/webview-vs-electron-vs-tauri" class="btn btn-secondary">Engine Comparison</a>
+            <a href="/windows" class="btn btn-primary"><Icon name="windows" />Start Windows Builder</a>
+            <a href="/guides/webview-vs-electron-vs-tauri" class="btn btn-secondary"><Icon name="book" />Engine Comparison</a>
           </div>
         </section>
 

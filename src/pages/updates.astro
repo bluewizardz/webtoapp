@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
 
 const pageTitle = "SiteToApp Updates & Changelog";
 const pageDescription = "What's new in SiteToApp: Tauri engine, draft releases, redesigned previews, brand assets, SEO upgrades. Free forever.";
@@ -60,11 +61,11 @@ const updatesSchema = {
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={updatesSchema}>
   <main class="shell">
     <header class="page-hero">
-      <h1>Updates &amp; Changelog</h1>
+      <h1>Updates and changelog</h1>
       <p class="page-lede">What's new in SiteToApp. Everything below is free forever — no tiers, no credits.</p>
       <div class="page-hero-actions">
-        <a href="/guides" class="btn btn-secondary">Browse the guides</a>
-        <a href="mailto:discovereverything123@gmail.com" class="btn btn-secondary">Ask a question</a>
+        <a href="/guides" class="btn btn-secondary"><Icon name="book" />Browse the guides</a>
+        <a href="mailto:discovereverything123@gmail.com" class="btn btn-secondary"><Icon name="support" />Ask a question</a>
       </div>
     </header>
 
@@ -75,7 +76,7 @@ const updatesSchema = {
           <span class="changelog-badge">Latest</span>
         </div>
         <div class="changelog-card">
-          <h2>Tauri Engine + Draft Releases</h2>
+          <h2>Tauri builds and draft releases</h2>
           <p>Windows EXE builds now let you pick a <strong>Tauri engine</strong> (~5–10 MB) alongside the classic Electron engine (~65–90 MB). Leaner installers, faster cold starts, and the same one-click build flow.</p>
           <ul>
             <li>EXE builds publish to <strong>draft releases</strong>, so finished installers no longer clutter the repository's public Releases section — direct CDN downloads still work via signed URLs.</li>
@@ -90,7 +91,7 @@ const updatesSchema = {
           <time class="changelog-date" datetime="2026-11-09">November 9, 2026</time>
         </div>
         <div class="changelog-card">
-          <h2>Brand Refresh + SEO Upgrade</h2>
+          <h2>Brand assets and site updates</h2>
           <p>New brand identity: navbar banner, WebP-optimized wordmark, favicon, and a 1200×630 social card. Under the hood: Organization/WebSite/FAQ/HowTo structured data on every page, a complete sitemap, security headers, immutable caching, and preloaded fonts for faster loads.</p>
           <p>New content: the <a href="/guides">guides hub</a> with step-by-step tutorials — <a href="/guides/publish-to-play-store">publishing to the Google Play Store</a>, <a href="/guides/sign-apk">signing your APK</a>, <a href="/guides/website-to-desktop-windows">building Windows desktop apps</a>, and <a href="/guides/webview-vs-electron-vs-tauri">WebView vs Electron vs Tauri</a>.</p>
         </div>
@@ -101,7 +102,7 @@ const updatesSchema = {
           <time class="changelog-date" datetime="2026-10-15">October 15, 2026</time>
         </div>
         <div class="changelog-card">
-          <h2>Windows EXE Builder Launch</h2>
+          <h2>Windows EXE builder</h2>
           <p>Convert websites into Windows desktop apps: Electron-powered NSIS installers and portable EXEs, with engine selection, a live device preview, and a ready-made GitHub Actions workflow inside every workspace ZIP. Start at the <a href="/windows">Windows builder</a>.</p>
         </div>
       </article>
@@ -111,7 +112,7 @@ const updatesSchema = {
           <span class="changelog-date">Earlier</span>
         </div>
         <div class="changelog-card">
-          <h2>Android APK Builder</h2>
+          <h2>Android APK builder</h2>
           <p>The original release: free website-to-APK conversion with a native Java WebView wrapper (~30–60 KB APK), pull-to-refresh, splash screen, offline fallback, and a workspace ZIP with CI/CD. Start at the <a href="/android">Android builder</a>.</p>
         </div>
       </article>
@@ -119,12 +120,12 @@ const updatesSchema = {
 
     <section class="guides-cta" aria-labelledby="updates-cta-title">
       <div>
-        <h2 id="updates-cta-title">Stay in the loop</h2>
+        <h2 id="updates-cta-title">Need help?</h2>
         <p>Questions about any release? Read the FAQ for answers on builds, app size, and publishing — or email support and we'll get back to you.</p>
       </div>
       <div class="guides-cta-actions">
-        <a href="/faq" class="btn btn-secondary">Read the FAQ</a>
-        <a href="mailto:discovereverything123@gmail.com" class="btn btn-primary">Email support</a>
+        <a href="/faq" class="btn btn-secondary"><Icon name="book" />Read the FAQ</a>
+        <a href="mailto:discovereverything123@gmail.com" class="btn btn-primary"><Icon name="mail" />Email support</a>
       </div>
     </section>
   </main>

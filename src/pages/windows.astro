@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
 import '../styles/windows.css';
 
 const pageTitle = "Convert Website to EXE - Free Windows App Installer Builder";
@@ -14,7 +15,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
       <!-- Windows App Configuration -->
       <form class="builder-panel" id="winForm">
         <div class="section-title">
-          <h2>Windows App Configuration</h2>
+          <h2>Windows app configuration</h2>
         </div>
 
         <div class="simple-zone">
@@ -78,7 +79,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
                   <span>App ID</span>
                   <div class="inline-control">
                     <input id="winAppId" type="text" placeholder="com.example.app" spellcheck="false">
-                    <button type="button" id="winResetId" class="btn btn-secondary">Auto</button>
+                    <button type="button" id="winResetId" class="btn btn-secondary"><Icon name="reset" />Auto</button>
                   </div>
                 </label>
               </div>
@@ -193,7 +194,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
               </div>
             </fieldset>
 
-            <button type="button" class="btn btn-secondary btn-small" id="winResetDefaults">Reset to defaults</button>
+            <button type="button" class="btn btn-secondary btn-small" id="winResetDefaults"><Icon name="reset" />Reset to defaults</button>
           </div>
         </details>
 
@@ -210,6 +211,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
 
         <div class="actions">
           <button class="btn btn-primary" id="winBuild" type="submit">
+            <Icon name="download" />
             Build Windows Installer
           </button>
           <div class="build-success" id="winSuccess" style="display: none;">
@@ -217,7 +219,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
-            <span class="build-success-text">Build Successful! Your installer is downloading.</span>
+            <span class="build-success-text">Build complete. Your installer is downloading</span>
           </div>
           <div class="build-retry" id="winRetry" style="display: none;">
             <a id="winRetryLink" href="#" download>Download again</a>
@@ -275,7 +277,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
     <div class="notice-overlay" id="winModal" hidden>
       <div class="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="winModalTitle" aria-describedby="winModalText">
         <div class="notice-dialog-header">
-          <h2 id="winModalTitle">Windows SmartScreen Notice</h2>
+          <h2 id="winModalTitle">Windows SmartScreen notice</h2>
           <button type="button" class="notice-close" id="winModalClose" aria-label="Close notice">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -283,7 +285,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
             </svg>
           </button>
         </div>
-        <p class="notice-dialog-text" id="winModalText">Windows SmartScreen may warn you because this installer is unsigned. Choose <strong>More info → Run anyway</strong> to install. The app is a clean wrapper around your website and contains no malware.</p>
+        <p class="notice-dialog-text" id="winModalText">Windows may warn because this installer is unsigned. Select <strong>More info</strong>, then choose <strong>Run anyway</strong> only if you trust the source.</p>
 
         <div class="notice-support">
           <p class="notice-support-text">
@@ -297,7 +299,7 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
           </a>
         </div>
 
-        <button type="button" class="btn btn-primary btn-small" id="winModalDismiss">Got it</button>
+        <button type="button" class="btn btn-primary btn-small" id="winModalDismiss"><Icon name="check" />Got it</button>
       </div>
     </div>
   </main>

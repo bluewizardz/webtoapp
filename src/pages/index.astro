@@ -1,8 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
 
-const pageTitle = "SiteToApp - Free Website to APK Converter & App Wrapper";
-const pageDescription = "Convert any website URL into a fully functional native Android app (APK) instantly with zero coding. High-performance, lightweight WebView wrapper, 100% free.";
+const pageTitle = "SiteToApp - Android and Windows App Builder";
+const pageDescription = "Build an Android APK or Windows app from a website URL. Configure the app and download the build with its source workspace. Free to use, with no account required.";
 ---
 
 <Layout title={pageTitle} description={pageDescription}>
@@ -10,32 +11,65 @@ const pageDescription = "Convert any website URL into a fully functional native 
     <!-- Hero Section -->
     <section class="hero" aria-label="Product introduction">
       <div class="hero-container">
-        <div class="hero-badge-wrapper" style="display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-          <span class="hero-badge" style="color: #3ddc84; border-color: rgba(61, 220, 132, 0.3); background-color: rgba(61, 220, 132, 0.05);">No Login Required</span>
-          <span class="hero-badge" style="color: #0070f3; border-color: rgba(0, 112, 243, 0.3); background-color: rgba(0, 112, 243, 0.05);">100% Free</span>
+        <div class="hero-copy">
+          <p class="hero-eyebrow">Website to app builder <span>Fast · Free · No account</span></p>
+          <h1 class="hero-title">Turn any website into an app</h1>
+          <p class="hero-subtitle">
+            Build for free without an account. Enter a website URL, set the app name and launch options, then download the build and its source workspace.
+          </p>
+          <div class="hero-ctas">
+            <a href="#platforms" class="btn btn-primary"><Icon name="layers" />Choose a builder</a>
+            <a href="#how-it-works" class="btn btn-secondary"><Icon name="book" />How it works</a>
+          </div>
         </div>
-        <h1 class="hero-title">
-          Your website.<br>
-          As a native application.
-        </h1>
-        <p class="hero-subtitle">
-          Instantly package and compile any website URL into a native Android wrapper app (APK). Get a lightweight, high-performance mobile application with pull-to-refresh, loading indicators, and offline fallback—<strong>100% free, no login required, no cost</strong>.
-        </p>
-        <div class="hero-ctas">
-          <a href="#platforms" class="btn btn-primary">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
-              <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-              <line x1="12" y1="18" x2="12.01" y2="18"></line>
-            </svg>
-            Build Your App Now
-          </a>
-          <a href="#how-it-works" class="btn btn-secondary">
-            Learn More
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 18px; height: 18px;">
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-              <polyline points="12 5 19 12 12 19"></polyline>
-            </svg>
-          </a>
+
+        <div class="preview-scene" aria-label="Android, Apple, Linux and Windows app platforms">
+          <img class="preview-orbit orbit-android" src="/images/platforms/android-mascot.webp" alt="" aria-hidden="true" />
+          <img class="preview-orbit orbit-apple" src="/images/platforms/apple-logo.webp" alt="" aria-hidden="true" />
+          <img class="preview-orbit orbit-linux" src="/images/platforms/linux-logo.webp" alt="" aria-hidden="true" />
+          <img class="preview-orbit orbit-windows" src="/images/platforms/windows-logo.webp" alt="" aria-hidden="true" />
+          <figure class="conversion-preview" aria-label="A website URL flowing into Android, Windows, macOS and Linux app builds">
+          <div class="preview-heading">
+            <img class="preview-logo preview-logo-dark" src="/brand-wordmark.webp" alt="SiteToApp" width="600" height="131" />
+            <img class="preview-logo preview-logo-light" src="/brand-wordmark-light.webp" alt="" aria-hidden="true" width="600" height="131" />
+          </div>
+          <div class="preview-source">
+            <span class="preview-label">Website URL</span>
+            <div class="preview-url">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span>https://example.com</span>
+            </div>
+          </div>
+          <div class="preview-connector" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3v16m0 0 5-5m-5 5-5-5"/></svg>
+          </div>
+          <div class="preview-builds">
+            <div class="preview-build">
+              <span class="build-mark android-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 18h6"/></svg>
+              </span>
+              <span class="build-name"><strong>Android</strong><small>Native wrapper</small></span>
+              <span class="build-file">.APK</span>
+            </div>
+            <div class="preview-build">
+              <span class="build-mark windows-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M3 5.5 10.5 4v7H3zM12 3.7 21 2v9h-9zM3 13h7.5v7L3 18.5zM12 13h9v9l-9-1.7z"/></svg>
+              </span>
+              <span class="build-name"><strong>Windows</strong><small>Desktop installer</small></span>
+              <span class="build-file">.EXE</span>
+            </div>
+            <div class="preview-build">
+              <span class="build-mark apple-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M16.7 12.8c0-2 1.6-3 1.7-3.1a3.7 3.7 0 0 0-2.9-1.6c-1.2-.1-2.3.7-2.9.7s-1.5-.7-2.5-.7a3.9 3.9 0 0 0-3.3 2c-1.4 2.4-.4 6 1 8 .7 1 1.5 2 2.5 2s1.4-.6 2.6-.6 1.6.6 2.6.6 1.7-1 2.3-2a9 9 0 0 0 1-2.1 3.4 3.4 0 0 1-2.1-3.2ZM14.8 6.8a3.7 3.7 0 0 0 .8-2.6 3.8 3.8 0 0 0-2.4 1.2 3.5 3.5 0 0 0-.9 2.5 3.2 3.2 0 0 0 2.5-1.1Z"/></svg></span>
+              <span class="build-name"><strong>macOS</strong><small class="build-status">Coming soon</small></span>
+              <span class="build-file">.DMG</span>
+            </div>
+            <div class="preview-build">
+              <span class="build-mark linux-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path class="tux-body" d="M20 2.8c-6.3 0-10.2 4.7-10.2 11.6-2.3 1.4-4.1 4-5.1 7.8l-1.4 5.1c-.5 1.8.7 3.5 2.5 3.5 1 0 1.8-.5 2.4-1.4l2.4-3.8c.5 3.1 1.5 5.4 3.4 6.8l-1.1 2c-.7 1.3.2 2.8 1.7 2.8h3.1c1 0 1.8-.6 2.1-1.4.3.8 1.1 1.4 2.1 1.4H25c1.5 0 2.4-1.5 1.7-2.8l-1.1-2c1.9-1.4 2.9-3.7 3.4-6.8l2.4 3.8c.6.9 1.4 1.4 2.4 1.4 1.8 0 3-1.7 2.5-3.5L35 22.2c-1-3.8-2.8-6.4-5.1-7.8C29.9 7.5 26.3 2.8 20 2.8Z"/><path class="tux-belly" d="M20 15.2c-4.4 0-7.1 3.8-7.1 8.2 0 3.5 2.5 5.6 7.1 5.6s7.1-2.1 7.1-5.6c0-4.4-2.7-8.2-7.1-8.2Z"/><ellipse class="tux-eye" cx="16.3" cy="10.3" rx="1.2" ry="1.8"/><ellipse class="tux-eye" cx="23.7" cy="10.3" rx="1.2" ry="1.8"/><path class="tux-beak" d="m17 13 3-1.2 3 1.2-3 2.4-3-2.4Z"/></svg></span>
+              <span class="build-name"><strong>Linux</strong><small class="build-status">Coming soon</small></span>
+              <span class="build-file linux-formats">.deb, .rpm, .tar.gz</span>
+            </div>
+          </div>
+          </figure>
         </div>
       </div>
     </section>
@@ -43,20 +77,20 @@ const pageDescription = "Convert any website URL into a fully functional native 
     <!-- Platforms Grid -->
     <section class="platforms-section" id="platforms" aria-label="Supported platforms">
       <div class="section-container">
-        <h2 class="section-heading">Supported Platforms</h2>
+        <h2 class="section-heading">Supported platforms</h2>
         <div class="platforms-grid">
           
           <!-- Android Card (Active) -->
           <a href="/android" class="platform-card active-card" aria-label="Configure Android App">
             <div class="card-header">
               <span class="platform-icon android-icon">
-                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px; color: #3ddc84;" xmlns="http://www.w3.org/2000/svg">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M16.61 15.15C16.15 15.15 15.77 14.78 15.77 14.32S16.15 13.5 16.61 13.5H16.61C17.07 13.5 17.45 13.86 17.45 14.32C17.45 14.78 17.07 15.15 16.61 15.15M7.41 15.15C6.95 15.15 6.57 14.78 6.57 14.32C6.57 13.86 6.95 13.5 7.41 13.5H7.41C7.87 13.5 8.24 13.86 8.24 14.32C8.24 14.78 7.87 15.15 7.41 15.15M16.91 10.14L18.58 7.26C18.67 7.09 18.61 6.88 18.45 6.79C18.28 6.69 18.07 6.75 18 6.92L16.29 9.83C14.95 9.22 13.5 8.9 12 8.91C10.47 8.91 9 9.24 7.73 9.82L6.04 6.91C5.95 6.74 5.74 6.68 5.57 6.78C5.4 6.87 5.35 7.08 5.44 7.25L7.1 10.13C4.25 11.69 2.29 14.58 2 18H22C21.72 14.59 19.77 11.7 16.91 10.14H16.91Z" />
                 </svg>
               </span>
-              <span class="badge badge-success">Active</span>
+              <span class="badge badge-success">Available</span>
             </div>
-            <h3 class="card-title">Turn Website into an Android App</h3>
+            <h3 class="card-title">Turn a website into an Android app</h3>
             <p class="card-description">
               Convert any website into a high-performance native Android container. Generates a clean Gradle project compiling into a lightweight APK in minutes.
             </p>
@@ -69,13 +103,13 @@ const pageDescription = "Convert any website URL into a fully functional native 
           <a href="/windows" class="platform-card active-card" aria-label="Configure Windows app">
             <div class="card-header">
               <span class="platform-icon windows-icon">
-                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px; color: #0078d7;">
+                <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.1zM10.8 1.95L24 0v11.55H10.8V1.95zM10.8 12.45H24v11.55l-13.2-1.95v-9.6z"/>
                 </svg>
               </span>
-              <span class="badge badge-success">Active</span>
+              <span class="badge badge-success">Available</span>
             </div>
-            <h3 class="card-title">Turn Website into a Windows App</h3>
+            <h3 class="card-title">Turn a website into a Windows app</h3>
             <p class="card-description">
               Transform any website into a native Windows desktop program. Generates professional NSIS installers (.exe) and portable apps with full system integration.
             </p>
@@ -88,39 +122,30 @@ const pageDescription = "Convert any website URL into a fully functional native 
           <div class="platform-card disabled-card">
             <div class="card-header">
               <span class="platform-icon macos-icon">
-                <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px; color: #a3aaae;">
+                <svg viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.2.67-2.92 1.51-.62.73-1.16 1.87-1.01 2.98 1.12.09 2.27-.61 2.94-1.43Z"/>
                 </svg>
               </span>
               <span class="badge badge-neutral">Coming Soon</span>
             </div>
-            <h3 class="card-title">Turn Website into a macOS App</h3>
+            <h3 class="card-title">Turn a website into a macOS app</h3>
             <p class="card-description">
               Package any website into a desktop-ready macOS application. Generates optimized DMG installers and standalone ZIP packages built on Electron.
             </p>
-            <div class="card-footer">
-              <span class="cta-link">Coming Soon &rarr;</span>
-            </div>
           </div>
 
           <!-- Linux Card (Coming Soon) -->
           <div class="platform-card disabled-card">
             <div class="card-header">
               <span class="platform-icon linux-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 32px; height: 32px; color: #fcc729;">
-                  <polyline points="4 17 10 11 4 5" />
-                  <line x1="12" y1="19" x2="20" y2="19" />
-                </svg>
+                <img src="/linux-tux.webp" alt="" aria-hidden="true" width="192" height="234" />
               </span>
               <span class="badge badge-neutral">Coming Soon</span>
             </div>
-            <h3 class="card-title">Turn Website into a Linux App</h3>
+            <h3 class="card-title">Turn a website into a Linux app</h3>
             <p class="card-description">
               Package any website for Linux desktop environments. Generates universal AppImage binaries and native .deb packages ready for Ubuntu, Debian, and Mint.
             </p>
-            <div class="card-footer">
-              <span class="cta-link">Coming Soon &rarr;</span>
-            </div>
           </div>
 
         </div>
@@ -130,7 +155,7 @@ const pageDescription = "Convert any website URL into a fully functional native 
     <!-- How It Works -->
     <section class="features-section" id="how-it-works" aria-label="How SiteToApp works">
       <div class="section-container">
-        <h2 class="section-heading">How It Works</h2>
+        <h2 class="section-heading">How it works</h2>
         <div class="features-grid">
           <div class="feature-item">
             <h3 class="feature-title">
@@ -159,7 +184,7 @@ const pageDescription = "Convert any website URL into a fully functional native 
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; color: #a3aaae; display: inline-block; vertical-align: text-bottom; margin-right: 8px;">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              3. Download and go live
+              3. Download your build
             </h3>
             <p class="feature-desc">
               Get your APK or EXE plus the full source workspace with CI/CD. Then follow our <a href="/guides/publish-to-play-store">Play Store publishing guide</a> to ship it.

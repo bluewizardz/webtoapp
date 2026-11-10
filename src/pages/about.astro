@@ -1,8 +1,9 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
 
-const pageTitle = "About SiteToApp - Free Open-Source WebView Wrapper Project";
-const pageDescription = "Learn about the SiteToApp mission: free, secure website-to-app conversion into lightweight Android APK and Windows EXE wrapper apps at zero cost.";
+const pageTitle = "About SiteToApp - Android and Windows App Builder";
+const pageDescription = "Learn about SiteToApp, a free website-to-app builder for Android APK and Windows EXE projects.";
 
 const aboutSchema = {
   "@graph": [
@@ -22,7 +23,7 @@ const aboutSchema = {
   <main class="shell">
     <header class="page-hero">
       <h1>About SiteToApp</h1>
-      <p class="page-lede">Making website-to-app packaging fully accessible, secure, and developer-friendly — 100% free with zero coding required.</p>
+      <p class="page-lede">SiteToApp packages your website as an Android or Windows app and gives you the generated project source.</p>
     </header>
 
     <!-- Single-column About content -->
@@ -30,15 +31,15 @@ const aboutSchema = {
       
       <!-- Main Content Column -->
       <article class="content-panel about-article" style="margin: 0;">
-        <h2>Our Mission</h2>
-        <p>Typically, packaging a web application for mobile distribution involves standing up heavy developer environments like Android Studio, Gradle, and managing nested package structures. The other alternative is subscription-based services that bundle tracking scripts, advertisements, or slow, outdated rendering engines behind a paywall.</p>
-        <p>We believe in democratizing application compiles. By delivering clean, boilerplate native Java wrapper projects featuring standard WebView clients, you get compile-ready codebases that conform to standard Android guidelines — with absolutely zero dependency on third-party frameworks.</p>
+        <h2>Our mission</h2>
+        <p>Packaging a website as an app usually means setting up a native development environment and managing project files. SiteToApp generates the wrapper project so you can download it and build locally when needed.</p>
+        <p>The Android workspace uses Java and the standard WebView APIs. The Windows builder offers Electron and Tauri projects.</p>
 
-        <h2>How SiteToApp Works</h2>
+        <h2>How SiteToApp works</h2>
         <p>Enter your website URL and a few details (app name, icon, and features) into our <a href="/android">Android</a> or <a href="/windows">Windows</a> builder. Our build pipeline then generates a complete native project on the fly: for Android, a standard Java WebView wrapper compiled into an APK; for Windows, an Electron or Tauri desktop application packaged as an NSIS installer or portable EXE. You download the finished app (and, if you want, the full source workspace) in minutes — no signup, no install, no local toolchain.</p>
         <p>Because every wrapper simply loads your live website in a native WebView, content changes on your site show up in the app instantly. You only need to rebuild when you change the app name, icon, package ID, or native features.</p>
 
-        <h2>What You Get</h2>
+        <h2>What you get</h2>
         <ul>
           <li><strong>A ready-to-install app</strong> — a signed or signable APK / Windows EXE you can install on any device immediately.</li>
           <li><strong>The full source ZIP</strong> — the complete Java/Gradle (Android) or Electron/Tauri (Windows) project, with your icon, splash screen, and feature settings applied.</li>
@@ -46,16 +47,16 @@ const aboutSchema = {
           <li><strong>Full ownership</strong> — the compiled code is yours. No licenses, no seat limits, no attribution required.</li>
         </ul>
 
-        <h2>Who It's For</h2>
-        <p>SiteToApp is built for small businesses, creators, and indie developers who have a website and want an app on every store — without hiring an app developer or learning a native toolchain. It also works well for teams who need a quick, standards-compliant wrapper to prototype or ship behind a native shell, then iterate locally with the downloaded source.</p>
+        <h2>Who it's for</h2>
+        <p>SiteToApp is for small businesses, creators, and developers who want an app wrapper for an existing website. Teams can also download the generated source and customize the project locally.</p>
 
-        <h2>Security First</h2>
+        <h2>Security</h2>
         <p>Your source code remains your own. We do not inject telemetry, analytics SDKs, or background services into your wrapper, and we never see your site credentials — you only ever give us a public URL and a logo. Everything matches standard native Android Java / desktop app structures, ensuring lightweight, high-performance execution on any device. Read the details on our <a href="/privacy">Privacy Policy</a> page.</p>
 
-        <h2>Zero Server Costs, Forever Free</h2>
-        <p>We keep compiles cheap by leaning on free infrastructure: builds run through GitHub Actions, and the generated workspace includes its own Actions pipeline so future builds cost nothing at all. There are no tiers, no credits, and no surprise invoices — SiteToApp is 100% free, forever.</p>
+        <h2>Build costs</h2>
+        <p>Builds run through GitHub Actions. Each generated workspace also includes a workflow for future builds. SiteToApp is free to use and has no subscription tiers.</p>
 
-        <h2>Open Source</h2>
+        <h2>Open source</h2>
         <p>The builder, templates, and build workflows are an open project. You can inspect exactly what lands inside your app, contribute improvements, or fork the pipeline for your own needs. Generated wrappers are yours to use, modify, and publish — including on the Google Play Store, as explained in our <a href="/guides/publish-to-play-store">publishing guide</a>.</p>
       </article>
 
@@ -68,7 +69,7 @@ const aboutSchema = {
             </svg>
             Start Building
           </h3>
-          <p style="font-size: 0.88rem; color: var(--accents-6); line-height: 1.5; margin: 0;">Convert your website into an app in seconds with zero code.</p>
+          <p style="font-size: 0.88rem; color: var(--accents-6); line-height: 1.5; margin: 0;">Build an Android or Windows wrapper from a public website URL.</p>
           <div class="about-build-actions">
             <a href="/android" class="btn btn-primary btn-small about-build-link about-build-link--android">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -112,6 +113,7 @@ const aboutSchema = {
           </h3>
           <p style="font-size: 0.88rem; color: var(--accents-6); line-height: 1.5; margin: 0;">Have a question, configuration issue, or feature request?</p>
           <a href="mailto:discovereverything123@gmail.com" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">
+            <Icon name="mail" />
             Contact Support Team
           </a>
         </div>

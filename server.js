@@ -394,7 +394,10 @@ app.post('/api/build/deb', compilerLimiter, async (req, res) => {
 });
 
 // Check build status
-app.get('/api/build/:buildId', (req, res) => {
+app.get('/api/build/:buildId', getBuildStatus);
+app.get('/api/exe/:buildId', getBuildStatus);
+
+function getBuildStatus(req, res) {
   const { buildId } = req.params;
   const buildStatus = buildQueue.get(buildId);
 
@@ -403,10 +406,13 @@ app.get('/api/build/:buildId', (req, res) => {
   }
 
   res.json(buildStatus);
-});
+}
 
 // Download built file
-app.get('/api/download/:buildId', (req, res) => {
+app.get('/api/download/:buildId', downloadBuild);
+app.get('/api/exe/download/:buildId', downloadBuild);
+
+function downloadBuild(req, res) {
   const { buildId } = req.params;
   const buildStatus = buildQueue.get(buildId);
 
@@ -422,7 +428,7 @@ app.get('/api/download/:buildId', (req, res) => {
   res.download(filePath, buildStatus.filename, (err) => {
     if (err) console.error('Download error:', err);
   });
-});
+}
 
 // Batch build endpoint (individual polling per platform)
 app.post('/api/build/batch', compilerLimiter, async (req, res) => {

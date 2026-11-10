@@ -307,7 +307,7 @@
     els.buildButton.disabled = loading;
     els.buildButton.innerHTML = loading
       ? '<span class="spinner" aria-hidden="true"></span> Building installer…'
-      : "Build Windows Installer";
+      : '<svg class="ui-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg> Build Windows Installer';
   }
 
   // === Preview ===
@@ -620,7 +620,7 @@
     document.body.removeChild(link);
 
     showProgress("Installer compiled. Download started.", 100);
-    setStatus("Build complete!");
+    setStatus("Build complete");
     if (els.success) els.success.style.display = "flex";
     if (els.retry) els.retry.style.display = "block";
     if (els.retryLink) els.retryLink.href = downloadUrl;

@@ -1,12 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icon.astro';
 
-const pageTitle = "Guides - Website to App Tutorials & Publishing Checklists";
+const pageTitle = "Guides - Website to app tutorials and publishing checklists";
 const pageDescription = "Step-by-step guides: publish APK to Play Store, sign APK, build Windows EXE, and compare WebView vs Electron vs Tauri.";
 
 const guides = [
   {
-    title: "Publish Your Website App to the Google Play Store",
+    title: "Publish your website app to Google Play",
     url: "/guides/publish-to-play-store",
     description: "From a finished APK to a live Play Store listing: build, test, create a Play Console account, upload the release, complete your store listing, and submit for review. Free and no-code.",
     tag: "Android",
@@ -15,7 +16,7 @@ const guides = [
     icon: "android"
   },
   {
-    title: "Sign an APK for Play Store Publishing",
+    title: "Sign an APK for Play Store publishing",
     url: "/guides/sign-apk",
     description: "Generate a keystore, sign the release build with apksigner, verify the signature, and upload — the signing walkthrough that unblocks Play Console submissions.",
     tag: "Android",
@@ -24,7 +25,7 @@ const guides = [
     icon: "key"
   },
   {
-    title: "Convert a Website to a Windows Desktop App (EXE)",
+    title: "Convert a website to a Windows app",
     url: "/guides/website-to-desktop-windows",
     description: "Build a standalone Windows app from any website: choose the Electron or Tauri engine, pick an NSIS installer or portable EXE, and distribute it to your users.",
     tag: "Windows",
@@ -33,7 +34,7 @@ const guides = [
     icon: "windows"
   },
   {
-    title: "WebView vs Electron vs Tauri: Which Wrapper Should You Use?",
+    title: "WebView, Electron, or Tauri: choose a wrapper",
     url: "/guides/webview-vs-electron-vs-tauri",
     description: "App size, performance, features, and ecosystem — a practical comparison of the three wrapper technologies, and how to pick between them for your project.",
     tag: "Comparison",
@@ -76,11 +77,11 @@ const guidesSchema = {
 <Layout title={pageTitle} description={pageDescription} bodyClass="landing-page" structuredData={guidesSchema}>
   <main class="shell">
     <header class="page-hero">
-      <h1>Guides &amp; Tutorials</h1>
+      <h1>Guides and tutorials</h1>
       <p class="page-lede">Practical, step-by-step tutorials for turning your website into a native app — and shipping it. Start from the Android or Windows builder, then follow the guides for publishing, signing, and picking the right engine.</p>
       <div class="page-hero-actions">
-        <a href="/android" class="btn btn-primary">Build an Android app</a>
-        <a href="/windows" class="btn btn-secondary">Build a Windows app</a>
+        <a href="/android" class="btn btn-primary"><Icon name="android" />Build an Android app</a>
+        <a href="/windows" class="btn btn-secondary"><Icon name="windows" />Build a Windows app</a>
       </div>
     </header>
 

@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icon.astro';
 
 const pageTitle = "How to Publish Your Website App to the Google Play Store";
 const pageDescription = "Step-by-step: build your website app, sign the APK, and submit to Google Play Console. Free, no-code.";
@@ -39,15 +40,15 @@ const guideSchema = {
           <li aria-current="page">Play Store Publishing</li>
         </ol>
       </nav>
-      <h1>How to Publish Your Website App to Google Play</h1>
-      <p class="page-lede">A comprehensive, step-by-step walkthrough taking you from a website URL to a live app listing on the Google Play Store — zero coding required.</p>
+      <h1>Publish your website app to Google Play</h1>
+      <p class="page-lede">Steps from a website URL to a Play Store listing: build, test, prepare the listing, and submit for review.</p>
     </header>
 
     <div class="guide-layout">
       <!-- Sticky Navigation & Overview Sidebar -->
       <aside class="guide-sidebar" aria-label="Guide overview and navigation">
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a Glance</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a glance</h2>
           <div class="guide-meta-box">
             <div class="guide-meta-item">
               <span class="guide-meta-label">Time</span>
@@ -69,7 +70,7 @@ const guideSchema = {
         </div>
 
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">Step Navigation</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">On this page</h2>
           <nav class="guide-toc-nav" aria-label="Table of contents">
             <a href="#step-1" class="guide-toc-link"><span class="guide-toc-num">01</span> Build APK</a>
             <a href="#step-2" class="guide-toc-link"><span class="guide-toc-num">02</span> Device Testing</a>
@@ -82,9 +83,9 @@ const guideSchema = {
         </div>
 
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">Need an APK?</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Build an APK</h2>
           <p style="font-size: 0.86rem; color: var(--accents-6); line-height: 1.5; margin: 0 0 12px;">Generate your free Android APK with native pull-to-refresh and splash screen.</p>
-          <a href="/android" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;">Open Android Builder</a>
+          <a href="/android" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;"><Icon name="android" />Open Android Builder</a>
         </div>
       </aside>
 
@@ -145,7 +146,7 @@ const guideSchema = {
         <article class="guide-step-card" id="step-3">
           <div class="guide-step-header">
             <span class="guide-step-badge">Step 03</span>
-            <h2>Create a Google Play Console developer account</h2>
+            <h2>Create a Google Play Console account</h2>
           </div>
           <p>Visit <a href="https://play.google.com/console" target="_blank" rel="noopener noreferrer">play.google.com/console</a> and register a developer account. Google charges a one-time registration fee of <strong>$25 USD</strong> (SiteToApp itself is completely free).</p>
           <p>You will need:</p>
@@ -160,7 +161,7 @@ const guideSchema = {
         <article class="guide-step-card" id="step-4">
           <div class="guide-step-header">
             <span class="guide-step-badge">Step 04</span>
-            <h2>Create your app &amp; upload the production release</h2>
+            <h2>Create your app and upload a release</h2>
           </div>
           <p>Once inside your Google Play Console dashboard, select <strong>Create app</strong>:</p>
           <ul style="color: var(--accents-6); padding-left: 20px; line-height: 1.7; margin-bottom: 16px;">
@@ -175,7 +176,7 @@ const guideSchema = {
         <article class="guide-step-card" id="step-5">
           <div class="guide-step-header">
             <span class="guide-step-badge">Step 05</span>
-            <h2>Complete the store listing &amp; data safety declarations</h2>
+            <h2>Complete the store listing and data safety forms</h2>
           </div>
           <p>Fill out the required listing details in Google Play Console:</p>
           <ul style="color: var(--accents-6); padding-left: 20px; line-height: 1.7; margin-bottom: 16px;">
@@ -201,10 +202,10 @@ const guideSchema = {
         <article class="guide-step-card" id="step-6">
           <div class="guide-step-header">
             <span class="guide-step-badge">Step 06</span>
-            <h2>Submit for Google review and roll out</h2>
+            <h2>Submit the app for review</h2>
           </div>
           <p>Review the automated <strong>Pre-launch report</strong> in Play Console to confirm there are no layout or crash warnings on test devices. Click <strong>Review and roll out</strong> and submit your application for Google's review.</p>
-          <p>Most clean WebView wrapper applications pass review in anywhere from 12 hours to a few days. Once approved, enable <strong>Start rollout to Production</strong> to make your app publicly accessible to billions of Android users worldwide!</p>
+          <p>Review times vary. Once the app is approved, start the production rollout to make it available on Google Play.</p>
         </article>
 
         <!-- Maintenance -->

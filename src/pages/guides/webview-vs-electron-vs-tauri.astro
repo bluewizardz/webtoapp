@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import Icon from '../../components/Icon.astro';
 
 const pageTitle = "WebView vs Electron vs Tauri: Which Wrapper Should You Use?";
 const pageDescription = "Compare Android WebView, Electron, and Tauri: app size, performance, ecosystem, and which SiteToApp picks for you.";
@@ -37,7 +38,7 @@ const compareSchema = { "@graph": [{
           <li aria-current="page">Architecture Comparison</li>
         </ol>
       </nav>
-      <h1>WebView vs Electron vs Tauri</h1>
+      <h1>WebView, Electron, or Tauri</h1>
       <p class="page-lede">App size, startup performance, native features, and memory footprint — an objective comparison of the three major web application wrapper architectures.</p>
     </header>
 
@@ -45,7 +46,7 @@ const compareSchema = { "@graph": [{
       <!-- Sticky Navigation & Overview Sidebar -->
       <aside class="guide-sidebar" aria-label="Guide overview and navigation">
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a Glance</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">At a glance</h2>
           <div class="guide-meta-box">
             <div class="guide-meta-item">
               <span class="guide-meta-label">Time</span>
@@ -78,10 +79,10 @@ const compareSchema = { "@graph": [{
         </div>
 
         <div class="guide-sidebar-card">
-          <h2 class="guide-sidebar-title" style="margin-top: 0;">Start Building</h2>
+          <h2 class="guide-sidebar-title" style="margin-top: 0;">Start building</h2>
           <div style="display: flex; flex-direction: column; gap: 8px;">
-            <a href="/android" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;">Android Builder</a>
-            <a href="/windows" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;">Windows Builder</a>
+            <a href="/android" class="btn btn-primary btn-small" style="width: 100%; justify-content: center;"><Icon name="android" />Android Builder</a>
+            <a href="/windows" class="btn btn-secondary btn-small" style="width: 100%; justify-content: center;"><Icon name="windows" />Windows Builder</a>
           </div>
         </div>
       </aside>
@@ -92,7 +93,7 @@ const compareSchema = { "@graph": [{
         <article class="guide-step-card" id="matrix">
           <div class="guide-step-header">
             <span class="guide-step-badge">Overview</span>
-            <h2>Architectural Comparison Matrix</h2>
+            <h2>Wrapper comparison</h2>
           </div>
           <p>Every "website to app" technology is a wrapper: a native shell that displays your web application using an underlying rendering engine. The three architectures differ considerably across file size, cold start latency, memory usage, and native API access:</p>
 
@@ -217,8 +218,8 @@ const compareSchema = { "@graph": [{
             <p>Convert any website URL into an Android APK or Windows desktop executable in under 2 minutes.</p>
           </div>
           <div class="guides-cta-actions">
-            <a href="/android" class="btn btn-primary">Android APK Builder</a>
-            <a href="/windows" class="btn btn-secondary">Windows EXE Builder</a>
+            <a href="/android" class="btn btn-primary"><Icon name="android" />Android APK Builder</a>
+            <a href="/windows" class="btn btn-secondary"><Icon name="windows" />Windows EXE Builder</a>
           </div>
         </section>
 

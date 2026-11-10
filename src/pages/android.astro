@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
 
 const pageTitle = "Convert Website to APK - Free Android App Wrapper Builder";
 const pageDescription = "Convert website to APK: free Android app wrapper with WebView, pull-to-refresh, splash screen, and offline support.";
@@ -13,7 +14,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
       <!-- Left Side: Form -->
       <form class="builder-panel" id="generatorForm">
         <div class="section-title">
-          <h2>App Configuration</h2>
+          <h2>App configuration</h2>
         </div>
 
         <div class="simple-zone">
@@ -50,7 +51,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
                   <span>App ID (Package Name)</span>
                   <div class="inline-control">
                     <input id="appId" name="appId" type="text" placeholder="com.example.app" spellcheck="false">
-                    <button type="button" id="resetIdButton" class="btn btn-secondary">Auto</button>
+                    <button type="button" id="resetIdButton" class="btn btn-secondary"><Icon name="reset" />Auto</button>
                   </div>
                 </label>
               </div>
@@ -165,7 +166,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
               </div>
             </fieldset>
 
-            <button type="button" class="btn btn-secondary btn-small" id="resetDefaultsButton">Reset to defaults</button>
+            <button type="button" class="btn btn-secondary btn-small" id="resetDefaultsButton"><Icon name="reset" />Reset to defaults</button>
           </div>
         </details>
 
@@ -183,6 +184,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
 
         <div class="actions">
           <button class="btn btn-primary" id="downloadButton" type="submit">
+            <Icon name="download" />
             Build & Download APK
           </button>
           <div class="build-success" id="buildSuccess" style="display: none;">
@@ -190,7 +192,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
-            <span class="build-success-text">Build Successful! Your APK is downloading.</span>
+            <span class="build-success-text">Build complete. Your APK is downloading</span>
           </div>
           <div class="build-retry" id="buildRetry" style="display: none;">
             <a id="retryDownloadLink" href="#" class="retry-link">Click here</a> if your download didn't start automatically.
@@ -265,8 +267,8 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
         <!-- Build History -->
         <div class="build-history" id="buildHistory" style="display: none;">
           <div class="section-title">
-            <h2>Build History</h2>
-            <button type="button" class="btn btn-secondary btn-small" id="clearHistoryBtn">Clear</button>
+          <h2>Build history</h2>
+            <button type="button" class="btn btn-secondary btn-small" id="clearHistoryBtn"><Icon name="trash" />Clear</button>
           </div>
           <ul class="history-list" id="historyList"></ul>
         </div>
@@ -278,7 +280,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
     <div class="notice-overlay" id="playProtectModal" hidden>
       <div class="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="playProtectTitle" aria-describedby="playProtectText">
         <div class="notice-dialog-header">
-          <h2 id="playProtectTitle">Google Play Protect Notice</h2>
+          <h2 id="playProtectTitle">Google Play Protect notice</h2>
           <button type="button" class="notice-close" id="playProtectClose" aria-label="Close notice">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -286,7 +288,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
             </svg>
           </button>
         </div>
-        <p class="notice-dialog-text" id="playProtectText">Google Play Protect might warn you during installation since the compiled APK is unrecognized/unsigned. Rest assured, the app is 100% clean and does not contain any viruses or malware.</p>
+        <p class="notice-dialog-text" id="playProtectText">Play Protect may warn because this APK is unsigned or unfamiliar. Review the generated app and its source before installing.</p>
 
         <div class="notice-support">
           <p class="notice-support-text">
@@ -300,7 +302,7 @@ const pageDescription = "Convert website to APK: free Android app wrapper with W
           </a>
         </div>
 
-        <button type="button" class="btn btn-primary btn-small" id="playProtectDismiss">Got it</button>
+        <button type="button" class="btn btn-primary btn-small" id="playProtectDismiss"><Icon name="check" />Got it</button>
       </div>
     </div>
   </main>

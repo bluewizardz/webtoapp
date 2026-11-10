@@ -349,7 +349,7 @@
     if (loading) {
       els.downloadButton.innerHTML = '<span class="spinner" aria-hidden="true"></span> Building APK…';
     } else {
-      els.downloadButton.innerHTML = 'Build & Download APK';
+      els.downloadButton.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg> Build & Download APK';
     }
   }
 
@@ -648,7 +648,7 @@
         document.body.removeChild(downloadLink);
 
         showPlayProtectNotice();
-        setMessage("Build complete!", "ok");
+        setMessage("Build complete", "ok");
         showBuildSuccess(downloadUrl, filename);
         return;
       } else if (status.status === "error") {
