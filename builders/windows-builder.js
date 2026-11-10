@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import archiver from 'archiver';
-import sharp from 'sharp';
-import { generatePngIcon, pngToIco } from './icon-generator.js';
+import { pngToIco } from './icon-generator.js';
+import { resolveWindowsIcon } from './windows-icon.js';
 import { tryBuildElectron } from './build-utils.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -268,22 +268,7 @@ Artifacts land in \`dist/\`.
 
   fs.mkdirSync(path.join(buildDir, 'assets'), { recursive: true });
 
-  // Icon: the uploaded image wins, otherwise initials on a gradient.
-  let pngBuffer = null;
-  if (icon) {
-    try {
-      const base64 = String(icon).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, '');
-      pngBuffer = await sharp(Buffer.from(base64, 'base64'))
-        .resize(256, 256, { fit: 'cover' })
-        .png()
-        .toBuffer();
-    } catch (e) {
-      console.log(`[windows-builder] Uploaded icon could not be decoded: ${e.message}`);
-    }
-  }
-  if (!pngBuffer) {
-    pngBuffer = await generatePngIcon(appName, 256);
-  }
+  const pngBuffer = await resolveWindowsIcon({ icon, siteUrl, appName, size: 256 });
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.ico'), pngToIco(pngBuffer));
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.png'), pngBuffer);
 

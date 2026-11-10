@@ -1,114 +1,72 @@
-# How Site2App Works & Cloud Deployment Guide
+# How SiteToApp Works
 
-This guide explains the inner workings of the **Site2App** website generator, clarifies how compilation is processed locally, and outlines the steps needed to host the application on **Cloudflare Pages**.
+SiteToApp has a static Astro frontend and two separate build paths. Locally, the browser talks to the Express server and local platform tools. On the deployed Cloudflare Pages site, Android and Windows build requests are delegated to GitHub Actions.
 
----
-
-## 1. How the Website Works Locally
-
-When running Site2App on your local machine (`npm run dev` or `npm start`), it acts as a self-contained system consisting of a static frontend and a local Node.js compilation server.
+## Local flow
 
 ```mermaid
-graph TD
-    A[Frontend: index.html / app.js] -- 1. Submit Settings --> RL{Rate Limiter}
-    RL -- Allowed (Max 10 / 15m) --> B[Express Server: server.js]
-    RL -- Exceeded --> A1[Return 429 Too Many Requests]
-    B -- 2. Download Favicon --> C[Google Favicon API]
-    C -- Favicon Buffer --> B
-    B -- 3. Generate Android Project --> D[Isolated builds/buildId Folder]
-    B -- 4. Add to Task Queue --> Q{Queue Manager}
-    Q -- BullMQ / Local Fallback --> E[Gradle Worker (Max 3 Parallel)]
-    E -- 5. Run gradle assembleDebug --> F[Local Java & Gradle Compiler]
-    F -- Compiled APK --> D
-    Q -- Complete Status --> B
-    B -- 6. Poll Completed Status --> A
-    A -- 7. Pull Download Link --> G[User Browser Download]
+sequenceDiagram
+    participant Browser
+    participant Express as Express server
+    participant Queue as Android queue
+    participant Builder as Platform builder
+    participant Tools as Local SDK/toolchain
+    Browser->>Express: POST /api/build/{platform}
+    Express-->>Browser: buildId, queued
+    Express->>Queue: Android job (other builders run directly)
+    Queue->>Builder: Build project
+    Builder->>Tools: Attempt native compilation
+    Tools-->>Builder: APK/EXE or build failure
+    Builder-->>Express: Compiled artifact or source ZIP
+    Browser->>Express: Poll status by buildId
+    Express-->>Browser: completed/error + filename
+    Browser->>Express: Download completed file
 ```
 
-### Step-by-Step Workflow:
-1. **Frontend Interface (`app.js` & HTML)**:
-   - When you enter your website URL and select your preferences, `app.js` validates the inputs and auto-generates a Package ID (e.g. `com.google.portal` for `google.com`).
-   - If **Auto Fetch Website Icon** is checked, the browser requests the favicon from the server's favicon proxy (`/api/favicon`) which fetches and converts it to PNG.
-   - When you click **Deploy App to APK**, the frontend sends a POST request with the JSON configuration payload to the local server endpoint `/api/build/apk`.
+The Astro pages provide the forms and previews. The Android client submits its URL, identity, icon, and WebView options to `/api/build/apk`; the Windows client submits engine, installer, window, and user-agent choices to `/api/build/exe`. Express normalizes URLs without a scheme and limits build requests to 10 per IP per 15 minutes.
 
-2. **Rate Limiting & Authentication (`server.js`)**:
-   - The request hits the `compilerLimiter` middleware. It tracks the IP address of the sender using a sliding window.
-   - If the IP has exceeded 10 compilation requests in 15 minutes, it immediately aborts the request and returns a `429 Too Many Requests` status. Otherwise, it allows the request.
+Android builds pass through `queue-manager.js`: it uses BullMQ/Redis if Redis is available when the server starts, or an in-memory queue otherwise. The builder writes the generated project under `builds/{buildId}/android/`, fetches or generates icons, and attempts compilation with JDK 17, Gradle 8.12, and the Android SDK. Windows, macOS, and Linux builders generate Electron projects; Tauri is an alternative Windows wrapper. Compilation depends on the operating system and installed toolchain. A builder may return a source ZIP when it cannot produce a native package.
 
-3. **Backend Server & Task Queue (`server.js` & `queue-manager.js`)**:
-   - The Express backend registers the compilation in a local `buildQueue` Map with a status of `pending` and replies to the frontend with a unique `buildId` (e.g. `858fb151...`) so the client can start polling for progress.
-   - In the background, instead of calling the builder directly, it routes the request through the `Queue Manager`.
-   - The `Queue Manager` pushes the task to a **BullMQ** queue backed by **Redis** (or falls back to an in-memory local queue if Redis is not running). The queue limits active builds to **3 parallel workers** to prevent CPU and RAM exhaustion.
+The Express server keeps status metadata in memory. A restart loses the mapping from build IDs to files. There is no configured cleanup for generated build directories. Batch builds also have a limitation: their per-platform IDs are not registered as pending before completion, so polling early can return 404.
 
-4. **Favicon Processing & Project Setup**:
-   - When the worker picks up the job, it runs `builders/android-builder.js` inside an isolated directory (`builds/{buildId}/android/`) to prevent conflict with other concurrent builds.
-   - It fetches/converts the favicon using the **Sharp** image processing library and outputs multiple sizes of `ic_launcher.png` for Android density folders (`hdpi`, `xhdpi`, `xxhdpi`, etc.).
-   - It writes files such as `AndroidManifest.xml`, gradle configurations, resource rules (`backup_rules.xml`), and the core `MainActivity.java` containing the WebView code preconfigured with settings like loading spinners, zoom support, full-screen support, and custom User Agents.
+## Cloudflare Pages and GitHub Actions flow
 
-5. **Gradle Compilation**:
-   - The worker triggers your local Java Runtime Environment (JDK 17+) and runs the local Gradle wrapper command (`gradlew assembleDebug`).
-   - Once compiling finishes, the worker copies the finished `.apk` file into the main build directory and marks the queue task status as `completed`.
-   - The client-side browser, which has been polling the status, triggers a download link for the completed `.apk`.
-
----
-
-## 2. Does it send requests to GitHub Actions when running locally?
-
-**No.** 
-- When running locally, **all compilation happens entirely on your local machine** using your local Gradle installation and Java Development Kit (JDK). 
-- No HTTP requests are sent to GitHub or GitHub Actions to compile the APK during local execution.
-- **Why is GitHub Actions mentioned?** The generated project workspace ZIP includes a `.github/workflows/build.yml` file. This is a helper feature: if you decide to push the generated source code to your own GitHub repository, GitHub's free runners will automatically detect the workflow and compile release APKs for you in the cloud for free.
-
----
-
-## 3. Hosting on Cloudflare Pages (Deployment Guide)
-
-**Cloudflare Pages** is a Jamstack platform designed to compile and host **static frontend files** (HTML, CSS, JS). 
-
-Because Cloudflare Pages runs on a serverless Edge Network without access to a persistent disk or developer build environments (like Gradle, Android SDK, and JDK), **you cannot host both the frontend and the compiler backend together on Cloudflare Pages.**
-
-To deploy the project to production, you must use a **split-hosting architecture**:
-
-```
-[ User Browser ] ───► Serves Frontend UI (Cloudflare Pages)
-       │
-       └─────────────► Sends Build Requests (Hosted Backend VPS / Render / Railway)
+```mermaid
+sequenceDiagram
+    participant Browser
+    participant Pages as Cloudflare Pages Function
+    participant GitHub as GitHub Actions API
+    participant Runner as Workflow runner
+    participant Artifact as Actions artifact
+    Browser->>Pages: POST /api/build/apk or /api/build/exe
+    Pages->>GitHub: Dispatch workflow with configuration and buildId
+    GitHub-->>Pages: Dispatch accepted
+    Pages-->>Browser: buildId
+    GitHub->>Runner: Run build-apk.yml or build-exe.yml
+    Runner->>Runner: CLI generates project and compiles artifact
+    Runner->>Artifact: Upload build-{buildId}
+    Browser->>Pages: Poll /api/build/{id} or /api/exe/{id}
+    Pages->>GitHub: Check workflow/artifact status
+    Pages-->>Browser: pending/completed/error
+    Browser->>Pages: Download APK or EXE
+    Pages->>Artifact: Retrieve artifact or release asset
+    Pages-->>Browser: Download response/redirect
 ```
 
-### Steps to split and deploy:
+The Cloudflare Functions are in `functions/api/`. Android dispatches `.github/workflows/build-apk.yml`; Windows dispatches `build-exe.yml`. Both workflows run their CLI entry point on a hosted runner and upload an artifact named `build-{buildId}`. The Windows workflow also publishes the EXE as a draft GitHub release asset; its download function prefers a signed asset redirect and can fall back to the Actions artifact.
 
-### Step 1: Deploy the Backend to a Host with build tools
-You must host the Node.js backend (`server.js`, `builders/`) on a cloud platform that supports persistent servers or Docker container builds where Gradle and JDK can be installed. Great options include:
-- **Railway.app** (Fits our theme perfectly!)
-- **Render.com** (Supports custom Docker runtimes)
-- **A VPS** (Ubuntu instance with JDK 17 and Gradle installed)
+The Android Pages status function checks for the matching artifact, then uses recent Android workflow runs as a fallback. That fallback is not associated with a specific build ID, so concurrent builds or a failed run can make status ambiguous or leave a request pending. The Windows function uses a build-tagged draft release when visible and checks the build-specific artifact on successful workflow completion.
 
-*Note: Ensure that the platform has JDK 17 installed or use a Docker container based on a Java/Gradle image.*
+The Pages build functions require `GITHUB_PAT` and currently target the `bluewizardz/webtoapp` repository on `main`. The deployment workflow requires `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`. `PUBLIC_BACKEND_URL` can configure the frontend API base at build time; otherwise, frontend requests use the current origin. See [SETUP.md](SETUP.md) for deployment configuration.
 
-### Step 2: Configure CORS on the Backend
-Because your frontend will run on Cloudflare Pages (e.g., `https://site2app.pages.dev`) and the backend will run on another domain (e.g., `https://site2app-api.railway.app`), you must allow cross-origin requests.
-In `server.js` (Line 27), the CORS middleware is already enabled:
-```javascript
-app.use(cors()); // Allows all origins by default
-```
-*(In production, you can restrict this to your Cloudflare Pages domain for security).*
+## Local GitHub Actions behavior
 
-### Step 3: Update Frontend API Target in `app.js`
-In [app.js](file:///home/anwin/Documents/VS%20Codes/websitetoapp/app.js) (Line 320), the backend URL is derived dynamically from the current origin:
-```javascript
-const backendUrl = window.location.origin;
-```
-You must change this to point directly to your cloud-hosted backend API. Change it to:
-```javascript
-const backendUrl = "https://your-backend-api.railway.app";
-```
+Running `npm start` does not call GitHub Actions. It builds the site, starts Express, and invokes local builders. GitHub Actions are used for the deployed Pages flow, and generated source projects may also include workflows for users who choose to build those projects in their own repositories.
 
-### Step 4: Host Frontend on Cloudflare Pages
-1. Push your updated code to GitHub.
-2. Go to the Cloudflare Dashboard -> **Workers & Pages** -> **Create application** -> **Pages**.
-3. Connect your GitHub repository.
-4. Select the build settings:
-   - **Framework preset**: `None` (Static HTML/JS)
-   - **Build command**: Leave blank
-   - **Build output directory**: `/` (root directory containing `index.html`, `android.html`, `app.js`, `styles.css`)
-5. Click **Save and Deploy**. Cloudflare will serve your static UI globally with lightning-fast load times.
+## Favicon flow
+
+The builder previews call `/api/favicon`. Locally this is an Express proxy that fetches a favicon and uses Sharp to convert it where possible. On Cloudflare Pages, `functions/api/favicon.js` performs the proxying, applies an eight-second timeout, limits HTML inspection, and rejects several private/local host patterns. The two implementations are similar in purpose but are not identical in validation behavior.
+
+## Output expectations
+
+The local Android builder can mark its result completed even when compilation fell back to a source ZIP; inspect the filename before assuming it is an APK. The GitHub CLI build scripts exit unsuccessfully on source-ZIP fallback, and their workflows require an APK or EXE file before uploading. The deployed download functions therefore expect compiled artifacts.

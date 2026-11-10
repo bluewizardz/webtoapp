@@ -26,7 +26,7 @@ const updatesSchema = {
           "inLanguage": "en",
           "author": { "@type": "Organization", "@id": "https://sitetoapp.dev/#org", "name": "SiteToApp" },
           "publisher": { "@type": "Organization", "@id": "https://sitetoapp.dev/#org", "name": "SiteToApp" },
-          "description": "Windows builds now offer a Tauri engine (~5–10 MB vs ~70–90 MB) alongside Electron, and EXE builds publish to draft releases so they no longer clutter GitHub Releases."
+          "description": "Windows builds now offer a Tauri engine (~5–10 MB vs ~70–90 MB) alongside Electron, with direct installer downloads."
         },
         {
           "@type": "BlogPosting",
@@ -50,7 +50,7 @@ const updatesSchema = {
           "inLanguage": "en",
           "author": { "@type": "Organization", "@id": "https://sitetoapp.dev/#org", "name": "SiteToApp" },
           "publisher": { "@type": "Organization", "@id": "https://sitetoapp.dev/#org", "name": "SiteToApp" },
-          "description": "Convert websites into Windows desktop apps: Electron-powered NSIS installers and portable EXEs with a live preview and GitHub Actions CI included."
+          "description": "Convert websites into Windows desktop apps: Electron-powered NSIS installers and portable EXEs with a live preview and downloadable source projects."
         }
       ]
     }
@@ -79,7 +79,7 @@ const updatesSchema = {
           <h2>Tauri builds and draft releases</h2>
           <p>Windows EXE builds now let you pick a <strong>Tauri engine</strong> (~5–10 MB) alongside the classic Electron engine (~65–90 MB). Leaner installers, faster cold starts, and the same one-click build flow.</p>
           <ul>
-            <li>EXE builds publish to <strong>draft releases</strong>, so finished installers no longer clutter the repository's public Releases section — direct CDN downloads still work via signed URLs.</li>
+            <li>Finished installers are delivered directly, keeping generated app downloads separate from the source project.</li>
             <li>Builder previews were redesigned to match the Android page.</li>
             <li>Metadata now never truncates long app names or IDs.</li>
           </ul>
@@ -103,7 +103,7 @@ const updatesSchema = {
         </div>
         <div class="changelog-card">
           <h2>Windows EXE builder</h2>
-          <p>Convert websites into Windows desktop apps: Electron-powered NSIS installers and portable EXEs, with engine selection, a live device preview, and a ready-made GitHub Actions workflow inside every workspace ZIP. Start at the <a href="/windows">Windows builder</a>.</p>
+          <p>Convert websites into Windows desktop apps: Electron-powered NSIS installers and portable EXEs, with engine selection, a live device preview, and downloadable source projects. Start at the <a href="/windows">Windows builder</a>.</p>
         </div>
       </article>
 
@@ -113,7 +113,7 @@ const updatesSchema = {
         </div>
         <div class="changelog-card">
           <h2>Android APK builder</h2>
-          <p>The original release: free website-to-APK conversion with a native Java WebView wrapper (~30–60 KB APK), pull-to-refresh, splash screen, offline fallback, and a workspace ZIP with CI/CD. Start at the <a href="/android">Android builder</a>.</p>
+          <p>The original release: free website-to-APK conversion with a native Java WebView wrapper (~30–60 KB APK), pull-to-refresh, splash screen, offline fallback, and a downloadable Android project. Start at the <a href="/android">Android builder</a>.</p>
         </div>
       </article>
     </div>

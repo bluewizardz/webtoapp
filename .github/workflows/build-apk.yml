@@ -87,7 +87,7 @@ jobs:
             ~/.gradle-android
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-8.12.1-${{ hashFiles('builders/android-builder.js') }}
+          key: gradle-${{ runner.os }}-8.12.1-${{ hashFiles('builders/android-builder.js', 'builders/build-utils.js') }}
           restore-keys: |
             gradle-${{ runner.os }}-8.12.1-
 

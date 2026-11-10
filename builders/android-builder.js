@@ -232,6 +232,7 @@ android {
 }
 
 dependencies {
+    implementation 'androidx.core:core:1.15.0'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 }
 `;
@@ -358,6 +359,7 @@ dependencies {
     android:layout_height="match_parent">
 
     <FrameLayout
+        android:id="@+id/contentRoot"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#09080f">
@@ -403,6 +405,10 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.widget.ProgressBar;
 
@@ -433,6 +439,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         
         final boolean fullScreen = ${fullScreen};
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
         if (fullScreen) {
             getWindow().getDecorView().setSystemUiVisibility(
                 android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
@@ -449,6 +456,27 @@ public class MainActivity extends Activity {
         webView = findViewById(R.id.webView);
         swipeRefresh = findViewById(R.id.swipeRefresh);
         progressBar = findViewById(R.id.progressBar);
+
+        if (!fullScreen) {
+            final android.view.View contentRoot = findViewById(R.id.contentRoot);
+            final int initialPaddingLeft = contentRoot.getPaddingLeft();
+            final int initialPaddingTop = contentRoot.getPaddingTop();
+            final int initialPaddingRight = contentRoot.getPaddingRight();
+            final int initialPaddingBottom = contentRoot.getPaddingBottom();
+            ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (view, windowInsets) -> {
+                Insets safeInsets = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
+                );
+                view.setPadding(
+                    initialPaddingLeft + safeInsets.left,
+                    initialPaddingTop + safeInsets.top,
+                    initialPaddingRight + safeInsets.right,
+                    initialPaddingBottom + safeInsets.bottom
+                );
+                return windowInsets;
+            });
+            ViewCompat.requestApplyInsets(contentRoot);
+        }
         
         webView.setBackgroundColor(0xFF09080F);
         
@@ -459,6 +487,12 @@ public class MainActivity extends Activity {
 
         swipeRefresh.setEnabled(enablePullToRefresh);
         if (enablePullToRefresh) {
+            swipeRefresh.setOnChildScrollUpCallback(new SwipeRefreshLayout.OnChildScrollUpCallback() {
+                @Override
+                public boolean canChildScrollUp(SwipeRefreshLayout parent, android.view.View child) {
+                    return webView.canScrollVertically(-1);
+                }
+            });
             swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
                 @Override
                 public void onRefresh() {

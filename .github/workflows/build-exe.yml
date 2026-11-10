@@ -99,9 +99,20 @@ jobs:
           path: |
             ~\.cargo\registry
             ~\.cargo\git
-          key: rust-tauri-${{ hashFiles('builders/tauri-builder.js') }}
+          key: rust-tauri-${{ runner.os }}-${{ hashFiles('builders/tauri-builder.js') }}
           restore-keys: |
-            rust-tauri-
+            rust-tauri-${{ runner.os }}-
+
+      - name: Cache Tauri CLI and compiled dependencies
+        if: ${{ github.event.inputs.engine == 'tauri' }}
+        uses: actions/cache@v4
+        with:
+          path: |
+            builds-cli/cache/tauri-shared
+            builds-cli/cache/tauri-target
+          key: tauri-build-${{ runner.os }}-${{ hashFiles('builders/tauri-builder.js') }}
+          restore-keys: |
+            tauri-build-${{ runner.os }}-
 
       - name: Install Dependencies
         run: npm ci

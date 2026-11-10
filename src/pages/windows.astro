@@ -175,6 +175,9 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
                   <input id="winHeight" type="number" value="800" step="10">
                 </label>
               </div>
+              <div class="win-size-actions">
+                <button type="button" class="dimension-reset" id="winResetSize">Reset size</button>
+              </div>
 
               <label class="check-row">
                 <input id="winFullScreen" type="checkbox">
@@ -238,10 +241,8 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
 
       <!-- Windows App Preview -->
       <aside class="preview-panel" aria-label="Windows app preview">
-
         <!-- Device Preview Frame -->
-        <div class="win-preview-wrap" aria-hidden="true">
-          <div class="win-frame" id="winFrame">
+        <div class="win-frame" id="winFrame" aria-hidden="true">
             <div class="win-titlebar">
               <div class="win-title-left">
                 <span class="win-app-icon" id="winTitleIcon">A</span>
@@ -267,11 +268,18 @@ const pageDescription = "Wrap any website into a Windows desktop app. Free, no-c
               <span class="win-tile" id="winTaskbarTile">A</span>
               <span class="win-clock">12:00</span>
             </div>
-          </div>
         </div>
 
       </aside>
     </div>
+
+    <section class="build-history windows-build-history" id="winBuildHistory" aria-labelledby="winBuildHistoryTitle" style="display: none;">
+      <div class="section-title">
+        <h2 id="winBuildHistoryTitle">Build history</h2>
+        <button type="button" class="btn btn-secondary btn-small" id="winClearHistory"><Icon name="trash" />Clear</button>
+      </div>
+      <ul class="history-list" id="winHistoryList"></ul>
+    </section>
 
     <!-- SmartScreen notice (shown when a download starts) -->
     <div class="notice-overlay" id="winModal" hidden>

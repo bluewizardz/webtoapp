@@ -275,7 +275,53 @@
   // === Build History ===
 
   const HISTORY_KEY = "sitetapp_build_history";
+  const LAST_BUILD_KEY = "sitetapp_last_successful_build";
   const MAX_HISTORY = 5;
+  let buildInProgress = false;
+  let lastSuccessfulBuildFingerprint = null;
+
+  try {
+    lastSuccessfulBuildFingerprint = localStorage.getItem(LAST_BUILD_KEY);
+  } catch {}
+
+  function fingerprintConfig(config) {
+    const value = JSON.stringify(config);
+    let hash = 2166136261;
+    for (let i = 0; i < value.length; i += 1) {
+      hash = Math.imul(hash ^ value.charCodeAt(i), 16777619);
+    }
+    return value.length + "-" + (hash >>> 0).toString(36);
+  }
+
+  function currentBuildRequest(app) {
+    const config = app || getAppConfig();
+    return {
+      siteUrl: config.url,
+      appName: config.name,
+      appId: config.appId,
+      appVersion: config.version,
+      icon: base64Icon,
+      autoFetchIcon: els.autoFetchIcon ? els.autoFetchIcon.checked : true,
+      showSpinner: els.showSpinner.checked,
+      pullToRefresh: els.pullToRefresh.checked,
+      allowZoom: els.allowZoom.checked,
+      showSplash: els.showSplash.checked,
+      splashDuration: Math.min(10000, Math.max(500, parseInt(els.splashDuration.value, 10) || 2000)),
+      fullScreen: els.fullScreen.checked,
+      customUserAgent: els.customUserAgent.value
+    };
+  }
+
+  function updateBuildButtonState() {
+    if (!els.downloadButton) return;
+    let unchangedSinceBuild = false;
+    if (lastSuccessfulBuildFingerprint) {
+      try {
+        unchangedSinceBuild = fingerprintConfig(currentBuildRequest()) === lastSuccessfulBuildFingerprint;
+      } catch {}
+    }
+    els.downloadButton.disabled = buildInProgress || unchangedSinceBuild;
+  }
 
   function loadHistory() {
     try {
@@ -345,12 +391,13 @@
   }
 
   function setButtonLoading(loading) {
-    els.downloadButton.disabled = loading;
+    buildInProgress = loading;
     if (loading) {
       els.downloadButton.innerHTML = '<span class="spinner" aria-hidden="true"></span> Building APK…';
     } else {
       els.downloadButton.innerHTML = '<svg class="ui-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4"/><path d="M4 16v4a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-4"/></svg> Build & Download APK';
     }
+    updateBuildButtonState();
   }
 
   // === Icon Preview State ===
@@ -664,21 +711,7 @@
   }
 
   async function buildAndDownload(app) {
-    const requestBody = {
-      siteUrl: app.url,
-      appName: app.name,
-      appId: app.appId,
-      appVersion: app.version,
-      icon: base64Icon,
-      autoFetchIcon: els.autoFetchIcon ? els.autoFetchIcon.checked : true,
-      showSpinner: els.showSpinner.checked,
-      pullToRefresh: els.pullToRefresh.checked,
-      allowZoom: els.allowZoom.checked,
-      showSplash: els.showSplash.checked,
-      splashDuration: Math.min(10000, Math.max(500, parseInt(els.splashDuration.value, 10) || 2000)),
-      fullScreen: els.fullScreen.checked,
-      customUserAgent: els.customUserAgent.value
-    };
+    const requestBody = currentBuildRequest(app);
 
     try {
       setButtonLoading(true);
@@ -698,6 +731,11 @@
       const { buildId } = await response.json();
       showProgress("Initializing build environment…", 30);
       await pollAndDownload(buildId, backendUrl, "Android APK");
+
+      lastSuccessfulBuildFingerprint = fingerprintConfig(requestBody);
+      try {
+        localStorage.setItem(LAST_BUILD_KEY, lastSuccessfulBuildFingerprint);
+      } catch {}
 
       const finalUrl = `${backendUrl}/api/download/${buildId}`;
       addToHistory({
@@ -813,6 +851,7 @@
     updateIconUploadState();
     updatePreview();
     persistAdvanced();
+    updateBuildButtonState();
   }
 
   // === Event Listeners ===
@@ -827,10 +866,15 @@
     }
   });
 
+  ["input", "change"].forEach((eventName) => {
+    els.form.addEventListener(eventName, updateBuildButtonState);
+  });
+
   els.resetIdButton.addEventListener("click", () => {
     packageWasEdited = false;
     els.appId.value = derivePackageId(els.siteUrl.value, els.appName.value);
     updatePreview();
+    updateBuildButtonState();
   });
 
   if (els.sampleButton) {
@@ -840,6 +884,7 @@
       els.appVersion.value = "1.0.0";
       packageWasEdited = false;
       updatePreview();
+      updateBuildButtonState();
     });
   }
 
@@ -876,12 +921,14 @@
         base64Icon = event.target.result;
         updateIconUploadState();
         updatePreview();
+        updateBuildButtonState();
       };
       reader.readAsDataURL(file);
     } else {
       base64Icon = null;
       updateIconUploadState();
       updatePreview();
+      updateBuildButtonState();
     }
   });
 
@@ -892,6 +939,7 @@
       els.appIcon.value = "";
       updateIconUploadState();
       updatePreview();
+      updateBuildButtonState();
     });
   }
 
@@ -978,6 +1026,7 @@
   restoreAdvanced();
   updatePreview();
   renderHistory();
+  updateBuildButtonState();
 
   if (els.clearHistoryBtn) {
     els.clearHistoryBtn.addEventListener("click", function () {

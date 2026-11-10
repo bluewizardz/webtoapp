@@ -54,6 +54,15 @@
   transform: translateY(0);
 }
 
+.windows-page .btn-primary:disabled {
+  background: var(--accents-3);
+  color: var(--accents-5);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  filter: none;
+}
+
 .windows-page .btn-secondary:hover {
   border-color: var(--win-accent);
   color: var(--win-accent);
@@ -241,6 +250,40 @@
   gap: 12px;
 }
 
+.windows-page .win-size-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -12px;
+  margin-bottom: 16px;
+}
+
+.windows-page .dimension-reset {
+  flex: 0 0 auto;
+  padding: 2px 4px;
+  border: 0;
+  border-left: 0 !important;
+  background: transparent;
+  box-shadow: none;
+  color: var(--win-accent);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.windows-page .dimension-reset:hover {
+  color: var(--win-accent-hover);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.windows-page .dimension-reset:focus-visible {
+  outline: 2px solid var(--win-accent);
+  outline-offset: 2px;
+}
+
 /* === Toggle Switches & Checkmarks in Windows Blue === */
 .windows-page input[type="checkbox"]:checked + .toggle-switch {
   background: var(--win-accent);
@@ -370,12 +413,52 @@
 }
 
 .windows-page .engine-option input[type="radio"] {
-  flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
+  flex: 0 0 16px !important;
+  box-sizing: border-box !important;
+  width: 16px !important;
+  min-width: 16px !important;
+  max-width: 16px !important;
+  height: 16px !important;
+  min-height: 16px !important;
+  max-height: 16px !important;
+  aspect-ratio: 1 / 1;
+  align-self: flex-start;
   margin-top: 3px;
+  padding: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--accents-5);
+  border-radius: 50% !important;
+  background: var(--accents-1);
   accent-color: var(--win-accent);
   cursor: pointer;
+}
+
+.windows-page .engine-option input[type="radio"]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: scale(0);
+  transition: transform 120ms ease;
+}
+
+.windows-page .engine-option input[type="radio"]:checked {
+  border-color: var(--win-accent);
+  background: var(--win-accent);
+}
+
+.windows-page .engine-option input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+
+.windows-page .engine-option input[type="radio"]:focus-visible {
+  outline: 2px solid var(--win-accent) !important;
+  outline-offset: 2px;
+  box-shadow: none !important;
 }
 
 .windows-page .engine-body {
@@ -426,17 +509,6 @@
 }
 
 /* === Desktop Window Preview === */
-.win-preview-wrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 24px 16px;
-  margin-bottom: 24px;
-  background-color: var(--accents-2);
-  border: 1px solid var(--accents-3);
-  border-radius: 16px;
-}
-
 .win-frame {
   width: 100%;
   max-width: 600px;
@@ -623,9 +695,6 @@
     grid-template-columns: 1fr;
   }
 
-  .win-preview-wrap {
-    padding: 20px 8px;
-  }
 }
 
 
@@ -658,6 +727,8 @@
 .windows-page .preview-panel {
   position: sticky;
   top: 84px;
+  display: flex;
+  justify-content: center;
 }
 
 .windows-page .output-meta {

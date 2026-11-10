@@ -1,378 +1,80 @@
-# Site2App Builder - Backend System
+# Backend and Build APIs
 
-## Overview
+## Two backend paths
 
-This is a complete Node.js backend system that converts websites into native applications for multiple platforms:
+The project has two distinct execution paths:
 
-- **Android** (APK) - Native WebView wrapper
-- **macOS** (DMG, ZIP) - Electron-based desktop app
-- **Windows** (EXE, Portable) - Electron-based installer
-- **Linux** (AppImage, DEB) - Electron-based packages
+- **Local:** `server.js` runs Express, serves the Astro output from `dist/`, and invokes builder modules on the same machine. Android jobs are submitted through `queue-manager.js`.
+- **Cloudflare Pages:** `functions/api/` provides edge functions. Android and Windows build requests dispatch GitHub Actions workflows in `bluewizardz/webtoapp`; those workflows run the CLI build scripts and upload artifacts. Pages functions poll GitHub and proxy or redirect downloads.
 
-## Quick Start
+The Pages path is currently configured for Android and Windows only. Express also has local macOS and Linux endpoints, but those platforms are marked as coming soon in the site UI. The Cloudflare functions do not call the Express backend.
 
-### 1. Start the Server
+## Local Express API
 
-```bash
-cd /home/anwin/Documents/VS\ Codes/websitetoapp
-npm start
-```
+All JSON build requests require `siteUrl`, `appName`, and `appId` unless otherwise stated. The server adds `https://` when a submitted URL has no scheme. Build endpoints are limited to 10 requests per IP in 15 minutes by an in-memory limiter.
 
-Server runs on **http://localhost:3000**
+| Method and route | Purpose |
+| --- | --- |
+| `GET /api/health` | Health response with status and timestamp |
+| `GET /api/favicon?url=...` | Fetch and convert a remote favicon for previews/builds |
+| `POST /api/build/apk` | Queue Android build; supports icon and WebView options |
+| `POST /api/build/exe` | Build Windows wrapper; accepts `engine` (`electron` or `tauri`), installer type, window size, fullscreen, and user agent |
+| `POST /api/build/dmg` | Attempt local macOS Electron packaging |
+| `POST /api/build/appimage` | Attempt local Linux AppImage packaging |
+| `POST /api/build/deb` | Attempt local Debian package generation |
+| `POST /api/build/batch` | Start selected local builds and return platform build IDs |
+| `POST /api/build/combined` | Build selected local platforms and package outputs/source directories into one ZIP |
+| `GET /api/build/:buildId` | Read build status; also available as `GET /api/exe/:buildId` |
+| `GET /api/download/:buildId` | Download completed local output; also available as `/api/exe/download/:buildId` |
 
-### 2. Open the Frontend
+Single-build endpoints return a `buildId` and `status: "queued"`. Poll the corresponding status endpoint until it returns `completed` or `error`, then download the output. The filename determines whether the result is an installer/APK or a source ZIP.
 
-Visit `http://localhost:3000` in your browser
+The Android request accepts `appVersion`, `icon` (data URL), `autoFetchIcon`, `showSpinner`, `pullToRefresh`, `allowZoom`, `showSplash`, `splashDuration`, `fullScreen`, and `customUserAgent`. The Windows request accepts `appVersion`, `icon`, `engine`, `installerType`, `windowWidth`, `windowHeight`, `fullScreen`, and `customUserAgent`. Batch endpoints expose a narrower option set than the single-build routes.
 
-### 3. Build Apps
+Example Android request:
 
-**Option A: Download GitHub Actions ZIP** (CI/CD workflow)
-1. Enter website URL and app details
-2. Click "Download ZIP"
-3. Push to GitHub for automated builds
-
-**Option B: Download Files Directly** (New!)
-1. Enter website URL and app details
-2. Select target platforms
-3. Click platform buttons (APK, DMG, EXE, etc.)
-4. Files download directly when ready
-
-## Architecture
-
-### Frontend (`index.html`, `app.js`, `styles.css`)
-- Web UI for entering app configuration
-- Supports both GitHub Actions workflow ZIP download
-- Direct API calls to backend for instant file generation
-- Real-time validation and preview
-
-### Backend Server (`server.js`)
-```
-Express.js HTTP Server
-│
-├── POST /api/build/apk          → buildAPK()
-├── POST /api/build/dmg          → buildDMG()
-├── POST /api/build/exe          → buildEXE()
-├── POST /api/build/appimage     → buildAppImage()
-├── POST /api/build/deb          → buildDeb()
-├── POST /api/build/batch        → All platforms
-├── GET  /api/build/:id          → Check status
-├── GET  /api/download/:id       → Download file
-└── GET  /api/health             → Health check
-```
-
-### Builders (`builders/` directory)
-
-#### `android-builder.js`
-- Generates Android Gradle project structure
-- Creates MainActivity.java with WebView
-- Generates AndroidManifest.xml
-- Creates build.gradle configuration
-- Output: Mock APK file (ready for real Gradle build)
-
-**To enable real APKs:**
-```javascript
-execSync('gradle :app:assembleDebug :app:assembleRelease', { cwd: buildDir });
-```
-Requires: Android SDK, Gradle, Java 11+
-
-#### `macos-builder.js`
-- Creates Electron main.js entry point
-- Generates package.json with electron-builder config
-- Sets up DMG distribution packaging
-- Output: Mock DMG file
-
-**To enable real DMGs:**
-```javascript
-execSync('npm install && npm run build', { cwd: buildDir });
-```
-Requires: macOS, Node.js, Electron, electron-builder
-
-#### `windows-builder.js`
-- Creates Electron main.js for Windows
-- Generates NSIS installer configuration
-- Sets up portable EXE generation
-- Output: Mock EXE file
-
-**To enable real EXEs:**
-```javascript
-execSync('npm install && npm run build', { cwd: buildDir });
-```
-Requires: Windows or Wine, Node.js, electron-builder
-
-#### `linux-builder.js`
-- Generates AppImage configuration
-- Creates Debian package metadata
-- Sets up system integration files
-- Output: Mock AppImage and DEB files
-
-**To enable real Linux packages:**
-```javascript
-execSync('npm install && npm run build', { cwd: buildDir });
-```
-Requires: Linux, Node.js, electron-builder, AppImage tools
-
-## File Structure
-
-```
-websitetoapp/
-├── index.html              Frontend UI
-├── app.js                  Frontend JS (updated with API calls)
-├── styles.css              Frontend CSS
-├── server.js               Express backend
-├── package.json            Node.js dependencies
-├── builders/
-│   ├── android-builder.js  APK generation
-│   ├── macos-builder.js    DMG generation
-│   ├── windows-builder.js  EXE generation
-│   └── linux-builder.js    AppImage/DEB generation
-├── builds/                 Generated app files (output)
-├── SETUP.md               Setup guide
-└── BACKEND.md             This file
-```
-
-## API Examples
-
-### Build Single File
-
-**Request:**
 ```bash
 curl -X POST http://localhost:3000/api/build/apk \
-  -H "Content-Type: application/json" \
-  -d '{
-    "siteUrl": "https://example.com",
-    "appName": "Example App",
-    "appId": "com.example.app",
-    "appVersion": "1.0.0",
-    "icon": null
-  }'
+  -H 'Content-Type: application/json' \
+  -d '{"siteUrl":"https://example.com","appName":"Example App","appId":"com.example.app","appVersion":"1.0.0"}'
 ```
 
-**Response:**
+Example response:
+
 ```json
-{
-  "buildId": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
-  "status": "queued"
-}
+{"buildId":"<uuid>","status":"queued"}
 ```
 
-### Check Build Status
+## Cloudflare Pages API
 
-**Request:**
-```bash
-curl http://localhost:3000/api/build/f47ac10b-58cc-4372-a567-0e02b2c3d479
-```
+Pages Functions use `GITHUB_PAT` to access the repository configured in their source. Current routes include:
 
-**Response (Pending):**
-```json
-{
-  "status": "pending",
-  "platform": "android"
-}
-```
+| Method and route | Purpose |
+| --- | --- |
+| `GET /api/health` | Health response |
+| `GET /api/favicon?url=...` | Edge favicon proxy with timeout and private-host checks |
+| `POST /api/build/apk` | Dispatch `build-apk.yml` and return a build ID |
+| `POST /api/build/exe` | Dispatch `build-exe.yml` and return a build ID |
+| `GET /api/build/:id` | Poll Android workflow/artifact state |
+| `GET /api/download/:id` | Retrieve APK from the matching Actions artifact |
+| `GET /api/exe/:id` | Poll Windows release/artifact state |
+| `GET /api/exe/download/:id` | Redirect to a Windows draft-release asset or extract its Actions artifact |
 
-**Response (Completed):**
-```json
-{
-  "status": "completed",
-  "platform": "android",
-  "file": "/path/to/app/com.example.app-1.0.0.apk",
-  "filename": "com.example.app-1.0.0.apk"
-}
-```
+Cloudflare build requests are not subject to the Express in-memory rate limiter. Build status and artifact state are obtained from GitHub Actions rather than stored by the Pages function. The Windows release path creates draft releases so installers do not appear in the public release listing.
 
-### Download File
+## Builder behavior and outputs
 
-**Request:**
-```bash
-curl -O http://localhost:3000/api/download/f47ac10b-58cc-4372-a567-0e02b2c3d479
-```
+- `builders/android-builder.js` generates a native Java WebView project and attempts a debug APK build with JDK 17, Gradle 8.12, and the Android SDK. If compilation is unavailable, it returns a ZIP of the Android project source.
+- `builders/windows-builder.js` generates an Electron WebView wrapper. `builders/tauri-builder.js` generates a Rust/Tauri wrapper; it compiles Windows EXEs on Windows and returns source on unsupported hosts.
+- `builders/macos-builder.js` and `builders/linux-builder.js` generate Electron wrappers and try their respective native packaging targets. Where compilation is unavailable, they return project-source ZIPs.
+- Icons may be uploaded or fetched from a target site. Sharp resizes them for platform resource formats; generated initials are used when no usable icon is available.
 
-### Batch Build All Platforms
+In GitHub Actions, `cli-build-apk.js` and `cli-build-exe.js` treat a source-ZIP fallback as a failed compiled build. Workflows upload only the requested `.apk` or `.exe`, so Pages downloads are intended to deliver compiled artifacts.
 
-**Request:**
-```bash
-curl -X POST http://localhost:3000/api/build/batch \
-  -H "Content-Type: application/json" \
-  -d '{
-    "siteUrl": "https://example.com",
-    "appName": "My App",
-    "appId": "com.mycompany.myapp",
-    "appVersion": "1.0.0",
-    "platforms": ["android", "macos", "windows", "linux-appimage", "linux-deb"]
-  }'
-```
+## Queue, persistence, and limitations
 
-**Response:**
-```json
-{
-  "batchId": "batch-uuid",
-  "builds": {
-    "android": "build-id-1",
-    "macos": "build-id-2",
-    "windows": "build-id-3",
-    "linux-appimage": "build-id-4",
-    "linux-deb": "build-id-5"
-  }
-}
-```
+Android local builds use BullMQ with Redis when Redis connects during server startup. Otherwise, `queue-manager.js` uses an in-memory queue. `MAX_GRADLE_PARALLEL_BUILDS` controls concurrency (default 3); Redis settings use `REDIS_HOST` and `REDIS_PORT`.
 
-## Configuration
+Express stores build status in a process-local `Map` and files under `builds/{buildId}/`. A server restart loses status records, and no automatic build-file cleanup is configured. The local rate limiter is also process-local. Batch mode returns per-platform IDs but does not register a pending status before each build completes, so early polling can return 404. The Cloudflare Android status function checks the build artifact and then recent workflow runs; because the fallback run lookup is not keyed to the specific build ID, simultaneous or failed runs can result in ambiguous/persistently pending status.
 
-### Environment Variables
-
-```bash
-PORT=3000              # Server port (default: 3000)
-NODE_ENV=development   # development or production
-```
-
-### Start Modes
-
-**Production:**
-```bash
-npm start
-```
-
-**Development (with auto-reload):**
-```bash
-npm run dev
-```
-
-## Output Files
-
-Generated files are stored in: `/builds/{buildId}/`
-
-```
-builds/
-├── f47ac10b-58cc/
-│   ├── android/           # Android project source
-│   │   ├── app/
-│   │   ├── build.gradle
-│   │   └── settings.gradle
-│   ├── macos/             # macOS/Electron source
-│   │   ├── src/
-│   │   └── package.json
-│   ├── windows/           # Windows/Electron source
-│   └── com.example.app-1.0.0.apk      # Final APK
-│   └── MyApp-1.0.0.dmg               # Final DMG
-│   └── MyApp-Setup-1.0.0.exe         # Final EXE
-```
-
-## Feature Comparison
-
-| Feature | GitHub Actions ZIP | Direct Build |
-|---------|-------------------|--------------|
-| Setup time | 1 minute | Instant |
-| Build time | 5-10 minutes | Real-time |
-| Cost | Free (GitHub) | Server costs |
-| Offline | No | Yes |
-| CI/CD | Yes | No |
-| Custom workflows | Yes | No |
-| Direct download | No | Yes |
-
-## Deployment Options
-
-### Option 1: Local Server (Development)
-```bash
-npm start
-```
-- Runs on `localhost:3000`
-- Perfect for testing
-- Single user only
-
-### Option 2: VPS/Cloud Server (Production)
-```bash
-# Requires: Node.js, all build tools
-npm install --production
-npm start
-```
-
-Recommended providers:
-- AWS EC2
-- DigitalOcean
-- Linode
-- Google Cloud
-- Azure
-
-### Option 3: Docker (Recommended)
-```dockerfile
-FROM node:20
-WORKDIR /app
-COPY . .
-RUN npm install
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-Build: `docker build -t site2app .`
-Run: `docker run -p 3000:3000 site2app`
-
-### Option 4: Serverless (Limited)
-- AWS Lambda
-- Google Cloud Functions
-- Requires timeouts configured for build time
-
-## Build Time Estimates
-
-- **Android APK**: 2-5 minutes (with real Gradle)
-- **macOS DMG**: 3-7 minutes (macOS only)
-- **Windows EXE**: 3-7 minutes (Windows only)
-- **Linux AppImage**: 2-4 minutes
-- **Linux DEB**: 1-2 minutes
-
-## Troubleshooting
-
-### Port 3000 Already in Use
-```bash
-PORT=3001 npm start
-```
-
-### Build Files Not Generating
-1. Check `/builds/` directory exists
-2. Check terminal logs for errors
-3. Verify disk space available
-4. Check file permissions
-
-### Downloads Not Working
-```bash
-# Rebuild the download linkage
-npm install
-```
-
-### Memory Issues During Builds
-Increase Node.js heap:
-```bash
-NODE_OPTIONS=--max-old-space-size=4096 npm start
-```
-
-## Security Considerations
-
-1. **Input Validation**: All URLs and app IDs are validated
-2. **File Permissions**: Generated files are user-readable only
-3. **Isolation**: Each build uses unique UUID directories
-4. **Cleanup**: Implement periodic cleanup of old builds
-5. **Rate Limiting**: Add rate limiting middleware for production
-
-## Performance Optimization
-
-1. **Caching**: Cache project templates
-2. **Async Builds**: Use worker threads for CPU-intensive tasks
-3. **Compression**: Compress response files
-4. **CDN**: Use CDN for static frontend files
-5. **Load Balancing**: Use reverse proxy for multiple servers
-
-## Next Steps
-
-1. ✅ Backend server working
-2. ⏳ Integrate real build tools (Gradle, Electron Builder, etc.)
-3. ⏳ Add database for build history
-4. ⏳ Implement user authentication
-5. ⏳ Add build status dashboard
-6. ⏳ Deploy to production server
-
-## Support
-
-For issues or questions, check:
-- Terminal logs for error messages
-- `/builds/` directory for generated artifacts
-- Network tab in browser DevTools
-- API endpoints in `server.js`
+See [SETUP.md](SETUP.md) for local prerequisites and deployment secrets, and [HOW_IT_WORKS.md](HOW_IT_WORKS.md) for sequence details.

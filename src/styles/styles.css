@@ -51,8 +51,8 @@
   
   --accents-1: #ffffff;
   --accents-2: #f9fafb;
-  --accents-3: #e5e7eb;
-  --accents-4: #cbd5e1;
+  --accents-3: #c6cbd1;
+  --accents-4: #a5afbc;
   --accents-5: #6b7280;
   --accents-6: #374151;
   --accents-7: #0f172a;
@@ -4259,12 +4259,6 @@ body.builder-page .advanced-badge {
   letter-spacing: 0;
 }
 
-body.builder-page .engine-option:has(input:checked),
-body.builder-page .engine-option input:checked + .engine-body {
-  border-color: color-mix(in srgb, var(--primary-color) 45%, var(--accents-3));
-  background: color-mix(in srgb, var(--primary-color) 5%, var(--accents-1));
-}
-
 body.builder-page .engine-size,
 body.builder-page .engine-size--small {
   border-color: var(--accents-3);
@@ -4774,8 +4768,8 @@ html.light-theme body.landing-page {
   --foreground: #191a17;
   --accents-1: #ffffff;
   --accents-2: #f0f0ed;
-  --accents-3: #deded9;
-  --accents-4: #bdbdb6;
+  --accents-3: #c7c8c2;
+  --accents-4: #aeb0a7;
   --accents-5: #73746e;
   --accents-6: #50514c;
   --accents-7: #191a17;
@@ -5526,8 +5520,8 @@ html.light-theme body.builder-page {
   --foreground: #191a17;
   --accents-1: #ffffff;
   --accents-2: #f0f0ed;
-  --accents-3: #deded9;
-  --accents-4: #bdbdb6;
+  --accents-3: #c7c8c2;
+  --accents-4: #aeb0a7;
   --accents-5: #73746e;
   --accents-6: #50514c;
   --accents-7: #191a17;
@@ -6584,10 +6578,10 @@ body.builder-page .advanced-summary small {
   }
 }
 
-/* Apply the same font rendering and readable navigation scale everywhere. */
+/* Keep navigation typography crisp using the platform's native UI font. */
 html,
 body {
-  font-family: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-optical-sizing: auto;
   font-kerning: normal;
   text-rendering: optimizeLegibility;
@@ -6785,6 +6779,35 @@ html.light-theme body.landing-page .preview-logo-light {
   }
 }
 
+/* Keep the brand, navigation, and actions from competing for one row on tablets. */
+@media (min-width: 641px) and (max-width: 1023px) {
+  body:is(.landing-page, .builder-page) .navbar-container {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 16px;
+    padding: 8px 20px;
+  }
+
+  body:is(.landing-page, .builder-page) .navbar .brand {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-self: center;
+  }
+
+  body:is(.landing-page, .builder-page) .navbar .nav-links {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  body:is(.landing-page, .builder-page) .navbar .nav-actions {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+  }
+}
+
 body.landing-page .platform-icon {
   display: grid;
   width: 60px;
@@ -6821,4 +6844,298 @@ body.landing-page .linux-icon img {
   width: 42px;
   height: 52px;
   object-fit: contain;
+}
+
+/* Navbar support link: keep the yellow label and cup legible in both themes. */
+body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn {
+  background: var(--accents-2);
+  border-color: var(--accents-3);
+  color: #ffdd00;
+  font-size: 16px;
+}
+
+body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn svg {
+  color: currentColor;
+}
+
+body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn:hover {
+  background: var(--accents-1);
+  border-color: var(--accents-4);
+  color: var(--foreground);
+}
+
+body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn:active {
+  background: var(--accents-2);
+  border-color: var(--accents-4);
+  color: var(--foreground);
+}
+
+body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn:focus-visible {
+  outline: 2px solid #ffdd00;
+  outline-offset: 2px;
+}
+
+html.light-theme body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn,
+html.light-theme body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn:hover,
+html.light-theme body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn:active {
+  background: #fff;
+}
+
+html.light-theme body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn {
+  color: #9a7200;
+}
+
+body:is(.landing-page, .builder-page) .navbar .brand-logo {
+  height: 54px;
+}
+
+body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn {
+  font-size: 18px;
+}
+
+body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+body:is(.landing-page, .builder-page) .navbar .nav-actions .bmc-btn,
+body:is(.landing-page, .builder-page) .navbar .nav-actions .theme-toggle {
+  height: 44px;
+  min-height: 44px;
+}
+
+body:is(.landing-page, .builder-page) .navbar .nav-links a {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  min-height: 44px;
+}
+
+/* About page: readable article width with a sidebar that stacks before it gets cramped. */
+body.landing-page .about-columns {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: clamp(24px, 4vw, 48px);
+  width: 100%;
+}
+
+body.landing-page .about-article,
+body.landing-page .about-sidebar {
+  min-width: 0;
+}
+
+body.landing-page .about-article {
+  overflow-wrap: anywhere;
+}
+
+body.landing-page .about-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+body.landing-page .about-sidebar-card,
+body.landing-page .about-sidebar-card:first-child,
+body.landing-page .about-sidebar-card + .about-sidebar-card {
+  margin: 0;
+  padding: 20px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+body.landing-page .about-sidebar-card:first-child {
+  padding-top: 0;
+}
+
+body.landing-page .about-sidebar-card + .about-sidebar-card {
+  border-top: 1px solid var(--accents-3);
+}
+
+body.landing-page .about-build-link {
+  width: 100%;
+  max-width: 260px;
+  min-height: 44px;
+}
+
+@media (max-width: 960px) {
+  body.landing-page .about-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+
+  body.landing-page .about-sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  body.landing-page .about-sidebar-card,
+  body.landing-page .about-sidebar-card:first-child,
+  body.landing-page .about-sidebar-card + .about-sidebar-card {
+    margin: 0;
+    padding: 20px 0;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.landing-page .about-sidebar-card:first-child {
+    padding-top: 0;
+  }
+
+  body.landing-page .about-sidebar-card + .about-sidebar-card {
+    border-top: 2px solid var(--accents-3);
+  }
+
+  body.landing-page .about-sidebar-card {
+    width: 100%;
+    box-sizing: border-box;
+    align-items: center;
+    text-align: center;
+  }
+
+  body.landing-page .about-sidebar-card .guide-sidebar-title {
+    justify-content: center;
+  }
+
+  body.landing-page .about-sidebar-card ul {
+    width: 100%;
+    padding-left: 0 !important;
+    list-style-position: inside;
+    text-align: center;
+  }
+}
+
+@media (max-width: 560px) {
+  body.landing-page .about-columns {
+    gap: 20px;
+  }
+
+  body.landing-page .about-sidebar,
+  body.landing-page .about-sidebar-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  body.landing-page .about-sidebar-card,
+  body.landing-page .about-sidebar-card:first-child,
+  body.landing-page .about-sidebar-card + .about-sidebar-card {
+    padding: 18px 0;
+  }
+
+  body.landing-page .about-sidebar-card:first-child {
+    padding-top: 0;
+  }
+
+  body.landing-page .about-build-link {
+    max-width: none;
+  }
+}
+
+@media (max-width: 380px) {
+  body:is(.landing-page, .builder-page) .navbar-container {
+    gap: 8px;
+    padding-inline: 10px;
+  }
+
+  body:is(.landing-page, .builder-page) .navbar .nav-links {
+    width: 100%;
+    gap: 0;
+  }
+
+  body:is(.landing-page, .builder-page) .navbar .nav-links a {
+    padding: 6px 5px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 560px) {
+  body.landing-page .privacy-principles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.landing-page .privacy-principle,
+  body.landing-page .privacy-principle:first-child,
+  body.landing-page .privacy-principle:nth-child(odd),
+  body.landing-page .privacy-principle:nth-child(even) {
+    padding: 16px 0;
+    border-left: 0;
+  }
+
+  body.landing-page .privacy-principle + .privacy-principle {
+    border-top: 1px solid var(--accents-3);
+  }
+}
+
+@media (max-width: 640px) {
+  body:is(.landing-page, .builder-page) .navbar .brand-logo {
+    height: 44px;
+  }
+}
+
+@media (max-width: 560px) {
+  body.builder-page .history-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    gap: 10px 12px;
+    padding: 12px;
+  }
+
+  body.builder-page .history-item-info {
+    min-width: 0;
+  }
+
+  body.builder-page .history-item-meta {
+    min-width: 0;
+    flex-wrap: wrap;
+    gap: 4px 7px;
+  }
+
+  body.builder-page .history-item-meta > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  body.builder-page .history-item-download {
+    align-self: start;
+  }
+}
+
+@media (max-width: 360px) {
+  body.builder-page .history-item {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  body.builder-page .history-item-download {
+    justify-self: end;
+  }
+}
+
+html.light-theme body.builder-page input[type="file"] {
+  color: #334155;
+  color-scheme: light;
+}
+
+html.light-theme body.builder-page input[type="file"]::file-selector-button,
+html.light-theme body.builder-page input[type="file"]::-webkit-file-upload-button {
+  border: 1px solid #9ca3af;
+  background: #f3f4f6;
+  color: #111827;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+html.light-theme body.builder-page input[type="file"]::file-selector-button:hover,
+html.light-theme body.builder-page input[type="file"]::-webkit-file-upload-button:hover {
+  border-color: #64748b;
+  background: #e5e7eb;
 }

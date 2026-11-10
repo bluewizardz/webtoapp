@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import archiver from 'archiver';
 import sharp from 'sharp';
-import { generatePngIcon, pngToIco } from './icon-generator.js';
+import { pngToIco } from './icon-generator.js';
+import { resolveWindowsIcon } from './windows-icon.js';
 import { tryExec } from './build-utils.js';
 
 /**
@@ -50,6 +51,10 @@ export async function buildTauri({
   fs.mkdirSync(frontendDir, { recursive: true });
 
   const crateName = toCrateName(appName);
+  const sharedCacheDir = path.join(buildsDir, 'cache', 'tauri-shared');
+  const sharedNodeModules = path.join(sharedCacheDir, 'node_modules');
+  const projectNodeModules = path.join(buildDir, 'node_modules');
+  const tauriTargetDir = path.join(buildsDir, 'cache', 'tauri-target');
 
   // === Rust sources ===
   const libContent = `const APP_URL: &str = ${JSON.stringify(siteUrl)};
@@ -184,21 +189,7 @@ tauri = { version = "2", features = [] }
   );
 
   // === Icons ===
-  let pngBuffer = null;
-  if (icon) {
-    try {
-      const base64 = String(icon).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, '');
-      pngBuffer = await sharp(Buffer.from(base64, 'base64'))
-        .resize(512, 512, { fit: 'cover' })
-        .png()
-        .toBuffer();
-    } catch (e) {
-      console.log(`[tauri-builder] Uploaded icon could not be decoded: ${e.message}`);
-    }
-  }
-  if (!pngBuffer) {
-    pngBuffer = await generatePngIcon(appName, 512);
-  }
+  const pngBuffer = await resolveWindowsIcon({ icon, siteUrl, appName, size: 512 });
 
   await writePngSize(pngBuffer, path.join(iconsDir, '32x32.png'), 32);
   await writePngSize(pngBuffer, path.join(iconsDir, '128x128.png'), 128);
@@ -213,28 +204,72 @@ tauri = { version = "2", features = [] }
 
   if (process.platform === 'win32') {
     try {
-      console.log('[tauri-builder] Installing Tauri CLI...');
-      if (!tryExec('npm install --no-audit --no-fund --prefer-offline', { cwd: buildDir, timeout: 300000 })) {
-        throw new Error('npm install failed');
+      fs.mkdirSync(sharedCacheDir, { recursive: true });
+      const sharedPackage = {
+        name: 'site2app-tauri-cli-cache',
+        private: true,
+        devDependencies: packageJson.devDependencies
+      };
+      const sharedPackagePath = path.join(sharedCacheDir, 'package.json');
+      let sharedPackageMatches = false;
+      if (fs.existsSync(sharedPackagePath)) {
+        try {
+          const cachedPackage = JSON.parse(fs.readFileSync(sharedPackagePath, 'utf8'));
+          sharedPackageMatches = JSON.stringify(cachedPackage.devDependencies) === JSON.stringify(sharedPackage.devDependencies);
+        } catch (_) {}
+      }
+      if (!sharedPackageMatches) {
+        fs.rmSync(sharedNodeModules, { recursive: true, force: true });
+        fs.rmSync(path.join(sharedCacheDir, 'package-lock.json'), { force: true });
+      }
+      fs.writeFileSync(sharedPackagePath, JSON.stringify(sharedPackage, null, 2));
+
+      const tauriExecutable = path.join(sharedNodeModules, '.bin', 'tauri.cmd');
+      if (!fs.existsSync(tauriExecutable)) {
+        console.log('[tauri-builder] Installing Tauri CLI in shared cache...');
+        if (!tryExec('npm install --no-audit --no-fund --prefer-offline', { cwd: sharedCacheDir, timeout: 300000 })) {
+          throw new Error('Tauri CLI installation failed');
+        }
+      }
+
+      if (!fs.existsSync(projectNodeModules)) {
+        try {
+          fs.symlinkSync(sharedNodeModules, projectNodeModules, 'junction');
+        } catch (symlinkError) {
+          console.log(`[tauri-builder] Could not link shared Tauri CLI: ${symlinkError.message}`);
+        }
+      }
+
+      if (!fs.existsSync(path.join(projectNodeModules, '.bin', 'tauri.cmd'))
+          && !tryExec('npm install --no-audit --no-fund --prefer-offline', { cwd: buildDir, timeout: 300000 })) {
+        throw new Error('Tauri CLI installation failed in project directory');
       }
 
       const localCli = path.join(buildDir, 'node_modules', '.bin', process.platform === 'win32' ? 'tauri.cmd' : 'tauri');
       const cli = fs.existsSync(localCli) ? `"${localCli}"` : 'npx --no-install tauri';
       const bundleFlag = target === 'portable' ? '--no-bundle' : '--bundles nsis';
+      const bundleOutputDir = path.join(tauriTargetDir, 'release', 'bundle', 'nsis');
+      const portableOutput = path.join(tauriTargetDir, 'release', `${crateName}.exe`);
+      fs.rmSync(target === 'portable' ? portableOutput : bundleOutputDir, { recursive: true, force: true });
 
       console.log(`[tauri-builder] Running tauri build (${target})...`);
-      if (!tryExec(`${cli} build ${bundleFlag}`, { cwd: buildDir, timeout: 1800000 })) {
+      if (!tryExec(`${cli} build ${bundleFlag}`, {
+        cwd: buildDir,
+        timeout: 1800000,
+        env: { ...process.env, CARGO_TARGET_DIR: tauriTargetDir }
+      })) {
         throw new Error('tauri build failed');
       }
 
       const artifact = target === 'portable'
-        ? path.join(srcTauriDir, 'target', 'release', `${crateName}.exe`)
-        : firstMatch(path.join(srcTauriDir, 'target', 'release', 'bundle', 'nsis'), '.exe');
+        ? path.join(tauriTargetDir, 'release', `${crateName}.exe`)
+        : firstMatch(path.join(tauriTargetDir, 'release', 'bundle', 'nsis'), '.exe');
 
       if (artifact && fs.existsSync(artifact)) {
         const outputPath = path.join(buildsDir, buildId, `${safeName}.exe`);
         fs.mkdirSync(path.dirname(outputPath), { recursive: true });
         fs.copyFileSync(artifact, outputPath);
+        fs.rmSync(target === 'portable' ? portableOutput : bundleOutputDir, { recursive: true, force: true });
         console.log(`[tauri-builder] EXE built: ${outputPath}`);
         return outputPath;
       }
