@@ -1,6 +1,14 @@
 export async function onRequestPost(context) {
   const { request, env } = context;
 
+  const contentLength = Number(request.headers.get("content-length"));
+  if (Number.isFinite(contentLength) && contentLength > 64 * 1024) {
+    return new Response(JSON.stringify({ error: "Build request is too large" }), {
+      status: 413,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
   // Read request body
   let body;
   try {
@@ -11,6 +19,40 @@ export async function onRequestPost(context) {
       headers: { "Content-Type": "application/json" }
     });
   }
+
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return new Response(JSON.stringify({ error: "Request body must be a JSON object" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const icon = body.icon == null || body.icon === "" ? "" : body.icon;
+  const maxIconLength = 48 * 1024;
+  if (typeof icon !== "string") {
+    return new Response(JSON.stringify({ error: "Icon must be a Base64 image data URL" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  if (icon.length > maxIconLength) {
+    return new Response(JSON.stringify({ error: "Icon is too large. Choose a smaller image." }), {
+      status: 413,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  if (icon && (
+    !/^data:image\/(?:png|jpeg|webp);base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/i.test(icon)
+    || !icon.slice(icon.indexOf(",") + 1)
+  )) {
+    return new Response(JSON.stringify({ error: "Icon must be a PNG, JPEG, or WebP Base64 data URL" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  const autoFetchIcon = body.autoFetchIcon == null
+    ? true
+    : body.autoFetchIcon === true || body.autoFetchIcon === "true";
 
   // Generate unique build ID
   const buildId = crypto.randomUUID();
@@ -49,6 +91,8 @@ export async function onRequestPost(context) {
     splashDuration: String(body.splashDuration || "2000"),
     fullScreen: String(body.fullScreen === true),
     customUserAgent: body.customUserAgent || "",
+    icon: icon,
+    autoFetchIcon: String(autoFetchIcon),
     buildId: buildId
   };
 

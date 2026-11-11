@@ -64,7 +64,7 @@ Cloudflare build requests are not subject to the Express in-memory rate limiter.
 
 ## Builder behavior and outputs
 
-- `builders/android-builder.js` generates a native Java WebView project and attempts a debug APK build with JDK 17, Gradle 8.12, and the Android SDK. If compilation is unavailable, it returns a ZIP of the Android project source.
+- `builders/android-builder.js` generates a native Java WebView project and attempts a debug APK build with JDK 17, Gradle 8.12, and the Android SDK. Android launcher icons prefer a valid uploaded image, then fetch the website favicon when enabled, then generate initials from the app name. Pull-to-refresh uses a page-level gesture handler that checks the document and nested scroll containers before reloading. The Pages function passes uploaded icons to GitHub Actions as a size-limited data URL. If compilation is unavailable, the builder returns a ZIP of the Android project source.
 - `builders/windows-builder.js` generates an Electron WebView wrapper. `builders/tauri-builder.js` generates a Rust/Tauri wrapper; it compiles Windows EXEs on Windows and returns source on unsupported hosts.
 - `builders/macos-builder.js` and `builders/linux-builder.js` generate Electron wrappers and try their respective native packaging targets. Where compilation is unavailable, they return project-source ZIPs.
 - Icons may be uploaded or fetched from a target site. Sharp resizes them for platform resource formats; generated initials are used when no usable icon is available.

@@ -69,55 +69,31 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
   let customIconBuffer = null;
   if (icon && typeof icon === 'string' && icon.startsWith('data:')) {
     try {
-      const base64Data = icon.split(';base64,').pop();
-      customIconBuffer = Buffer.from(base64Data, 'base64');
-      customIconBuffer = extractPngOrBmpFromIco(customIconBuffer);
-    } catch (e) {
-      console.log(`[android-builder] Custom icon parsing failed: ${e.message}`);
-    }
-  } else if (autoFetchIcon && siteUrl) {
-    customIconBuffer = await fetchFaviconBuffer(siteUrl);
-    if (customIconBuffer) {
-      customIconBuffer = extractPngOrBmpFromIco(customIconBuffer);
+      const separator = icon.indexOf(';base64,');
+      if (separator < 0) throw new Error('Icon data URL is not Base64 encoded');
+      const base64Data = icon.slice(separator + ';base64,'.length);
+      const decoded = Buffer.from(base64Data, 'base64');
+      if (!decoded.length) throw new Error('Icon data URL is empty');
+      const candidate = extractPngOrBmpFromIco(decoded);
+      await sharp(candidate).metadata();
+      customIconBuffer = candidate;
+    } catch (error) {
+      console.log(`[android-builder] Custom icon could not be decoded; trying configured fallback: ${error.message}`);
     }
   }
 
-  // Self-correcting check: Test if sharp can successfully decode the buffer
-  if (customIconBuffer && customIconBuffer.length > 0) {
+  const shouldAutoFetchIcon = autoFetchIcon === true || autoFetchIcon === 'true';
+  if (!customIconBuffer && shouldAutoFetchIcon && siteUrl) {
     try {
-      await sharp(customIconBuffer).metadata();
-    } catch (sharpError) {
-      console.log(`[android-builder] Icon format unsupported by sharp, falling back to Google Favicon API wrapper: ${sharpError.message}`);
-      try {
-        let domain = siteUrl;
-        try {
-          domain = new URL(siteUrl).hostname || siteUrl;
-        } catch (_) {}
-        const googleUrl = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
-        const res = await fetch(googleUrl);
-        if (res.ok) {
-          const arrBuf = await res.arrayBuffer();
-          if (arrBuf && arrBuf.byteLength > 0) {
-            customIconBuffer = Buffer.from(arrBuf);
-            // Confirm the fallback is readable
-            try {
-              await sharp(customIconBuffer).metadata();
-            } catch (_) {
-              customIconBuffer = null;
-            }
-          } else {
-            customIconBuffer = null;
-          }
-        } else {
-          customIconBuffer = null;
-        }
-      } catch (fallbackError) {
-        console.log(`[android-builder] Google Favicon API fallback failed: ${fallbackError.message}`);
-        customIconBuffer = null; // Fall back to initials if everything fails
+      const fetchedIcon = await fetchFaviconBuffer(siteUrl);
+      if (fetchedIcon) {
+        const candidate = extractPngOrBmpFromIco(fetchedIcon);
+        await sharp(candidate).metadata();
+        customIconBuffer = candidate;
       }
+    } catch (error) {
+      console.log(`[android-builder] Website icon could not be decoded; using generated initials: ${error.message}`);
     }
-  } else {
-    customIconBuffer = null;
   }
 
   for (const { name, size } of mipmapDensities) {
@@ -233,7 +209,6 @@ android {
 
 dependencies {
     implementation 'androidx.core:core:1.15.0'
-    implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
 }
 `;
   fs.writeFileSync(path.join(appDir, 'build.gradle'), buildGradleContent);
@@ -352,39 +327,32 @@ dependencies {
         </LinearLayout>`;
 
   const activityMainContent = `<?xml version="1.0" encoding="utf-8"?>
-<androidx.swiperefreshlayout.widget.SwipeRefreshLayout 
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/swipeRefresh"
+    android:id="@+id/contentRoot"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#09080f">
 
-    <FrameLayout
-        android:id="@+id/contentRoot"
+    <WebView
+        android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#09080f">
+        android:background="#09080f" />
 
-        <WebView
-            android:id="@+id/webView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#09080f" />
+    ${splashXml}
 
-        ${splashXml}
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_gravity="top"
+        android:indeterminate="true"
+        android:indeterminateTint="#10b981"
+        android:visibility="gone" />
 
-        <ProgressBar
-            android:id="@+id/progressBar"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="4dp"
-            android:layout_gravity="top"
-            android:indeterminate="true"
-            android:indeterminateTint="#10b981"
-            android:visibility="gone" />
-
-    </FrameLayout>
-
-</androidx.swiperefreshlayout.widget.SwipeRefreshLayout>`;
+</FrameLayout>`;
 
   fs.writeFileSync(path.join(layoutDir, 'activity_main.xml'), activityMainContent);
 
@@ -409,7 +377,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.widget.ProgressBar;
 
 public class MainActivity extends Activity {
@@ -426,13 +393,128 @@ public class MainActivity extends Activity {
     };
 
     private WebView webView;
-    private SwipeRefreshLayout swipeRefresh;
     private ProgressBar progressBar;
     private String siteHost = "";
     private ValueCallback<Uri[]> filePathCallback;
     private PermissionRequest pendingPermissionRequest;
     private GeolocationPermissions.Callback pendingGeoCallback;
     private String pendingGeoOrigin;
+
+    private static final String PULL_TO_REFRESH_SCRIPT = """
+        (function () {
+          if (window.top !== window) return;
+          if (window.__siteToAppPullToRefreshInstalled) return;
+          window.__siteToAppPullToRefreshInstalled = true;
+
+          var threshold = 96;
+          var startX = 0;
+          var startY = 0;
+          var active = false;
+          var startTarget = null;
+          var indicator = document.createElement('div');
+          var spinner = document.createElement('div');
+          var style = document.createElement('style');
+
+          style.textContent = '@keyframes siteToAppRefreshSpin{to{transform:rotate(360deg)}}'
+            + '.site-to-app-refresh-indicator{position:fixed;top:0;left:50%;z-index:2147483647;'
+            + 'display:none;width:40px;height:40px;margin-left:-20px;border-radius:50%;'
+            + 'align-items:center;justify-content:center;background:#fff;'
+            + 'box-shadow:0 2px 10px rgba(0,0,0,.2);pointer-events:none;opacity:0;'
+            + 'transition:opacity .12s ease,transform .08s ease}'
+            + '.site-to-app-refresh-spinner{width:22px;height:22px;border:3px solid #d1d5db;'
+            + 'border-top-color:#10b981;border-radius:50%}'
+            + '.site-to-app-refresh-ready .site-to-app-refresh-spinner{'
+            + 'animation:siteToAppRefreshSpin .8s linear infinite}';
+          style.setAttribute('data-site-to-app-refresh-style', '');
+          document.documentElement.appendChild(style);
+
+          indicator.className = 'site-to-app-refresh-indicator';
+          indicator.setAttribute('aria-hidden', 'true');
+          spinner.className = 'site-to-app-refresh-spinner';
+          indicator.appendChild(spinner);
+          document.documentElement.appendChild(indicator);
+
+          function canRefreshAt(target) {
+            if (!target || !target.nodeType) return false;
+            var element = target.nodeType === 1 ? target : target.parentElement;
+            if (element && element.closest('input,textarea,select,button,[contenteditable="true"],iframe,video,audio')) {
+              return false;
+            }
+
+            while (element && element.nodeType === 1) {
+              var overflowY = window.getComputedStyle(element).overflowY;
+              var scrollable = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
+              if (scrollable && element.scrollHeight > element.clientHeight + 1 && element.scrollTop > 1) {
+                return false;
+              }
+              element = element.parentElement;
+            }
+
+            var roots = [document.scrollingElement, document.documentElement, document.body];
+            for (var i = 0; i < roots.length; i++) {
+              if (roots[i] && roots[i].scrollTop > 1) return false;
+            }
+            return true;
+          }
+
+          function hideIndicator() {
+            indicator.style.display = 'none';
+            indicator.style.opacity = '0';
+            indicator.classList.remove('site-to-app-refresh-ready');
+          }
+
+          document.addEventListener('touchstart', function (event) {
+            if (event.touches.length !== 1) {
+              active = false;
+              hideIndicator();
+              return;
+            }
+            var touch = event.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            startTarget = event.target;
+            active = canRefreshAt(startTarget);
+            hideIndicator();
+          }, { capture: true, passive: true });
+
+          document.addEventListener('touchmove', function (event) {
+            if (!active || event.touches.length !== 1) return;
+            var touch = event.touches[0];
+            var deltaX = touch.clientX - startX;
+            var deltaY = touch.clientY - startY;
+            if (deltaY <= 0 || Math.abs(deltaX) > deltaY * 0.8) {
+              if (Math.abs(deltaX) > deltaY * 0.8 || deltaY < 0) active = false;
+              hideIndicator();
+              return;
+            }
+            if (!canRefreshAt(startTarget)) {
+              active = false;
+              hideIndicator();
+              return;
+            }
+            if (deltaY < 8) return;
+
+            if (event.cancelable) event.preventDefault();
+            indicator.style.display = 'flex';
+            indicator.style.opacity = String(Math.min(1, deltaY / 40));
+            indicator.style.transform = 'translateY(' + Math.min(68, deltaY * 0.55) + 'px)';
+            if (deltaY >= threshold) {
+              active = false;
+              indicator.classList.add('site-to-app-refresh-ready');
+              window.location.reload();
+            }
+          }, { capture: true, passive: false });
+
+          document.addEventListener('touchend', function () {
+            active = false;
+            hideIndicator();
+          }, { capture: true, passive: true });
+          document.addEventListener('touchcancel', function () {
+            active = false;
+            hideIndicator();
+          }, { capture: true, passive: true });
+        })();
+        """;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -454,7 +536,6 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         webView = findViewById(R.id.webView);
-        swipeRefresh = findViewById(R.id.swipeRefresh);
         progressBar = findViewById(R.id.progressBar);
 
         if (!fullScreen) {
@@ -485,22 +566,6 @@ public class MainActivity extends Activity {
         final boolean showSplash = ${showSplash};
         final int splashDuration = ${splashDuration};
 
-        swipeRefresh.setEnabled(enablePullToRefresh);
-        if (enablePullToRefresh) {
-            swipeRefresh.setOnChildScrollUpCallback(new SwipeRefreshLayout.OnChildScrollUpCallback() {
-                @Override
-                public boolean canChildScrollUp(SwipeRefreshLayout parent, android.view.View child) {
-                    return webView.canScrollVertically(-1);
-                }
-            });
-            swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                @Override
-                public void onRefresh() {
-                    webView.reload();
-                }
-            });
-        }
-
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setDomStorageEnabled(true);
@@ -530,7 +595,7 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
-                if (showSpinner && !swipeRefresh.isRefreshing()) {
+                if (showSpinner) {
                     progressBar.setVisibility(android.view.View.VISIBLE);
                 }
             }
@@ -540,7 +605,9 @@ public class MainActivity extends Activity {
                 if (showSpinner) {
                     progressBar.setVisibility(android.view.View.GONE);
                 }
-                swipeRefresh.setRefreshing(false);
+                if (enablePullToRefresh) {
+                    view.evaluateJavascript(PULL_TO_REFRESH_SCRIPT, null);
+                }
                 
                 if (showSplash) {
                     final android.view.View splash = findViewById(R.id.splashOverlay);

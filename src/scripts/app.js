@@ -86,6 +86,9 @@
   let packageWasEdited = false;
   let nameWasEdited = false;
   let base64Icon = null;
+  let iconUploadToken = 0;
+  let iconProcessing = false;
+  const MAX_ICON_DATA_URL_LENGTH = 48 * 1024;
 
   const javaKeywords = new Set([
     "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
@@ -329,7 +332,7 @@
         unchangedSinceBuild = fingerprintConfig(currentBuildRequest()) === lastSuccessfulBuildFingerprint;
       } catch {}
     }
-    els.downloadButton.disabled = buildInProgress || unchangedSinceBuild;
+    els.downloadButton.disabled = buildInProgress || iconProcessing || unchangedSinceBuild;
   }
 
   function loadHistory() {
@@ -976,6 +979,8 @@
     els.customUserAgent.value = DEFAULTS.customUserAgent;
     els.splashDurationField.style.display = "block";
     els.autoFetchIcon.checked = true;
+    iconUploadToken++;
+    iconProcessing = false;
     base64Icon = null;
     els.appIcon.value = "";
     packageWasEdited = false;
@@ -1044,19 +1049,91 @@
     }
   }
 
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("This browser could not process the selected icon."));
+      }, type, quality);
+    });
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Could not read the prepared app icon."));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function prepareUploadedIcon(file) {
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
+      throw new Error("Choose a PNG or JPEG image for the app icon.");
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      throw new Error("The selected image is too large. Choose an image under 20 MB.");
+    }
+
+    const bitmap = await createImageBitmap(file);
+    try {
+      // Keep transparency while reducing the image to launcher-icon dimensions.
+      for (const size of [192, 160, 128, 96]) {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("This browser could not process the selected icon.");
+        context.clearRect(0, 0, size, size);
+
+        const scale = Math.min(size / bitmap.width, size / bitmap.height);
+        const width = Math.max(1, Math.round(bitmap.width * scale));
+        const height = Math.max(1, Math.round(bitmap.height * scale));
+        context.drawImage(bitmap, (size - width) / 2, (size - height) / 2, width, height);
+
+        for (const quality of [0.9, 0.82, 0.74, 0.66]) {
+          const blob = await canvasToBlob(canvas, "image/webp", quality);
+          const dataUrl = await blobToDataUrl(blob);
+          if (typeof dataUrl === "string" && dataUrl.length <= MAX_ICON_DATA_URL_LENGTH) {
+            return dataUrl;
+          }
+          // Unsupported WebP encoders return PNG regardless of quality; try a smaller canvas.
+          if (blob.type !== "image/webp") break;
+        }
+      }
+    } finally {
+      bitmap.close();
+    }
+
+    throw new Error("Could not reduce this image enough to upload. Try a simpler or smaller icon.");
+  }
+
   els.appIcon.addEventListener("change", (e) => {
     const file = e.target.files[0];
+    const token = ++iconUploadToken;
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        base64Icon = event.target.result;
+      iconProcessing = true;
+      updateBuildButtonState();
+      prepareUploadedIcon(file).then((preparedIcon) => {
+        if (token !== iconUploadToken) return;
+        base64Icon = preparedIcon;
+        iconProcessing = false;
         updateIconUploadState();
         updatePreview();
         updateBuildButtonState();
-      };
-      reader.readAsDataURL(file);
+      }).catch((error) => {
+        if (token !== iconUploadToken) return;
+        base64Icon = null;
+        iconProcessing = false;
+        els.appIcon.value = "";
+        updateIconUploadState();
+        updatePreview();
+        updateBuildButtonState();
+        setMessage(error.message, "error");
+      });
     } else {
       base64Icon = null;
+      iconProcessing = false;
       updateIconUploadState();
       updatePreview();
       updateBuildButtonState();
@@ -1066,6 +1143,8 @@
   // Remove icon button
   if (els.removeIconButton) {
     els.removeIconButton.addEventListener("click", function () {
+      iconUploadToken++;
+      iconProcessing = false;
       base64Icon = null;
       els.appIcon.value = "";
       updateIconUploadState();

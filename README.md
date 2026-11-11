@@ -2,6 +2,8 @@
 
 SiteToApp is an Astro website and app-wrapper builder. It creates Android WebView apps and Windows desktop wrappers from a website URL. The Windows builder supports Electron and Tauri; macOS and Linux builder modules are present in the local Express backend but are not currently exposed as active site builders.
 
+Android launcher icons use an uploaded image when provided, otherwise an automatically fetched website favicon when enabled, and generated app-name initials as the final fallback.
+
 ## Requirements
 
 - Node.js 22.12 or newer and npm

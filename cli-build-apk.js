@@ -20,6 +20,10 @@ const allowZoom = process.argv[12] === 'true';
 
 const buildId = process.argv[13] || 'latest';
 const buildsDir = path.resolve('./builds-cli');
+const icon = process.env.APP_ICON || null;
+const autoFetchIcon = process.env.AUTO_FETCH_ICON === undefined
+  ? true
+  : process.env.AUTO_FETCH_ICON === 'true';
 
 console.log('--- SiteToApp CLI Build ---');
 console.log('Website URL:', siteUrl);
@@ -32,6 +36,8 @@ console.log('Show Splash Screen:', showSplash);
 console.log('Splash Duration:', splashDuration, 'ms');
 console.log('Full Screen Mode:', fullScreen);
 console.log('Custom User Agent:', customUserAgent);
+console.log('Custom Icon:', icon ? 'provided' : 'not provided');
+console.log('Auto Fetch Icon:', autoFetchIcon);
 console.log('Allow Zoom:', allowZoom);
 console.log('---------------------------');
 
@@ -40,8 +46,8 @@ buildAPK({
   appName,
   appId,
   appVersion,
-  icon: null, // Auto-scraped favicon will be used
-  autoFetchIcon: true,
+  icon,
+  autoFetchIcon,
   showSpinner,
   pullToRefresh,
   allowZoom,
