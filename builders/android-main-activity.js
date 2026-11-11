@@ -1616,7 +1616,7 @@ ${blobScript}
                 .setDuration(300)
                 .setListener(new android.animation.AnimatorListenerAdapter() {
                     @Override
-                    public void onAnimationEnd(android.animation.Animation animation) {
+                    public void onAnimationEnd(android.animation.Animator animation) {
                         splash.setVisibility(android.view.View.GONE);
                     }
                 });

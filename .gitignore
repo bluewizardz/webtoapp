@@ -27,3 +27,6 @@ dist/
 # Wrangler bundle output
 .wrangler/
 
+
+# AI Agent Configuration
+AGENTS.md
