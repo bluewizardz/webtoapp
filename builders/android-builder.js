@@ -5,7 +5,20 @@ import archiver from 'archiver';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { generatePngIcon } from './icon-generator.js';
-import { tryBuildAPK as attemptAPK } from './build-utils.js';
+import { tryBuildAPK as attemptAPK, resolveAndroidBuildVariant } from './build-utils.js';
+import { escapeAndroidString, escapeGradleString, escapeJavaString, escapeXmlAttribute } from './codegen.js';
+import { buildMainActivityJava } from './android-main-activity.js';
+import {
+  AGP_VERSION,
+  COMPILE_SDK,
+  GRADLE_DISTRIBUTION_URL,
+  JAVA_VERSION,
+  MIN_SDK,
+  TARGET_SDK
+} from './android-toolchain.js';
+// Shared with the Cloudflare Pages functions (kept inside functions/ so Pages can
+// bundle it). Validating here protects every caller, including direct API use.
+import { normalizeSiteUrl, validateAppId, validateAppVersion } from '../functions/_lib/build-inputs.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,10 +34,159 @@ export async function buildAPK(params) {
   return await executeAndroidBuild(params);
 }
 
-async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, autoFetchIcon = true, showSpinner = true, pullToRefresh = true, allowZoom = false, showSplash = true, splashDuration = 2000, fullScreen = false, customUserAgent = null, buildId, buildsDir }) {
+/**
+ * Turn whatever the caller supplied (a data URI or bare base64) into a Buffer.
+ * Returns null when the payload is not a recognisable image data URI.
+ */
+function decodeIconPayload(icon) {
+  if (typeof icon !== 'string') return null;
+  const raw = icon.trim();
+  if (!raw) return null;
+
+  const dataUri = /^data:([^;,]*)(;base64)?,([\s\S]*)$/i.exec(raw);
+  if (dataUri) {
+    const mime = (dataUri[1] || '').toLowerCase();
+    const isBase64 = !!dataUri[2];
+    const payload = dataUri[3];
+    if (mime && mime !== 'application/octet-stream' && !/^image\//.test(mime)) return null;
+    try {
+      return isBase64
+        ? Buffer.from(payload, 'base64')
+        : Buffer.from(decodeURIComponent(payload), 'utf8');
+    } catch (error) {
+      return null;
+    }
+  }
+
+  // Bare base64 (no data: prefix).
+  if (/^[A-Za-z0-9+/\s]+={0,2}$/.test(raw)) {
+    return Buffer.from(raw, 'base64');
+  }
+  return null;
+}
+
+async function isDecodableIcon(buffer) {
+  if (!buffer || buffer.length === 0) return false;
+  try {
+    const meta = await sharp(buffer).metadata();
+    return !!(meta.width && meta.height);
+  } catch (error) {
+    return false;
+  }
+}
+
+async function renderLauncherIcon(buffer, size) {
+  return sharp(buffer)
+    .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
+    .toBuffer();
+}
+
+// sharp cannot decode BMP-based .ico entries, so an unreadable favicon gets one
+// more try from a PNG-producing favicon service before we give up.
+async function fetchUsableFavicon(siteUrl) {
+  const attempts = [
+    async () => fetchFaviconBuffer(siteUrl),
+    async () => {
+      try {
+        const domain = new URL(siteUrl).hostname;
+        const response = await fetch(`https://www.google.com/s2/favicons?sz=128&domain=${domain}`);
+        return response.ok ? Buffer.from(await response.arrayBuffer()) : null;
+      } catch (error) {
+        console.log(`[android-builder] Google favicon fallback failed: ${error.message}`);
+        return null;
+      }
+    }
+  ];
+
+  for (const attempt of attempts) {
+    const raw = await attempt();
+    if (!raw || raw.length === 0) continue;
+    const candidate = extractPngOrBmpFromIco(raw);
+    if (await isDecodableIcon(candidate)) return candidate;
+  }
+  return null;
+}
+
+/**
+ * Pick the launcher icon image, in priority order:
+ *   1. the icon the user uploaded,
+ *   2. the website favicon (only when automatic icon fetching is enabled),
+ *   3. null, which makes the caller draw the generated initials icon.
+ */
+async function resolveAppIcon({ icon, autoFetchIcon, siteUrl }) {
+  if (icon) {
+    const uploaded = decodeIconPayload(icon);
+    if (uploaded) {
+      const candidate = extractPngOrBmpFromIco(uploaded);
+      if (await isDecodableIcon(candidate)) {
+        console.log('[android-builder] Using the uploaded custom app icon.');
+        return candidate;
+      }
+    }
+    // The user chose an icon explicitly: never swap it for a scraped favicon.
+    console.log('[android-builder] Uploaded icon could not be read; using the generated icon.');
+    return null;
+  }
+
+  if (autoFetchIcon && siteUrl) {
+    const favicon = await fetchUsableFavicon(siteUrl);
+    if (favicon) {
+      console.log('[android-builder] Using the website favicon as the app icon.');
+      return favicon;
+    }
+    console.log('[android-builder] No usable favicon found; using the generated icon.');
+    return null;
+  }
+
+  console.log('[android-builder] Automatic icon fetching disabled; using the generated icon.');
+  return null;
+}
+
+export async function generateAndroidProject(params) {
+  // Validate the values that become file paths, package names and Gradle
+  // identifiers before a single file is written.
+  const siteResult = normalizeSiteUrl(params.siteUrl);
+  if (siteResult.error) {
+    throw new Error(`Invalid website URL: ${siteResult.error}`);
+  }
+  const appIdResult = validateAppId(params.appId);
+  if (appIdResult.error) {
+    throw new Error(`Invalid app ID: ${appIdResult.error}`);
+  }
+  const versionResult = validateAppVersion(params.appVersion);
+  if (versionResult.error) {
+    throw new Error(`Invalid app version: ${versionResult.error}`);
+  }
+
+  const {
+    icon,
+    autoFetchIcon = true,
+    showSpinner = true,
+    pullToRefresh = true,
+    allowZoom = false,
+    showSplash = true,
+    splashDuration = 2000,
+    fullScreen = false,
+    customUserAgent = null,
+    buildId,
+    buildsDir
+  } = params;
+  const siteUrl = siteResult.value;
+  const appId = appIdResult.value;
+  const appVersion = versionResult.value;
+  // Markup and quotes in names are handled by the per-format escaping below;
+  // control characters are never valid, so they become spaces.
+  const appName = String(params.appName ?? '').replace(/[\u0000-\u001F\u007F]/g, ' ').trim() || 'My Web App';
+
   const enableZoom = allowZoom === true || allowZoom === 'true';
   const buildDir = path.join(buildsDir, buildId, 'android');
   const sanitizedThemeName = appName.replace(/[^a-zA-Z0-9]/g, '') || 'App';
+
+  // Values pre-escaped for each output format this project uses.
+  const androidStringAppName = escapeAndroidString(appName);
+  const androidStringSiteUrl = escapeAndroidString(siteUrl);
+  const attributeAppName = escapeXmlAttribute(appName);
   
   // Clean up source files from any previous build to prevent compiling stale source files
   if (fs.existsSync(path.join(buildDir, 'app', 'src'))) {
@@ -66,65 +228,13 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
     { name: 'mipmap-xxxhdpi', size: 192 },
   ];
 
-  let customIconBuffer = null;
-  if (icon && typeof icon === 'string' && icon.startsWith('data:')) {
-    try {
-      const base64Data = icon.split(';base64,').pop();
-      customIconBuffer = Buffer.from(base64Data, 'base64');
-      customIconBuffer = extractPngOrBmpFromIco(customIconBuffer);
-    } catch (e) {
-      console.log(`[android-builder] Custom icon parsing failed: ${e.message}`);
-    }
-  } else if (autoFetchIcon && siteUrl) {
-    customIconBuffer = await fetchFaviconBuffer(siteUrl);
-    if (customIconBuffer) {
-      customIconBuffer = extractPngOrBmpFromIco(customIconBuffer);
-    }
-  }
-
-  // Self-correcting check: Test if sharp can successfully decode the buffer
-  if (customIconBuffer && customIconBuffer.length > 0) {
-    try {
-      await sharp(customIconBuffer).metadata();
-    } catch (sharpError) {
-      console.log(`[android-builder] Icon format unsupported by sharp, falling back to Google Favicon API wrapper: ${sharpError.message}`);
-      try {
-        let domain = siteUrl;
-        try {
-          domain = new URL(siteUrl).hostname || siteUrl;
-        } catch (_) {}
-        const googleUrl = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
-        const res = await fetch(googleUrl);
-        if (res.ok) {
-          const arrBuf = await res.arrayBuffer();
-          if (arrBuf && arrBuf.byteLength > 0) {
-            customIconBuffer = Buffer.from(arrBuf);
-            // Confirm the fallback is readable
-            try {
-              await sharp(customIconBuffer).metadata();
-            } catch (_) {
-              customIconBuffer = null;
-            }
-          } else {
-            customIconBuffer = null;
-          }
-        } else {
-          customIconBuffer = null;
-        }
-      } catch (fallbackError) {
-        console.log(`[android-builder] Google Favicon API fallback failed: ${fallbackError.message}`);
-        customIconBuffer = null; // Fall back to initials if everything fails
-      }
-    }
-  } else {
-    customIconBuffer = null;
-  }
+  const customIconBuffer = await resolveAppIcon({ icon, autoFetchIcon, siteUrl });
 
   for (const { name, size } of mipmapDensities) {
     const mipmapDir = path.join(resDir, name);
     fs.mkdirSync(mipmapDir, { recursive: true });
     const iconBuffer = customIconBuffer
-      ? await sharp(customIconBuffer).resize(size, size).png().toBuffer()
+      ? await renderLauncherIcon(customIconBuffer, size)
       : await generatePngIcon(appName, size);
     fs.writeFileSync(path.join(mipmapDir, 'ic_launcher.png'), iconBuffer);
     fs.writeFileSync(path.join(mipmapDir, 'ic_launcher_round.png'), iconBuffer);
@@ -135,7 +245,7 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
   fs.mkdirSync(wrapperDir, { recursive: true });
   fs.writeFileSync(path.join(wrapperDir, 'gradle-wrapper.properties'), `distributionBase=GRADLE_USER_HOME
 distributionPath=wrapper/dists
-distributionUrl=https\\://services.gradle.org/distributions/gradle-9.5.1-bin.zip
+distributionUrl=${GRADLE_DISTRIBUTION_URL.replace(/:/g, '\\:')}
 networkTimeout=10000
 validateDistributionUrl=true
 zipStoreBase=GRADLE_USER_HOME
@@ -177,13 +287,13 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "${appName}"
+rootProject.name = "${escapeGradleString(appName, '"')}"
 include ':app'
 `);
 
   // Create root build.gradle
   fs.writeFileSync(path.join(buildDir, 'build.gradle'), `plugins {
-    id 'com.android.application' version '8.9.1' apply false
+    id 'com.android.application' version '${AGP_VERSION}' apply false
 }
 `);
 
@@ -193,31 +303,56 @@ include ':app'
     id 'com.android.application'
 }
 
+// Release signing material comes from the environment (CI secrets) and is never
+// written into the project. Without it, only the debug variant is built.
+def releaseKeystorePath = System.getenv('SITEAPP_KEYSTORE_PATH')
+def releaseKeystorePassword = System.getenv('SITEAPP_KEYSTORE_PASSWORD')
+def releaseKeyAlias = System.getenv('SITEAPP_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('SITEAPP_KEY_PASSWORD')
+def hasReleaseSigning = releaseKeystorePath != null && releaseKeystorePath.length() > 0 \
+    && releaseKeystorePassword != null && releaseKeyAlias != null && releaseKeyPassword != null \
+    && file(releaseKeystorePath).exists()
+def enableShrinking = System.getenv('SITEAPP_MINIFY') == 'true'
+
 android {
-    namespace '${appId}'
-    compileSdk 35
+    namespace '${escapeGradleString(appId)}'
+    compileSdk ${COMPILE_SDK}
 
     defaultConfig {
-        applicationId '${appId}'
-        minSdk 24
-        targetSdk 35
+        applicationId '${escapeGradleString(appId)}'
+        minSdk ${MIN_SDK}
+        targetSdk ${TARGET_SDK}
         versionCode 1
-        versionName '${appVersion}'
+        versionName '${escapeGradleString(appVersion)}'
     }
 
     signingConfigs {
         debug {
-            storeFile file('${homeDir}/.android/debug.keystore')
+            storeFile file('${escapeGradleString(homeDir)}/.android/debug.keystore')
             storePassword 'android'
             keyAlias 'androiddebugkey'
             keyPassword 'android'
+        }
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
         }
     }
 
     buildTypes {
         release {
-            minifyEnabled false
+            // Shrinking stays off unless explicitly enabled after verifying the site.
+            minifyEnabled enableShrinking
+            shrinkResources enableShrinking
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                // A release build is never signed with the debug key.
+                signingConfig signingConfigs.release
+            }
         }
         debug {
             debuggable true
@@ -226,8 +361,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+        sourceCompatibility JavaVersion.VERSION_${JAVA_VERSION}
+        targetCompatibility JavaVersion.VERSION_${JAVA_VERSION}
     }
 }
 
@@ -241,10 +376,11 @@ dependencies {
   // Create AndroidManifest.xml
   // Cleartext HTTP is only permitted when the wrapped site itself is served over HTTP.
   const allowCleartext = /^http:\/\//i.test(siteUrl);
+  const manifestSiteHost = escapeXmlAttribute(new URL(siteUrl).hostname);
   const manifestContent = `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:versionCode="1"
-    android:versionName="${appVersion}">
+    android:versionName="${escapeXmlAttribute(appVersion)}">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -254,6 +390,8 @@ dependencies {
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Only needed to save downloads to the public Downloads folder before Android 10. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
@@ -273,11 +411,25 @@ dependencies {
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:hardwareAccelerated="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Lets the site return the user to the app after an OAuth flow. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="${manifestSiteHost}" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="siteapp" android:host="${manifestSiteHost}" />
             </intent-filter>
         </activity>
     </application>
@@ -289,8 +441,8 @@ dependencies {
   // Create strings.xml
   const stringsContent = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">${appName}</string>
-    <string name="website_url">${siteUrl}</string>
+    <string name="app_name">${androidStringAppName}</string>
+    <string name="website_url">${androidStringSiteUrl}</string>
 </resources>`;
 
   fs.writeFileSync(path.join(valuesDir, 'strings.xml'), stringsContent);
@@ -345,7 +497,7 @@ dependencies {
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_gravity="center"
-                android:text="${appName}"
+                android:text="${attributeAppName}"
                 android:textColor="#ffffff"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -378,8 +530,10 @@ dependencies {
             android:layout_width="match_parent"
             android:layout_height="4dp"
             android:layout_gravity="top"
-            android:indeterminate="true"
-            android:indeterminateTint="#10b981"
+            android:indeterminate="false"
+            android:max="100"
+            android:progress="0"
+            android:progressTint="#10b981"
             android:visibility="gone" />
 
     </FrameLayout>
@@ -390,373 +544,30 @@ dependencies {
 
   // Create MainActivity.java
   const javaPackagePath = appId.replace(/\./g, '/');
-  const mainActivityContent = `package ${appId};
-
-import android.app.Activity;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.net.Uri;
-import android.os.Bundle;
-import android.webkit.CookieManager;
-import android.webkit.GeolocationPermissions;
-import android.webkit.PermissionRequest;
-import android.webkit.ValueCallback;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
-import android.widget.ProgressBar;
-
-public class MainActivity extends Activity {
-    private static final int REQ_FILE_CHOOSER = 1001;
-    private static final int REQ_PERMISSIONS = 1002;
-    // Identity providers that refuse to run their sign-in flow inside an embedded WebView
-    private static final String[] EXTERNAL_AUTH_HOSTS = {
-        "accounts.google.com",
-        "accounts.youtube.com",
-        "appleid.apple.com",
-        "login.microsoftonline.com",
-        "login.live.com",
-        "id.atlassian.com"
-    };
-
-    private WebView webView;
-    private SwipeRefreshLayout swipeRefresh;
-    private ProgressBar progressBar;
-    private String siteHost = "";
-    private ValueCallback<Uri[]> filePathCallback;
-    private PermissionRequest pendingPermissionRequest;
-    private GeolocationPermissions.Callback pendingGeoCallback;
-    private String pendingGeoOrigin;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        
-        final boolean fullScreen = ${fullScreen};
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        if (fullScreen) {
-            getWindow().getDecorView().setSystemUiVisibility(
-                android.view.View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | android.view.View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | android.view.View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
-                | android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            );
-        }
-        
-        setContentView(R.layout.activity_main);
-
-        webView = findViewById(R.id.webView);
-        swipeRefresh = findViewById(R.id.swipeRefresh);
-        progressBar = findViewById(R.id.progressBar);
-
-        if (!fullScreen) {
-            final android.view.View contentRoot = findViewById(R.id.contentRoot);
-            final int initialPaddingLeft = contentRoot.getPaddingLeft();
-            final int initialPaddingTop = contentRoot.getPaddingTop();
-            final int initialPaddingRight = contentRoot.getPaddingRight();
-            final int initialPaddingBottom = contentRoot.getPaddingBottom();
-            ViewCompat.setOnApplyWindowInsetsListener(contentRoot, (view, windowInsets) -> {
-                Insets safeInsets = windowInsets.getInsets(
-                    WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
-                );
-                view.setPadding(
-                    initialPaddingLeft + safeInsets.left,
-                    initialPaddingTop + safeInsets.top,
-                    initialPaddingRight + safeInsets.right,
-                    initialPaddingBottom + safeInsets.bottom
-                );
-                return windowInsets;
-            });
-            ViewCompat.requestApplyInsets(contentRoot);
-        }
-        
-        webView.setBackgroundColor(0xFF09080F);
-        
-        final boolean enablePullToRefresh = ${pullToRefresh};
-        final boolean showSpinner = ${showSpinner};
-        final boolean showSplash = ${showSplash};
-        final int splashDuration = ${splashDuration};
-
-        swipeRefresh.setEnabled(enablePullToRefresh);
-        if (enablePullToRefresh) {
-            swipeRefresh.setOnChildScrollUpCallback(new SwipeRefreshLayout.OnChildScrollUpCallback() {
-                @Override
-                public boolean canChildScrollUp(SwipeRefreshLayout parent, android.view.View child) {
-                    return webView.canScrollVertically(-1);
-                }
-            });
-            swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-                @Override
-                public void onRefresh() {
-                    webView.reload();
-                }
-            });
-        }
-
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setDatabaseEnabled(true);
-        webSettings.setLoadWithOverviewMode(true);
-        webSettings.setUseWideViewPort(true);
-        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        
-        final String customUA = ${customUserAgent ? `"${customUserAgent}"` : "null"};
-        if (customUA != null && !customUA.trim().isEmpty()) {
-            webSettings.setUserAgentString(customUA);
-        }
-
-        final boolean allowZoom = ${enableZoom};
-        webSettings.setSupportZoom(allowZoom);
-        webSettings.setBuiltInZoomControls(allowZoom);
-        webSettings.setDisplayZoomControls(false);
-
-        // Third-party cookies are off by default for apps targeting Lollipop or newer
-        CookieManager cookieManager = CookieManager.getInstance();
-        cookieManager.setAcceptCookie(true);
-        cookieManager.setAcceptThirdPartyCookies(webView, true);
-
-        Uri siteUri = Uri.parse("${siteUrl}");
-        siteHost = siteUri.getHost() == null ? "" : siteUri.getHost().toLowerCase();
-
-        webView.setWebViewClient(new WebViewClient() {
-            @Override
-            public void onPageStarted(WebView view, String url, android.graphics.Bitmap favicon) {
-                if (showSpinner && !swipeRefresh.isRefreshing()) {
-                    progressBar.setVisibility(android.view.View.VISIBLE);
-                }
-            }
-
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                if (showSpinner) {
-                    progressBar.setVisibility(android.view.View.GONE);
-                }
-                swipeRefresh.setRefreshing(false);
-                
-                if (showSplash) {
-                    final android.view.View splash = findViewById(R.id.splashOverlay);
-                    if (splash != null && splash.getVisibility() == android.view.View.VISIBLE) {
-                        splash.animate()
-                            .alpha(0f)
-                            .setDuration(300)
-                            .setListener(new android.animation.AnimatorListenerAdapter() {
-                                @Override
-                                public void onAnimationEnd(android.animation.Animator animation) {
-                                    splash.setVisibility(android.view.View.GONE);
-                                }
-                            });
-                    }
-                }
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                return handleNavigation(url);
-            }
-
-            @Override
-            public boolean shouldOverrideUrlLoading(WebView view, android.webkit.WebResourceRequest request) {
-                return handleNavigation(request.getUrl().toString());
-            }
-        });
-
-        webView.setWebChromeClient(new WebChromeClient() {
-            @Override
-            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> callback, FileChooserParams params) {
-                if (filePathCallback != null) {
-                    filePathCallback.onReceiveValue(null);
-                }
-                filePathCallback = callback;
-                try {
-                    startActivityForResult(params.createIntent(), REQ_FILE_CHOOSER);
-                } catch (Exception e) {
-                    filePathCallback = null;
-                    return false;
-                }
-                return true;
-            }
-
-            @Override
-            public void onPermissionRequest(final PermissionRequest request) {
-                java.util.ArrayList<String> missing = new java.util.ArrayList<>();
-                for (String resource : request.getResources()) {
-                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)
-                            && checkSelfPermission(android.Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                        missing.add(android.Manifest.permission.CAMERA);
-                    } else if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)
-                            && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-                        missing.add(android.Manifest.permission.RECORD_AUDIO);
-                    }
-                }
-                if (!missing.isEmpty()) {
-                    pendingPermissionRequest = request;
-                    requestPermissions(missing.toArray(new String[0]), REQ_PERMISSIONS);
-                    return;
-                }
-                request.grant(request.getResources());
-            }
-
-            @Override
-            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
-                if (checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    callback.invoke(origin, true, false);
-                } else {
-                    pendingGeoCallback = callback;
-                    pendingGeoOrigin = origin;
-                    requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, REQ_PERMISSIONS);
-                }
-            }
-        });
-
-        webView.loadUrl("${siteUrl}");
-        
-        if (showSplash) {
-            new android.os.Handler().postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    final android.view.View splash = findViewById(R.id.splashOverlay);
-                    if (splash != null && splash.getVisibility() == android.view.View.VISIBLE) {
-                        splash.animate()
-                            .alpha(0f)
-                            .setDuration(300)
-                            .setListener(new android.animation.AnimatorListenerAdapter() {
-                                @Override
-                                public void onAnimationEnd(android.animation.Animator animation) {
-                                    splash.setVisibility(android.view.View.GONE);
-                                }
-                            });
-                    }
-                }
-            }, splashDuration);
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        if (requestCode == REQ_PERMISSIONS) {
-            if (pendingPermissionRequest != null) {
-                PermissionRequest request = pendingPermissionRequest;
-                pendingPermissionRequest = null;
-                java.util.ArrayList<String> granted = new java.util.ArrayList<>();
-                for (String resource : request.getResources()) {
-                    if (PermissionRequest.RESOURCE_VIDEO_CAPTURE.equals(resource)
-                            && checkSelfPermission(android.Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                        granted.add(resource);
-                    } else if (PermissionRequest.RESOURCE_AUDIO_CAPTURE.equals(resource)
-                            && checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-                        granted.add(resource);
-                    }
-                }
-                if (granted.isEmpty()) {
-                    request.deny();
-                } else {
-                    request.grant(granted.toArray(new String[0]));
-                }
-            }
-            if (pendingGeoCallback != null) {
-                GeolocationPermissions.Callback callback = pendingGeoCallback;
-                String origin = pendingGeoOrigin;
-                pendingGeoCallback = null;
-                pendingGeoOrigin = null;
-                callback.invoke(origin, checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED, false);
-            }
-            return;
-        }
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == REQ_FILE_CHOOSER) {
-            if (filePathCallback != null) {
-                filePathCallback.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data));
-                filePathCallback = null;
-            }
-            return;
-        }
-        super.onActivityResult(requestCode, resultCode, data);
-    }
-
-    private boolean isSameSite(String host) {
-        if (host == null || host.isEmpty() || siteHost.isEmpty()) {
-            return false;
-        }
-        return host.equals(siteHost) || host.endsWith("." + siteHost);
-    }
-
-    private boolean isExternalAuthHost(String host) {
-        if (host == null) {
-            return false;
-        }
-        for (String authHost : EXTERNAL_AUTH_HOSTS) {
-            if (host.equals(authHost) || host.endsWith("." + authHost)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void openExternally(String url) {
-        try {
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-        } catch (Exception e) {
-            // No installed app can handle this link, so there is nothing to open.
-        }
-    }
-
-    private boolean handleNavigation(String url) {
-        try {
-            Uri uri = Uri.parse(url);
-            String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
-            if (!scheme.equals("http") && !scheme.equals("https")) {
-                if (scheme.equals("intent")) {
-                    try {
-                        startActivity(Intent.parseUri(url, Intent.URI_INTENT_SCHEME));
-                    } catch (Exception e) {
-                        // Unresolvable intent link: drop it instead of crashing.
-                    }
-                    return true;
-                }
-                openExternally(url);
-                return true;
-            }
-            String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
-            if (!isSameSite(host) && isExternalAuthHost(host)) {
-                // Google and other providers block OAuth inside embedded WebViews
-                openExternally(url);
-                return true;
-            }
-            return false;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
-}`;
-
+  const mainActivityContent = buildMainActivityJava({
+    appId,
+    siteUrl,
+    customUserAgent,
+    enableZoom,
+    fullScreen,
+    pullToRefresh,
+    showSpinner,
+    showSplash,
+    splashDuration,
+    allowMixedContent: params.allowMixedContent === true,
+    externalAuthHosts: params.externalAuthHosts
+  });
   fs.writeFileSync(path.join(javaDir, 'MainActivity.java'), mainActivityContent);
 
   // Create proguard-rules.pro
   fs.writeFileSync(path.join(appDir, 'proguard-rules.pro'), `# WebView
 -keepclassmembers class * {
     public void onEvent*(**);
+}
+
+# The download bridge is called from JavaScript, so shrinking must keep it.
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
 }
 
 -keep class android.webkit.** { *; }
@@ -767,6 +578,8 @@ public class MainActivity extends Activity {
 .gradle
 build/
 *.apk
+*.jks
+*.keystore
 *.aar
 *.ap_
 *.aab
@@ -836,6 +649,21 @@ Android app wrapping ${siteUrl}
 
 The built APKs will be in \`app/build/outputs/apk/debug/\`
 
+## Build a Signed Release APK
+
+Release signing reads environment variables and never files in this repository:
+
+  export SITEAPP_KEYSTORE_PATH=/secure/path/release.jks
+  export SITEAPP_KEYSTORE_PASSWORD=...
+  export SITEAPP_KEY_ALIAS=...
+  export SITEAPP_KEY_PASSWORD=...
+  ./gradlew assembleRelease
+
+Without those variables the release build stays unsigned, so a release APK is
+never signed with the debug key. Code and resource shrinking stay disabled until
+SITEAPP_MINIFY=true is set. Never commit a keystore or its passwords; *.jks and
+*.keystore files are ignored by git.
+
 ## Build via GitHub Actions (Zero Cost Setup)
 
 This project has been pre-configured with a GitHub Actions workflow to build your APK for free:
@@ -844,12 +672,24 @@ This project has been pre-configured with a GitHub Actions workflow to build you
 3. The APK will be built automatically on every push. You can find the downloadable APK in the "Actions" tab of your GitHub repository under the latest run.
 `);
 
+  return { buildDir, buildsDir, buildId, appId, appVersion, appName };
+}
+
+/**
+ * Generate the Android project, then compile it (falling back to a source ZIP).
+ * Returns the produced file path.
+ */
+async function executeAndroidBuild(params) {
+  const { buildDir, buildsDir, buildId, appId, appVersion, appName } = await generateAndroidProject(params);
+
   // === Try to build actual APK ===
   try {
     const apkPath = await attemptAPK(buildDir);
     if (apkPath) {
-      // Copy the APK to the build output directory with a clean name
-      const outputApk = path.join(buildsDir, buildId, `${appId}-${appVersion}.apk`);
+      // Copy the APK to the build output directory with a clean name. The variant
+      // is part of the filename so a debug APK is never mistaken for a release.
+      const variant = resolveAndroidBuildVariant() || 'debug';
+      const outputApk = path.join(buildsDir, buildId, `${appId}-${appVersion}-${variant}.apk`);
       fs.mkdirSync(path.dirname(outputApk), { recursive: true }); // Ensure output folder exists
       fs.copyFileSync(apkPath, outputApk);
       console.log(`[android-builder] APK built: ${outputApk}`);
@@ -876,7 +716,7 @@ This project has been pre-configured with a GitHub Actions workflow to build you
     archive.glob('**/*', {
       cwd: buildDir,
       ignore: ['.gradle/**', 'app/build/**', 'local.properties', '.git/**']
-    }, { prefix: `${appName.replace(/\s+/g, '')}-android-source` });
+    }, { prefix: `${appName.replace(/[^\w.-]+/g, '') || 'app'}-android-source` });
 
     archive.finalize();
   });

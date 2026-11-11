@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { GRADLE_VERSION, GRADLE_DISTRIBUTION_URL } from './android-toolchain.js';
 
 // Ensure locally installed tools are in PATH
 const localBin = path.join(process.env.HOME || '', '.local', 'bin');
@@ -62,6 +63,30 @@ export function findFiles(dir, extension) {
 /**
  * Try to build an Android APK. Returns the APK path or null.
  */
+/**
+ * Decide which APK variant to build.
+ *
+ * `BUILD_VARIANT` selects it explicitly; otherwise a release build is used when
+ * release signing secrets are present, and the debug variant when they are not.
+ * Returns 'release', 'debug', or null when a release build was requested without
+ * signing material (a release APK must never be signed with the debug key).
+ */
+export function resolveAndroidBuildVariant() {
+  const requested = String(process.env.BUILD_VARIANT || '').trim().toLowerCase();
+  const keystorePath = String(process.env.SITEAPP_KEYSTORE_PATH || '').trim();
+  const hasSigning = Boolean(
+    keystorePath &&
+    fs.existsSync(keystorePath) &&
+    String(process.env.SITEAPP_KEYSTORE_PASSWORD || '').trim() &&
+    String(process.env.SITEAPP_KEY_ALIAS || '').trim() &&
+    String(process.env.SITEAPP_KEY_PASSWORD || '').trim()
+  );
+
+  if (requested === 'release') return hasSigning ? 'release' : null;
+  if (requested === 'debug') return 'debug';
+  return hasSigning ? 'release' : 'debug';
+}
+
 export async function tryBuildAPK(buildDir) {
   console.log('[build-utils] Attempting Android APK build...');
 
@@ -113,11 +138,12 @@ export async function tryBuildAPK(buildDir) {
       `android.suppressUnsupportedCompileSdk=35\n`
     );
 
-    // Build directly with gradle 8.12 + JDK 17 (AGP 8.9.1 needs Gradle 8.12+, not 9.x)
+    // Build directly with the pinned Gradle release from android-toolchain.js, so
+    // the hosted compiler matches the wrapper written into generated projects.
     console.log('[build-utils] Building APK with JDK 17...');
     const gradleBin = await ensureGradle8();
     if (!gradleBin) {
-      console.log('[build-utils] Gradle 8.12 not available, skipping APK compilation');
+      console.log(`[build-utils] Gradle ${GRADLE_VERSION} not available, skipping APK compilation`);
       return null;
     }
 
@@ -140,14 +166,38 @@ export async function tryBuildAPK(buildDir) {
       );
     }
 
+    // Regenerate the project wrapper with the same Gradle release used below, so an
+    // exported project builds with ./gradlew at the version its AGP expects.
+    console.log(`[build-utils] Generating Gradle ${GRADLE_VERSION} wrapper...`);
+    if (tryExec(`${gradleBin} wrapper --gradle-version ${GRADLE_VERSION} --distribution-type bin --quiet`, { cwd: buildDir, timeout: 180000, env })) {
+      const wrapperProps = path.join(buildDir, 'gradle', 'wrapper', 'gradle-wrapper.properties');
+      if (fs.existsSync(wrapperProps)) {
+        const pinnedUrl = GRADLE_DISTRIBUTION_URL.replace(/:/g, '\\:');
+        const contents = fs.readFileSync(wrapperProps, 'utf8')
+          .replace(/^distributionUrl=.*$/m, `distributionUrl=${pinnedUrl}`);
+        fs.writeFileSync(wrapperProps, contents);
+      }
+    } else {
+      console.log('[build-utils] Wrapper generation failed; continuing with the installed Gradle');
+    }
+
+    const variant = resolveAndroidBuildVariant();
+    if (!variant) {
+      console.log('[build-utils] Release build requested, but release signing is not configured. Add ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD secrets, or run a debug build. Refusing to sign a release APK with the debug key.');
+      return null;
+    }
+    const assembleTask = variant === 'release' ? 'assembleRelease' : 'assembleDebug';
+    console.log(`[build-utils] Building the ${variant} variant with ${assembleTask}...`);
+
     // Compile using parallel execution, build cache, and configuration cache (makes compilation blazing fast on repeat runs)
     // Pass Java Home explicitly via system property to guarantee it uses JDK 17 without polluting gradle.properties
-    if (!tryExec(`${gradleBin} assembleDebug --parallel --build-cache --configuration-cache -Dorg.gradle.java.home=${jdk17Home}`, { cwd: buildDir, timeout: 600000, env })) {
+    if (!tryExec(`${gradleBin} ${assembleTask} --parallel --build-cache --configuration-cache -Dorg.gradle.java.home=${jdk17Home}`, { cwd: buildDir, timeout: 600000, env })) {
+      console.log(`[build-utils] ${assembleTask} failed. Check the Gradle output above for the failing task.`);
       return null;
     }
 
     // Find the APK
-    const apkDir = path.join(buildDir, 'app', 'build', 'outputs', 'apk', 'debug');
+    const apkDir = path.join(buildDir, 'app', 'build', 'outputs', 'apk', variant);
     const apks = findFiles(apkDir, '.apk');
     if (apks.length > 0) {
       console.log(`[build-utils] APK built successfully: ${apks[0]}`);
@@ -223,17 +273,17 @@ async function ensureJdk17() {
  * Ensure Gradle 8.12.1 is available for Android builds. Returns gradle binary path or null.
  */
 async function ensureGradle8() {
-  const gradleDir = path.join(process.env.HOME || '/tmp', '.gradle-android', 'gradle-8.12.1');
+  const gradleDir = path.join(process.env.HOME || '/tmp', '.gradle-android', `gradle-${GRADLE_VERSION}`);
   const gradleBin = path.join(gradleDir, 'bin', 'gradle');
 
   if (fs.existsSync(gradleBin)) {
-    console.log('[build-utils] Gradle 8.12.1 found');
+    console.log(`[build-utils] Gradle ${GRADLE_VERSION} found`);
     return gradleBin;
   }
 
-  console.log('[build-utils] Downloading Gradle 8.12.1 for Android builds...');
-  const gradleUrl = 'https://services.gradle.org/distributions/gradle-8.12.1-bin.zip';
-  const zipPath = '/tmp/gradle-8.12.1.zip';
+  console.log(`[build-utils] Downloading Gradle ${GRADLE_VERSION} for Android builds...`);
+  const gradleUrl = GRADLE_DISTRIBUTION_URL;
+  const zipPath = `/tmp/gradle-${GRADLE_VERSION}.zip`;
 
   try {
     if (!tryExec(`curl -fsSL --retry 5 --retry-delay 5 --retry-max-time 600 --connect-timeout 30 "${gradleUrl}" -o "${zipPath}"`, { timeout: 660000 })) {
@@ -249,7 +299,7 @@ async function ensureGradle8() {
 
     if (fs.existsSync(gradleBin)) {
       tryExec(`chmod +x "${gradleBin}"`);
-      console.log('[build-utils] Gradle 8.12.1 installed');
+      console.log(`[build-utils] Gradle ${GRADLE_VERSION} installed`);
       return gradleBin;
     }
   } catch (e) {

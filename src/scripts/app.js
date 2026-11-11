@@ -687,6 +687,7 @@
   // then pull-to-refresh and zoom demonstrate themselves without interaction.
 
   const PREVIEW_PROGRESS_MS = 1000;
+  const PREVIEW_PAGE_READY_MS = 900;
   const PREVIEW_FADE_MS = 240;
   const PREVIEW_PULL_MS = 900;
   const PREVIEW_ZOOM_MS = 1400;
@@ -784,14 +785,20 @@
     const showSplash = els.showSplash.checked;
     const summary = androidPreviewSummary();
     if (showSplash) {
+      // The generated app keeps the splash until both the minimum duration and the
+      // first page are ready, so the preview mirrors that instead of using a timer.
+      const pageReadyAt = Math.max(duration, PREVIEW_PAGE_READY_MS);
       els.screenSplash.classList.add("active");
-      els.previewStatus.textContent = `Splash screen · ${duration} ms`;
+      els.previewStatus.textContent = duration + " ms minimum · loading page…";
       setPreviewLoading(true);
+      later(function () {
+        els.previewStatus.textContent = "Page ready · dismissing splash…";
+      }, PREVIEW_PAGE_READY_MS);
       later(function () {
         els.screenSplash.classList.remove("active");
         els.previewStatus.textContent = summary;
         runPreviewSequence();
-      }, duration);
+      }, pageReadyAt);
     } else {
       els.screenSplash.classList.remove("active");
       els.previewStatus.textContent = "App preview ready · no splash screen";
@@ -804,6 +811,27 @@
 
   // === Backend Build API ===
 
+  // Build stages reported by the backend. The app never receives real Gradle
+  // progress, so it shows honest steps instead of a fabricated percentage.
+  const BUILD_STAGE_COUNT = 4;
+
+  function buildStageProgress(status) {
+    if (status.state === "finalizing") {
+      return { index: 3, label: "Packaging the APK" };
+    }
+    if (status.state === "queued" || status.status === "queued" || status.status === "pending") {
+      return { index: 1, label: "Waiting for a build runner" };
+    }
+    return { index: 2, label: "Compiling with Gradle" };
+  }
+
+  function renderBuildStage(stage) {
+    showProgress(
+      `Step ${stage.index} of ${BUILD_STAGE_COUNT} · ${stage.label}`,
+      Math.round((stage.index / BUILD_STAGE_COUNT) * 100)
+    );
+  }
+
   async function pollAndDownload(buildId, backendUrl, label) {
     let attempts = 0;
     const maxAttempts = 300;
@@ -813,7 +841,7 @@
       const status = await response.json();
 
       if (status.status === "completed") {
-        showProgress(`${label} compiled! Downloading…`, 100);
+        showProgress(`Step ${BUILD_STAGE_COUNT} of ${BUILD_STAGE_COUNT} · ${label} ready — downloading…`, 100);
 
         const downloadUrl = `${backendUrl}/api/download/${buildId}`;
         const filename = status.filename || "app.apk";
@@ -833,8 +861,8 @@
         throw new Error(status.error || "Build failed");
       }
 
-      showProgress(`Compiling APK with Gradle…`, Math.min(20 + attempts * 2.5, 95));
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      renderBuildStage(buildStageProgress(status));
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       attempts++;
     }
 
@@ -846,7 +874,7 @@
 
     try {
       setButtonLoading(true);
-      showProgress("Queuing Android compiler build…", 15);
+      showProgress("Submitting your build request…", 0);
 
       const response = await fetch(`${backendUrl}/api/build/apk`, {
         method: "POST",
@@ -860,7 +888,7 @@
       }
 
       const { buildId } = await response.json();
-      showProgress("Initializing build environment…", 30);
+      renderBuildStage({ index: 1, label: "Waiting for a build runner" });
       await pollAndDownload(buildId, backendUrl, "Android APK");
 
       lastSuccessfulBuildFingerprint = fingerprintConfig(requestBody);
@@ -1026,6 +1054,63 @@
 
   // === Icon Upload State Management ===
 
+  // The icon reaches the build runner as a workflow input, and GitHub caps the
+  // whole input payload at 65,535 characters. Re-encoding the upload into a
+  // square PNG keeps every icon well under that limit.
+  const ICON_OUTPUT_SIZE = 512;
+  const ICON_OUTPUT_BUDGET = 40000;
+  const ICON_INPUT_MAX_BYTES = 15 * 1024 * 1024;
+
+  function loadImageFile(file) {
+    return new Promise((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new Image();
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(image);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("That image could not be read. Try a PNG or JPG file."));
+      };
+      image.src = objectUrl;
+    });
+  }
+
+  function renderIconDataUri(image, size) {
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const sourceWidth = image.naturalWidth || image.width || size;
+    const sourceHeight = image.naturalHeight || image.height || size;
+    const scale = Math.min(size / sourceWidth, size / sourceHeight);
+    const width = Math.max(1, Math.round(sourceWidth * scale));
+    const height = Math.max(1, Math.round(sourceHeight * scale));
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    // Centered on a transparent square with the aspect ratio kept, so the
+    // launcher icons match what the phone preview shows.
+    ctx.drawImage(image, Math.round((size - width) / 2), Math.round((size - height) / 2), width, height);
+    return canvas.toDataURL("image/png");
+  }
+
+  async function prepareIconDataUri(file) {
+    if (!/^image\//i.test(file.type || "")) {
+      throw new Error("Choose a PNG, JPG, WebP or SVG image.");
+    }
+    if (file.size > ICON_INPUT_MAX_BYTES) {
+      throw new Error("That image is too large. Choose a file under 15 MB.");
+    }
+    const image = await loadImageFile(file);
+    let dataUri = renderIconDataUri(image, ICON_OUTPUT_SIZE);
+    for (const size of [384, 256, 192, 128, 96]) {
+      if (dataUri.length <= ICON_OUTPUT_BUDGET) break;
+      dataUri = renderIconDataUri(image, size);
+    }
+    return dataUri;
+  }
+
   function updateIconUploadState() {
     const hasIcon = !!base64Icon;
 
@@ -1044,23 +1129,25 @@
     }
   }
 
-  els.appIcon.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        base64Icon = event.target.result;
-        updateIconUploadState();
-        updatePreview();
-        updateBuildButtonState();
-      };
-      reader.readAsDataURL(file);
-    } else {
+  els.appIcon.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) {
       base64Icon = null;
       updateIconUploadState();
       updatePreview();
       updateBuildButtonState();
+      return;
     }
+    try {
+      base64Icon = await prepareIconDataUri(file);
+    } catch (error) {
+      base64Icon = null;
+      els.appIcon.value = "";
+      setMessage(error.message, "error");
+    }
+    updateIconUploadState();
+    updatePreview();
+    updateBuildButtonState();
   });
 
   // Remove icon button

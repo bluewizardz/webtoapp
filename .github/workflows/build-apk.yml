@@ -1,5 +1,9 @@
 name: Build Android APK Wrapper
 
+# The run title carries the build ID, so status polling can find this exact run
+# even while several builds are running at the same time.
+run-name: Build APK ${{ github.event.inputs.buildId }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -56,6 +60,20 @@ on:
         description: 'Internal Build ID'
         required: true
         default: 'latest'
+      icon:
+        description: 'Custom launcher icon as a base64 image data URI (empty = favicon or generated icon)'
+        required: false
+        default: ''
+      autoFetchIcon:
+        description: 'Use the website favicon when no custom icon is supplied'
+        type: boolean
+        required: true
+        default: true
+      allowMixedContent:
+        description: 'Allow insecure HTTP resources inside HTTPS pages (compatibility only)'
+        type: boolean
+        required: true
+        default: false
 
 jobs:
   build:
@@ -87,9 +105,9 @@ jobs:
             ~/.gradle-android
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-8.12.1-${{ hashFiles('builders/android-builder.js', 'builders/build-utils.js') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('builders/android-toolchain.js', 'builders/android-builder.js', 'builders/build-utils.js') }}
           restore-keys: |
-            gradle-${{ runner.os }}-8.12.1-
+            gradle-${{ runner.os }}-
 
       - name: Verify Gradle cache
         run: |
@@ -112,21 +130,55 @@ jobs:
             fi
           fi
 
-      - name: Compile Android APK
+      # SECURITY: release signing material lives only in repository secrets. The
+      # keystore is decoded into the runner temp directory, never committed, and
+      # exported to Gradle through environment variables only.
+      - name: Prepare optional release signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          node cli-build-apk.js \
-            "${{ github.event.inputs.siteUrl }}" \
-            "${{ github.event.inputs.appName }}" \
-            "${{ github.event.inputs.appId }}" \
-            "${{ github.event.inputs.appVersion }}" \
-            "${{ github.event.inputs.pullToRefresh }}" \
-            "${{ github.event.inputs.showSpinner }}" \
-            "${{ github.event.inputs.showSplash }}" \
-            "${{ github.event.inputs.splashDuration }}" \
-            "${{ github.event.inputs.fullScreen }}" \
-            "${{ github.event.inputs.customUserAgent }}" \
-            "${{ github.event.inputs.allowZoom }}" \
-            "${{ github.event.inputs.buildId }}"
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "BUILD_VARIANT=debug" >> "$GITHUB_ENV"
+            echo "No release keystore secret configured; building the debug variant."
+            exit 0
+          fi
+          KEYSTORE_PATH="$RUNNER_TEMP/release.keystore"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          chmod 600 "$KEYSTORE_PATH"
+          {
+            echo "SITEAPP_KEYSTORE_PATH=$KEYSTORE_PATH"
+            echo "SITEAPP_KEYSTORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD"
+            echo "SITEAPP_KEY_ALIAS=$ANDROID_KEY_ALIAS"
+            echo "SITEAPP_KEY_PASSWORD=$ANDROID_KEY_PASSWORD"
+            echo "BUILD_VARIANT=release"
+          } >> "$GITHUB_ENV"
+          echo "Release signing configured; building the signed release APK."
+
+      # SECURITY: workflow inputs are attacker-controlled. They are passed to the
+      # CLI as environment variables and read inside Node, so no input is ever
+      # interpolated into shell command text. Never add ${{ ... }} to this run
+      # block; values would be evaluated by the shell on the runner.
+      - name: Compile Android APK
+        env:
+          SITE_URL: ${{ github.event.inputs.siteUrl }}
+          APP_NAME: ${{ github.event.inputs.appName }}
+          APP_ID: ${{ github.event.inputs.appId }}
+          APP_VERSION: ${{ github.event.inputs.appVersion }}
+          PULL_TO_REFRESH: ${{ github.event.inputs.pullToRefresh }}
+          SHOW_SPINNER: ${{ github.event.inputs.showSpinner }}
+          SHOW_SPLASH: ${{ github.event.inputs.showSplash }}
+          SPLASH_DURATION: ${{ github.event.inputs.splashDuration }}
+          FULL_SCREEN: ${{ github.event.inputs.fullScreen }}
+          CUSTOM_USER_AGENT: ${{ github.event.inputs.customUserAgent }}
+          ALLOW_ZOOM: ${{ github.event.inputs.allowZoom }}
+          BUILD_ID: ${{ github.event.inputs.buildId }}
+          AUTO_FETCH_ICON: ${{ github.event.inputs.autoFetchIcon }}
+          APP_ICON: ${{ github.event.inputs.icon }}
+          ALLOW_MIXED_CONTENT: ${{ github.event.inputs.allowMixedContent }}
+        run: node cli-build-apk.js
 
       - name: Locate Built APK and Upload Artifact
         uses: actions/upload-artifact@v4

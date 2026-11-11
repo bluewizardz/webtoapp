@@ -13,6 +13,7 @@ import { buildEXE } from './builders/windows-builder.js';
 import { buildTauri } from './builders/tauri-builder.js';
 import { buildAppImage, buildDeb } from './builders/linux-builder.js';
 import { queueGradleBuild } from './queue-manager.js';
+import { validateBuildInputs } from './functions/_lib/build-inputs.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -163,11 +164,16 @@ app.get('/api/favicon', async (req, res) => {
 // Generate APK
 app.post('/api/build/apk', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon, autoFetchIcon, showSpinner, pullToRefresh, allowZoom, showSplash, splashDuration, fullScreen, customUserAgent } = req.body;
     const buildId = uuidv4();
 
-    if (!siteUrl || !appName || !appId) {
+    if (!req.body || !req.body.siteUrl || !req.body.appName || !req.body.appId) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    // Validate before anything is written into the generated project.
+    const { error, inputs } = validateBuildInputs(req.body);
+    if (error) {
+      return res.status(400).json({ error });
     }
 
     buildQueue.set(buildId, { status: 'pending', platform: 'android' });
@@ -177,19 +183,8 @@ app.post('/api/build/apk', compilerLimiter, async (req, res) => {
     // Build asynchronously
     try {
       const resultPath = await queueGradleBuild({
-        siteUrl,
-        appName,
-        appId,
-        appVersion: appVersion || '1.0.0',
-        icon,
-        autoFetchIcon: autoFetchIcon !== false,
-        showSpinner: showSpinner !== false,
-        pullToRefresh: pullToRefresh !== false,
-        allowZoom: allowZoom === true,
-        showSplash: showSplash !== false,
-        splashDuration: splashDuration || 2000,
-        fullScreen: fullScreen === true,
-        customUserAgent: customUserAgent || null,
+        ...inputs,
+        customUserAgent: inputs.customUserAgent || null,
         buildId,
         buildsDir: BUILDS_DIR
       });

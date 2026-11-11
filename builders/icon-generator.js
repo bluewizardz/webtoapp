@@ -1,4 +1,5 @@
 import sharp from 'sharp';
+import { escapeXmlText } from './codegen.js';
 
 /**
  * Generate a PNG icon with app initials on a teal background.
@@ -11,6 +12,9 @@ export async function generatePngIcon(appName, size = 192) {
   const init = words.length > 1
     ? (words[0][0] + words[1][0]).toUpperCase()
     : (words[0][0] + (words[0][1] || '')).toUpperCase();
+  // App names can contain markup characters ("Ben & Jerry's"), which would make
+  // the SVG invalid, so the initials are escaped as XML text.
+  const initials = escapeXmlText(init);
 
   const fontSize = Math.round(size * 0.4);
   const cornerRadius = Math.round(size * 0.15);
@@ -23,7 +27,7 @@ export async function generatePngIcon(appName, size = 192) {
     </linearGradient>
   </defs>
   <rect width="${size}" height="${size}" rx="${cornerRadius}" fill="url(#violet-grad)" stroke="#2b2640" stroke-width="${Math.round(size * 0.03)}"/>
-  <text x="50%" y="54%" font-family="system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="${fontSize}" font-weight="900" fill="#10b981" text-anchor="middle" dominant-baseline="middle">${init}</text>
+  <text x="50%" y="54%" font-family="system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif" font-size="${fontSize}" font-weight="900" fill="#10b981" text-anchor="middle" dominant-baseline="middle">${initials}</text>
 </svg>`;
 
   return sharp(Buffer.from(svg)).png().toBuffer();
