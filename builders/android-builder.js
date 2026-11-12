@@ -1003,44 +1003,60 @@ async function getFaviconFromHtml(siteUrl) {
 }
 
 export async function fetchFaviconBuffer(siteUrl) {
+  const candidates = [];
+  const collect = (buf) => {
+    if (buf && Buffer.isBuffer(buf) && buf.length > 0) candidates.push(buf);
+  };
+
   try {
+    const parsedUrl = new URL(siteUrl);
+    const domain = parsedUrl.hostname;
+
     // 1. Try HTML scraping
-    let faviconUrl = await getFaviconFromHtml(siteUrl);
+    try {
+      const scrapedUrl = await getFaviconFromHtml(siteUrl);
+      if (scrapedUrl) {
+        const response = await fetch(scrapedUrl);
+        if (response.ok) collect(Buffer.from(await response.arrayBuffer()));
+      }
+    } catch {}
 
     // 2. Fallback to /favicon.ico
-    if (!faviconUrl) {
-      const parsedUrl = new URL(siteUrl);
-      faviconUrl = `${parsedUrl.origin}/favicon.ico`;
-    }
+    try {
+      const response = await fetch(`${parsedUrl.origin}/favicon.ico`);
+      if (response.ok) collect(Buffer.from(await response.arrayBuffer()));
+    } catch {}
 
-    let response = await fetch(faviconUrl);
-    if (!response.ok && !faviconUrl.endsWith('/favicon.ico')) {
-      const parsedUrl = new URL(siteUrl);
-      faviconUrl = `${parsedUrl.origin}/favicon.ico`;
-      response = await fetch(faviconUrl);
-    }
-
-    // 3. Fallback to Google Favicon API
-    if (!response.ok) {
-      const domain = new URL(siteUrl).hostname;
-      faviconUrl = `https://www.google.com/s2/favicons?sz=128&domain=${domain}`;
-      response = await fetch(faviconUrl);
-    }
+    // 3. Fallback to Google Favicon API (PNG, reliable)
+    try {
+      const response = await fetch(`https://www.google.com/s2/favicons?sz=128&domain=${domain}`);
+      if (response.ok) collect(Buffer.from(await response.arrayBuffer()));
+    } catch {}
 
     // 4. Fallback to DuckDuckGo
-    if (!response.ok) {
-      const domain = new URL(siteUrl).hostname;
-      faviconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-      response = await fetch(faviconUrl);
-    }
-
-    if (response.ok) {
-      const arrayBuffer = await response.arrayBuffer();
-      console.log(`[favicon-helper] Successfully fetched favicon from ${faviconUrl}`);
-      return Buffer.from(arrayBuffer);
-    }
+    try {
+      const response = await fetch(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
+      if (response.ok) collect(Buffer.from(await response.arrayBuffer()));
+    } catch {}
   } catch (err) {
-    console.log(`[favicon-helper] Failed to fetch favicon: ${err.message}`);
+    console.log(`[favicon-helper] Failed to parse site URL: ${err.message}`);
+  }
+
+  // Return the first candidate that sharp can decode (extracted from ICO if needed)
+  for (const buf of candidates) {
+    try {
+      const candidate = extractPngOrBmpFromIco(buf);
+      await sharp(candidate).metadata();
+      console.log(`[favicon-helper] Successfully resolved favicon for ${siteUrl}`);
+      return candidate;
+    } catch {}
+  }
+
+  // Nothing decodable; return null so caller falls back to initials
+  if (candidates.length) {
+    console.log(`[favicon-helper] Fetched ${candidates.length} favicon candidate(s) but none were decodable for ${siteUrl}`);
+  } else {
+    console.log(`[favicon-helper] Failed to fetch favicon for ${siteUrl}`);
   }
   return null;
 }

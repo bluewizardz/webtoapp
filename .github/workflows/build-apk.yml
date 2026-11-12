@@ -66,6 +66,9 @@ on:
         required: true
         default: 'latest'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -146,3 +149,17 @@ jobs:
           name: 'build-${{ github.event.inputs.buildId }}'
           path: 'builds-cli/${{ github.event.inputs.buildId }}/*.apk'
           if-no-files-found: error
+
+      # Publish the APK to a DRAFT release so the browser can download it
+      # straight from GitHub's CDN instead of proxying through Cloudflare.
+      - name: Publish APK as Draft Release Asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="build-${{ github.event.inputs.buildId }}"
+          gh release create "$TAG" builds-cli/${{ github.event.inputs.buildId }}/*.apk \
+            --repo "${{ github.repository }}" \
+            --title "Android build $TAG" \
+            --notes "Automated Android APK for ${{ github.event.inputs.siteUrl }}" \
+            --draft
