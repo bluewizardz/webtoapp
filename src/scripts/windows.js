@@ -76,7 +76,6 @@
   let fetchedIcon = null;
   let faviconTimer = null;
   let faviconToken = 0;
-  let downloadUrl = "";
   let noticeReturnFocus = null;
   let activeInstallerIndex = 0;
   let buildInProgress = false;
@@ -206,15 +205,42 @@
   // === URL & naming ===
 
   function normalizeUrl(value) {
-    let raw = String(value || "").trim();
+    const raw = String(value || "").trim();
     if (!raw) throw new Error("Website URL is required.");
-    raw = raw.replace(/,/g, ".");
     const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : "https://" + raw;
     const parsed = new URL(withScheme);
     if (!["http:", "https:"].includes(parsed.protocol)) {
       throw new Error("Use an http or https website URL.");
     }
+    if (parsed.username || parsed.password) {
+      throw new Error("URLs with embedded credentials are not supported.");
+    }
+    const host = parsed.hostname.replace(/\.+$/, "").toLowerCase();
+    if (isPrivateHost(host)) {
+      throw new Error("Public websites only — local or private addresses are not supported.");
+    }
     return parsed.toString();
+  }
+
+  function isPrivateHost(host) {
+    // The WHATWG URL parser normalizes integer/hex IPv4 forms to dotted quad.
+    if (/^\[?(::|fc00:|fe80:|::ffff:)/i.test(host)) return true;
+    if (host === "::1" || host === "[::1]" || host === "0.0.0.0") return true;
+    if (host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".localhost")) return true;
+    const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+    if (match) {
+      const a = Number(match[1]);
+      const b = Number(match[2]);
+      if (match.slice(1).some((part) => Number(part) > 255)) return false;
+      if (a === 10 || a === 127 || a === 0) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 169 && b === 254) return true;
+      if (a === 100 && b >= 64 && b <= 127) return true;
+      if (a === 198 && (b === 18 || b === 19)) return true;
+      if (a >= 224) return true;
+    }
+    return false;
   }
 
   function titleCase(value) {
@@ -272,7 +298,7 @@
 
   function normalizeVersion(value) {
     const version = String(value || DEFAULTS.appVersion).trim();
-    return /^\d+\.\d+\.\d+([-.][a-z0-9.-]+)?$/i.test(version) ? version : DEFAULTS.appVersion;
+    return /^\d+\.\d+\.\d+(-[0-9a-z]+(\.[0-9a-z]+)*)?(\+[0-9a-z]+(\.[0-9a-z]+)*)?$/i.test(version) ? version : DEFAULTS.appVersion;
   }
 
   function clamp(value, min, max, fallback) {
@@ -329,9 +355,19 @@
   }
 
   function escapeHtml(value) {
-    const element = document.createElement("div");
-    element.textContent = String(value || "");
-    return element.innerHTML;
+    return String(value == null ? "" : value).replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[ch]));
+  }
+
+  // http(s) only — a localStorage-tampered javascript: URL must never reach href.
+  function safeDownloadUrl(url) {
+    const value = String(url || "");
+    return /^https?:\/\//i.test(value) ? value : "#";
   }
 
   function timeAgo(dateString) {
@@ -354,7 +390,7 @@
     els.historyList.innerHTML = history.map((item) => {
       const engine = item.engine === "tauri" ? "Tauri" : "Electron";
       const installer = item.installerType === "portable" ? "Portable" : "Installer";
-      const href = `${backendUrl}/api/exe/download/${encodeURIComponent(item.buildId)}`;
+      const href = safeDownloadUrl(`${backendUrl}/api/exe/download/${encodeURIComponent(item.buildId)}`);
       return '<li class="history-item">' +
         '<div class="history-item-info">' +
           '<span class="history-item-name">' + escapeHtml(item.name) + '</span>' +
@@ -409,8 +445,13 @@
   // === Status helpers ===
 
   function setStatus(text, kind) {
-    if (els.message) {
-      els.message.textContent = kind === "error" ? text : "";
+    if (!els.message) return;
+    const message = String(text || "").trim();
+    els.message.textContent = message;
+    if (kind) {
+      els.message.dataset.kind = kind;
+    } else {
+      delete els.message.dataset.kind;
     }
   }
 
@@ -630,6 +671,7 @@
     if (state.windowHeight !== DEFAULTS.windowHeight) count += 1;
     if (state.fullScreen !== DEFAULTS.fullScreen) count += 1;
     if (String(state.customUserAgent || "").trim() !== DEFAULTS.customUserAgent) count += 1;
+    if (state.engine !== DEFAULTS.engine) count += 1;
     return count;
   }
 
@@ -718,10 +760,13 @@
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const response = await fetch(`${backendUrl}/api/exe/${buildId}`);
-      const status = await response.json();
+      const status = await response.json().catch(() => ({}));
 
+      if (!response.ok) {
+        throw new Error(status.error || `Status check failed (${response.status})`);
+      }
       if (status.status === "completed") {
-        startDownload(buildId, config);
+        startDownload(buildId, config, status.filename);
         return;
       }
       if (status.status === "error") {
@@ -739,12 +784,13 @@
     throw new Error("Build timed out. Please try again.");
   }
 
-  function startDownload(buildId, config) {
-    downloadUrl = `${backendUrl}/api/exe/download/${buildId}`;
+  function startDownload(buildId, config, filename) {
+    const downloadUrl = `${backendUrl}/api/exe/download/${buildId}`;
+    const installerName = filename || `${config.appName || "installer"}.exe`;
 
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.download = "";
+    link.download = installerName;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -753,7 +799,10 @@
     setStatus("Build complete");
     if (els.success) els.success.style.display = "flex";
     if (els.retry) els.retry.style.display = "block";
-    if (els.retryLink) els.retryLink.href = downloadUrl;
+    if (els.retryLink) {
+      els.retryLink.href = downloadUrl;
+      els.retryLink.download = installerName;
+    }
 
     addToHistory(config, buildId);
 
@@ -778,7 +827,11 @@
         throw new Error(err.error || "Could not start the Windows build.");
       }
 
-      const { buildId } = await response.json();
+      const postData = await response.json().catch(() => ({}));
+      const buildId = postData.buildId;
+      if (!buildId) {
+        throw new Error("Server did not return a build id.");
+      }
       showProgress("Provisioning Windows runner…", 15);
       await pollBuild(buildId, config);
     } catch (error) {
@@ -789,10 +842,72 @@
     }
   }
 
+  const MAX_ICON_DATA_URL_LENGTH = 45 * 1024;
+
+  function canvasToBlob(canvas, type, quality) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("Could not encode the icon."))), type, quality);
+    });
+  }
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Could not read the icon."));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  async function prepareUploadedIcon(file) {
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      throw new Error("Choose a PNG, JPEG or WebP image for the installer icon.");
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      throw new Error("The selected image is too large. Choose an image under 20 MB.");
+    }
+
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch (error) {
+      throw new Error("This browser could not decode the selected image.");
+    }
+    try {
+      for (const size of [256, 192, 128]) {
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("This browser could not process the selected icon.");
+        context.clearRect(0, 0, size, size);
+
+        const scale = Math.min(size / bitmap.width, size / bitmap.height);
+        const width = Math.max(1, Math.round(bitmap.width * scale));
+        const height = Math.max(1, Math.round(bitmap.height * scale));
+        context.drawImage(bitmap, (size - width) / 2, (size - height) / 2, width, height);
+
+        for (const quality of [0.9, 0.8, 0.7, 0.6]) {
+          const blob = await canvasToBlob(canvas, "image/webp", quality);
+          const dataUrl = await blobToDataUrl(blob);
+          if (typeof dataUrl === "string" && dataUrl.length <= MAX_ICON_DATA_URL_LENGTH) {
+            return dataUrl;
+          }
+          if (blob.type !== "image/webp") break;
+        }
+      }
+    } finally {
+      bitmap.close();
+    }
+
+    throw new Error("Could not reduce this image enough to upload. Try a simpler or smaller icon.");
+  }
+
   // === Listeners ===
 
   els.form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (buildInProgress) return;
     try {
       const config = await readConfig();
       runBuild(config);
@@ -824,6 +939,8 @@
 
   els.appId.addEventListener("input", () => {
     idEdited = true;
+    updatePreview();
+    updateBuildButtonState();
   });
 
   els.resetId.addEventListener("click", () => {
@@ -843,14 +960,18 @@
       return;
     }
     updateIconUploadState(true);
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      uploadedIcon = loadEvent.target.result;
+    prepareUploadedIcon(file).then((preparedIcon) => {
+      uploadedIcon = preparedIcon;
       updateIconUploadState();
       updatePreview();
       updateBuildButtonState();
-    };
-    reader.readAsDataURL(file);
+    }).catch((error) => {
+      els.icon.value = "";
+      uploadedIcon = null;
+      updateIconUploadState();
+      setStatus(error.message, "error");
+      updateBuildButtonState();
+    });
   });
 
   els.removeIcon.addEventListener("click", () => {

@@ -1,74 +1,77 @@
+import {
+  readBodyWithLimit, parseJsonBody, json, saneSiteUrl,
+  isAppId, isAppVersion, isAppName, clampInt
+} from '../_lib.js';
+
+const MAX_BODY_BYTES = 64 * 1024;
+
 export async function onRequestPost(context) {
   const { request, env } = context;
 
-  let body;
-  try {
-    body = await request.json();
-  } catch (err) {
-    return json({ error: 'Invalid JSON request body' }, 400);
-  }
+  const { body: rawBody, error: bodyError } = await readBodyWithLimit(request, MAX_BODY_BYTES);
+  if (bodyError) return json({ error: 'Build request is too large' }, { status: 413 });
+
+  const body = parseJsonBody(rawBody);
+  if (!body) return json({ error: 'Invalid JSON request body' }, { status: 400 });
 
   const githubPat = env.GITHUB_PAT;
-  if (!githubPat) {
-    return json({ error: 'Missing GITHUB_PAT environment secret in Cloudflare Pages settings' }, 500);
+  if (!githubPat) return json({ error: 'Build service is not configured' }, { status: 500 });
+
+  const siteUrl = saneSiteUrl(body.siteUrl);
+  if (!siteUrl) {
+    return json({ error: 'A valid public http(s) siteUrl is required (private hosts are not allowed).' }, { status: 400 });
   }
 
-  const buildId = crypto.randomUUID();
-
-  let siteUrl = String(body.siteUrl || '').trim();
-  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(siteUrl)) {
-    siteUrl = 'https://' + siteUrl;
-  }
-
+  const appName = isAppName(body.appName) ? String(body.appName).trim() : 'My Web App';
+  const appId = isAppId(body.appId) ? body.appId : 'com.example.app';
+  const appVersion = isAppVersion(body.appVersion) ? body.appVersion : '1.0.0';
   const width = clampInt(body.windowWidth, 800, 3840, 1200);
   const height = clampInt(body.windowHeight, 600, 2160, 800);
   const installerType = body.installerType === 'portable' ? 'portable' : 'nsis';
   const engine = body.engine === 'tauri' ? 'tauri' : 'electron';
+  const customUserAgent = typeof body.customUserAgent === 'string'
+    ? body.customUserAgent.trim().slice(0, 512)
+    : '';
+
+  const buildId = crypto.randomUUID();
 
   const inputs = {
-    siteUrl: siteUrl,
-    appName: body.appName || 'My Web App',
-    appId: body.appId || 'com.example.app',
-    appVersion: body.appVersion || '1.0.0',
-    installerType: installerType,
-    engine: engine,
+    siteUrl,
+    appName,
+    appId,
+    appVersion,
+    installerType,
+    engine,
     windowWidth: String(width),
     windowHeight: String(height),
     fullScreen: String(body.fullScreen === true),
-    customUserAgent: body.customUserAgent || '',
-    buildId: buildId
+    customUserAgent,
+    buildId
   };
 
-  const response = await fetch(
-    'https://api.github.com/repos/bluewizardz/webtoapp/actions/workflows/build-exe.yml/dispatches',
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${githubPat}`,
-        'Accept': 'application/vnd.github+json',
-        'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': 'SiteToApp-Cloudflare-Bridge'
-      },
-      body: JSON.stringify({ ref: 'main', inputs: inputs })
-    }
-  );
-
-  if (!response.ok) {
-    return json({ error: `GitHub API trigger failed: ${await response.text()}` }, 502);
+  let response;
+  try {
+    response = await fetch(
+      'https://api.github.com/repos/bluewizardz/webtoapp/actions/workflows/build-exe.yml/dispatches',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${githubPat}`,
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'User-Agent': 'SiteToApp-Cloudflare-Bridge'
+        },
+        body: JSON.stringify({ ref: 'main', inputs })
+      }
+    );
+  } catch {
+    return json({ error: 'Could not reach GitHub. Please try again later.' }, { status: 502 });
   }
 
-  return json({ buildId }, 200);
-}
+  if (!response.ok) {
+    console.error('GitHub dispatch failed:', response.status, await response.text());
+    return json({ error: 'Could not start the build. Please try again later.' }, { status: 502 });
+  }
 
-function clampInt(value, min, max, fallback) {
-  const parsed = parseInt(value, 10);
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.min(max, Math.max(min, parsed));
-}
-
-function json(payload, status) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { 'Content-Type': 'application/json' }
-  });
+  return json({ buildId }, { status: 200 });
 }

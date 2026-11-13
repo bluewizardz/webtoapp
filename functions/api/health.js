@@ -1,6 +1,10 @@
 export async function onRequestGet() {
-  return new Response(JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }), {
+  return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
     status: 200,
-    headers: { "Content-Type": "application/json" }
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff'
+    }
   });
 }

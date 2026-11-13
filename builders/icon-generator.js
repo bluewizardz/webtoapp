@@ -7,10 +7,16 @@ import sharp from 'sharp';
  * @returns {Promise<Buffer>} PNG buffer
  */
 export async function generatePngIcon(appName, size = 192) {
-  const words = String(appName || 'App').trim().split(/\s+/);
-  const init = words.length > 1
-    ? (words[0][0] + words[1][0]).toUpperCase()
-    : (words[0][0] + (words[0][1] || '')).toUpperCase();
+  const words = String(appName || 'App').trim().split(/\s+/).filter(Boolean);
+  const rawInit = words.length > 1
+    ? (words[0][0] || 'A') + (words[1][0] || '')
+    : (words[0]?.[0] || 'A') + (words[0]?.[1] || '');
+  const init = rawInit.toUpperCase()
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 
   const fontSize = Math.round(size * 0.4);
   const cornerRadius = Math.round(size * 0.15);

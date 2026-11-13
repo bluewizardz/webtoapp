@@ -1,11 +1,26 @@
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import archiver from 'archiver';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import { generatePngIcon } from './icon-generator.js';
 import { tryBuildAPK as attemptAPK } from './build-utils.js';
+import {
+  assertAppId,
+  assertAppName,
+  assertAppVersion,
+  assertBuildId,
+  assertSiteUrl,
+  assertSplashDuration,
+  coerceBoolean,
+  escapeGradleSingleQuoted,
+  escapeGroovyDoubleQuoted,
+  escapeJavaString,
+  escapeXml,
+  safeFileName,
+  safeJoin,
+} from './input-validation.js';
+import { fetchPublicBuffer } from './safe-fetch.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -21,10 +36,23 @@ export async function buildAPK(params) {
   return await executeAndroidBuild(params);
 }
 
-async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, autoFetchIcon = true, showSpinner = true, pullToRefresh = true, allowZoom = false, showSplash = true, splashDuration = 2000, fullScreen = false, customUserAgent = null, buildId, buildsDir }) {
-  const enableZoom = allowZoom === true || allowZoom === 'true';
-  const buildDir = path.join(buildsDir, buildId, 'android');
-  const sanitizedThemeName = appName.replace(/[^a-zA-Z0-9]/g, '') || 'App';
+async function executeAndroidBuild(rawParams) {
+  const params = { ...rawParams };
+  const appName = assertAppName(params.appName);
+  const appId = assertAppId(params.appId);
+  const appVersion = params.appVersion == null ? '1.0.0' : assertAppVersion(String(params.appVersion));
+  const buildId = assertBuildId(params.buildId);
+  const siteUrl = assertSiteUrl(params.siteUrl);
+  const splashDuration = assertSplashDuration(params.splashDuration ?? 2000);
+  const customUserAgent = params.customUserAgent == null ? null : String(params.customUserAgent).slice(0, 512);
+  const pullToRefresh = coerceBoolean(params.pullToRefresh, true);
+  const showSpinner = coerceBoolean(params.showSpinner, true);
+  const showSplash = coerceBoolean(params.showSplash, true);
+  const fullScreen = coerceBoolean(params.fullScreen, false);
+  const allowZoom = coerceBoolean(params.allowZoom, false);
+  const { icon, autoFetchIcon = true, buildsDir, appName: _a, appId: _i, appVersion: _v, buildId: _b, siteUrl: _s, splashDuration: _sd, customUserAgent: _u, pullToRefresh: _p, showSpinner: _sp, showSplash: _ss, fullScreen: _f, allowZoom: _z } = params;
+  const enableZoom = allowZoom;
+  const buildDir = safeJoin(buildsDir, buildId, 'android');
   
   // Clean up source files from any previous build to prevent compiling stale source files
   if (fs.existsSync(path.join(buildDir, 'app', 'src'))) {
@@ -49,7 +77,16 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
   const valuesDir = path.join(resDir, 'values');
   const layoutDir = path.join(resDir, 'layout');
   const xmlDir = path.join(resDir, 'xml');
-  const javaDir = path.join(srcDir, 'java', appId.replace(/\./g, '/'));
+  const javaDir = safeJoin(srcDir, 'java', path.join(...appId.split('.')));
+  const sanitizedThemeName = appName.replace(/[^a-zA-Z0-9]/g, '') || 'App';
+  const xmlAppName = escapeXml(appName);
+  const xmlSiteUrl = escapeXml(siteUrl);
+  const xmlVersionName = escapeXml(appVersion);
+  const javaSiteUrl = escapeJavaString(siteUrl);
+  const javaUserAgent = customUserAgent == null ? null : `"${escapeJavaString(customUserAgent)}"`;
+  const gradleSiteValue = escapeGradleSingleQuoted(appId);
+  const groovyAppName = escapeGroovyDoubleQuoted(appName);
+  const gradleVersion = escapeGradleSingleQuoted(appVersion);
 
   fs.mkdirSync(valuesDir, { recursive: true });
   fs.mkdirSync(layoutDir, { recursive: true });
@@ -74,8 +111,9 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
       const base64Data = icon.slice(separator + ';base64,'.length);
       const decoded = Buffer.from(base64Data, 'base64');
       if (!decoded.length) throw new Error('Icon data URL is empty');
+      if (decoded.length > 20 * 1024 * 1024) throw new Error('Icon exceeds 20 MB');
       const candidate = extractPngOrBmpFromIco(decoded);
-      await sharp(candidate).metadata();
+      await sharp(candidate, { limitInputPixels: 64 * 1024 * 1024 }).metadata();
       customIconBuffer = candidate;
     } catch (error) {
       console.log(`[android-builder] Custom icon could not be decoded; trying configured fallback: ${error.message}`);
@@ -88,7 +126,7 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
       const fetchedIcon = await fetchFaviconBuffer(siteUrl);
       if (fetchedIcon) {
         const candidate = extractPngOrBmpFromIco(fetchedIcon);
-        await sharp(candidate).metadata();
+        await sharp(candidate, { limitInputPixels: 64 * 1024 * 1024 }).metadata();
         customIconBuffer = candidate;
       }
     } catch (error) {
@@ -99,9 +137,15 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
   for (const { name, size } of mipmapDensities) {
     const mipmapDir = path.join(resDir, name);
     fs.mkdirSync(mipmapDir, { recursive: true });
-    const iconBuffer = customIconBuffer
-      ? await sharp(customIconBuffer).resize(size, size).png().toBuffer()
-      : await generatePngIcon(appName, size);
+    let iconBuffer;
+    try {
+      iconBuffer = customIconBuffer
+        ? await sharp(customIconBuffer, { limitInputPixels: 64 * 1024 * 1024 }).resize(size, size).png().toBuffer()
+        : await generatePngIcon(appName, size);
+    } catch (error) {
+      console.log(`[android-builder] Icon render failed for ${name}; falling back to initials: ${error.message}`);
+      iconBuffer = await generatePngIcon(appName, size);
+    }
     fs.writeFileSync(path.join(mipmapDir, 'ic_launcher.png'), iconBuffer);
     fs.writeFileSync(path.join(mipmapDir, 'ic_launcher_round.png'), iconBuffer);
   }
@@ -111,7 +155,7 @@ async function executeAndroidBuild({ siteUrl, appName, appId, appVersion, icon, 
   fs.mkdirSync(wrapperDir, { recursive: true });
   fs.writeFileSync(path.join(wrapperDir, 'gradle-wrapper.properties'), `distributionBase=GRADLE_USER_HOME
 distributionPath=wrapper/dists
-distributionUrl=https\\://services.gradle.org/distributions/gradle-9.5.1-bin.zip
+distributionUrl=https\\://services.gradle.org/distributions/gradle-8.12.1-bin.zip
 networkTimeout=10000
 validateDistributionUrl=true
 zipStoreBase=GRADLE_USER_HOME
@@ -153,7 +197,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "${appName}"
+rootProject.name = "${groovyAppName}"
 include ':app'
 `);
 
@@ -170,15 +214,15 @@ include ':app'
 }
 
 android {
-    namespace '${appId}'
+    namespace '${gradleSiteValue}'
     compileSdk 35
 
     defaultConfig {
-        applicationId '${appId}'
+        applicationId '${gradleSiteValue}'
         minSdk 24
         targetSdk 35
         versionCode 1
-        versionName '${appVersion}'
+        versionName '${gradleVersion}'
     }
 
     signingConfigs {
@@ -219,7 +263,7 @@ dependencies {
   const manifestContent = `<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     android:versionCode="1"
-    android:versionName="${appVersion}">
+    android:versionName="${xmlVersionName}">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -264,8 +308,8 @@ dependencies {
   // Create strings.xml
   const stringsContent = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">${appName}</string>
-    <string name="website_url">${siteUrl}</string>
+    <string name="app_name">${xmlAppName}</string>
+    <string name="website_url">${xmlSiteUrl}</string>
 </resources>`;
 
   fs.writeFileSync(path.join(valuesDir, 'strings.xml'), stringsContent);
@@ -320,7 +364,7 @@ dependencies {
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_gravity="center"
-                android:text="${appName}"
+                android:text="${xmlAppName}"
                 android:textColor="#ffffff"
                 android:textSize="22sp"
                 android:textStyle="bold" />
@@ -357,7 +401,6 @@ dependencies {
   fs.writeFileSync(path.join(layoutDir, 'activity_main.xml'), activityMainContent);
 
   // Create MainActivity.java
-  const javaPackagePath = appId.replace(/\./g, '/');
   const mainActivityContent = `package ${appId};
 
 import android.app.Activity;
@@ -572,9 +615,9 @@ public class MainActivity extends Activity {
         webSettings.setDatabaseEnabled(true);
         webSettings.setLoadWithOverviewMode(true);
         webSettings.setUseWideViewPort(true);
-        webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        webSettings.setMixedContentMode(${allowCleartext ? 'WebSettings.MIXED_CONTENT_ALWAYS_ALLOW' : 'WebSettings.MIXED_CONTENT_NEVER_ALLOW'});
         
-        final String customUA = ${customUserAgent ? `"${customUserAgent}"` : "null"};
+        final String customUA = ${javaUserAgent == null ? "null" : javaUserAgent};
         if (customUA != null && !customUA.trim().isEmpty()) {
             webSettings.setUserAgentString(customUA);
         }
@@ -589,7 +632,7 @@ public class MainActivity extends Activity {
         cookieManager.setAcceptCookie(true);
         cookieManager.setAcceptThirdPartyCookies(webView, true);
 
-        Uri siteUri = Uri.parse("${siteUrl}");
+        Uri siteUri = Uri.parse("${javaSiteUrl}");
         siteHost = siteUri.getHost() == null ? "" : siteUri.getHost().toLowerCase();
 
         webView.setWebViewClient(new WebViewClient() {
@@ -684,7 +727,7 @@ public class MainActivity extends Activity {
             }
         });
 
-        webView.loadUrl("${siteUrl}");
+        webView.loadUrl("${javaSiteUrl}");
         
         if (showSplash) {
             new android.os.Handler().postDelayed(new Runnable() {
@@ -787,7 +830,15 @@ public class MainActivity extends Activity {
             if (!scheme.equals("http") && !scheme.equals("https")) {
                 if (scheme.equals("intent")) {
                     try {
-                        startActivity(Intent.parseUri(url, Intent.URI_INTENT_SCHEME));
+                        Intent intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME);
+                        Uri data = intent.getData();
+                        String dataScheme = data == null || data.getScheme() == null ? "" : data.getScheme().toLowerCase();
+                        // Only honor intent:// links wrapping http(s) URLs, and strip any
+                        // explicit component the page tried to set.
+                        if (dataScheme.equals("http") || dataScheme.equals("https")) {
+                            intent.setComponent(null);
+                            startActivity(intent);
+                        }
                     } catch (Exception e) {
                         // Unresolvable intent link: drop it instead of crashing.
                     }
@@ -916,7 +967,7 @@ This project has been pre-configured with a GitHub Actions workflow to build you
     const apkPath = await attemptAPK(buildDir);
     if (apkPath) {
       // Copy the APK to the build output directory with a clean name
-      const outputApk = path.join(buildsDir, buildId, `${appId}-${appVersion}.apk`);
+      const outputApk = safeJoin(buildsDir, buildId, `${safeFileName(appId)}-${safeFileName(appVersion)}.apk`);
       fs.mkdirSync(path.dirname(outputApk), { recursive: true }); // Ensure output folder exists
       fs.copyFileSync(apkPath, outputApk);
       console.log(`[android-builder] APK built: ${outputApk}`);
@@ -928,24 +979,25 @@ This project has been pre-configured with a GitHub Actions workflow to build you
 
   // === Fallback: package as ZIP ===
   console.log('[android-builder] Falling back to source project ZIP');
-  const zipPath = path.join(buildsDir, buildId, `${appId}-android-${appVersion}.zip`);
+  const zipPath = safeJoin(buildsDir, buildId, `${safeFileName(appId)}-android-${safeFileName(appVersion)}.zip`);
   fs.mkdirSync(path.dirname(zipPath), { recursive: true }); // Ensure output folder exists
-  
+
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
     const archive = archiver('zip', { zlib: { level: 9 } });
 
     output.on('close', () => resolve(zipPath));
+    output.on('error', reject);
     archive.on('error', reject);
     archive.pipe(output);
-    
+
     // Archive only source files, excluding gradle caches and build directories
     archive.glob('**/*', {
       cwd: buildDir,
       ignore: ['.gradle/**', 'app/build/**', 'local.properties', '.git/**']
-    }, { prefix: `${appName.replace(/\s+/g, '')}-android-source` });
+    }, { prefix: `${safeFileName(appName).replace(/\s+/g, '') || 'App'}-android-source` });
 
-    archive.finalize();
+    archive.finalize().catch(reject);
   });
 }
 
@@ -953,13 +1005,8 @@ This project has been pre-configured with a GitHub Actions workflow to build you
 
 async function getFaviconFromHtml(siteUrl) {
   try {
-    const response = await fetch(siteUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
-    });
-    if (!response.ok) return null;
-    const html = await response.text();
+    const buf = await fetchPublicBuffer(siteUrl, { maxBytes: 1024 * 1024, timeoutMs: 8000 });
+    const html = buf.toString('utf8');
 
     const linkRegex = /<link\s+[^>]*>/gi;
     let match;
@@ -1016,27 +1063,23 @@ export async function fetchFaviconBuffer(siteUrl) {
     try {
       const scrapedUrl = await getFaviconFromHtml(siteUrl);
       if (scrapedUrl) {
-        const response = await fetch(scrapedUrl);
-        if (response.ok) collect(Buffer.from(await response.arrayBuffer()));
+        collect(await fetchPublicBuffer(scrapedUrl, { maxBytes: 512 * 1024, timeoutMs: 8000 }));
       }
     } catch {}
 
     // 2. Fallback to /favicon.ico
     try {
-      const response = await fetch(`${parsedUrl.origin}/favicon.ico`);
-      if (response.ok) collect(Buffer.from(await response.arrayBuffer()));
+      collect(await fetchPublicBuffer(`${parsedUrl.origin}/favicon.ico`, { maxBytes: 512 * 1024, timeoutMs: 8000 }));
     } catch {}
 
     // 3. Fallback to Google Favicon API (PNG, reliable)
     try {
-      const response = await fetch(`https://www.google.com/s2/favicons?sz=128&domain=${domain}`);
-      if (response.ok) collect(Buffer.from(await response.arrayBuffer()));
+      collect(await fetchPublicBuffer(`https://www.google.com/s2/favicons?sz=128&domain=${encodeURIComponent(domain)}`, { maxBytes: 512 * 1024, timeoutMs: 8000 }));
     } catch {}
 
     // 4. Fallback to DuckDuckGo
     try {
-      const response = await fetch(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
-      if (response.ok) collect(Buffer.from(await response.arrayBuffer()));
+      collect(await fetchPublicBuffer(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`, { maxBytes: 512 * 1024, timeoutMs: 8000 }));
     } catch {}
   } catch (err) {
     console.log(`[favicon-helper] Failed to parse site URL: ${err.message}`);
@@ -1112,7 +1155,18 @@ export function extractPngOrBmpFromIco(icoBuffer) {
         bmpHeader.writeUInt32LE(14 + imgBuffer.length, 2);
         bmpHeader.writeUInt16LE(0, 6);
         bmpHeader.writeUInt16LE(0, 8);
-        bmpHeader.writeUInt32LE(14 + dibHeaderSize, 10);
+        // BMP 3+ may carry a colour table between the header and pixel data
+        // (only for BI_RGB, ≤8 bpp). Include it so the pixel offset is right.
+        let paletteBytes = 0;
+        if (dibHeaderSize === 40) {
+          const bitCount = imgBuffer.readUInt16LE(14);
+          const compression = imgBuffer.readUInt32LE(16);
+          const clrUsed = imgBuffer.readUInt32LE(32);
+          if (compression === 0 && bitCount <= 8) {
+            paletteBytes = (clrUsed || (1 << bitCount)) * 4;
+          }
+        }
+        bmpHeader.writeUInt32LE(14 + dibHeaderSize + paletteBytes, 10);
         return Buffer.concat([bmpHeader, imgBuffer]);
       }
       

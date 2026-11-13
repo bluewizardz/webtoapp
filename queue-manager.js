@@ -108,36 +108,12 @@ async function initQueue() {
 // Perform initialization immediately
 await initQueue();
 
-// Helper to wait for BullMQ job completion
-function waitForJob(jobId) {
-  return new Promise((resolve, reject) => {
-    if (!queueEvents) {
-      return reject(new Error('QueueEvents not initialized'));
-    }
-
-    const onCompleted = ({ jobId: completedId, returnvalue }) => {
-      if (completedId === jobId) {
-        cleanup();
-        resolve(returnvalue);
-      }
-    };
-
-    const onFailed = ({ jobId: failedId, failedReason }) => {
-      if (failedId === jobId) {
-        cleanup();
-        reject(new Error(failedReason || 'Build failed in background worker'));
-      }
-    };
-
-    const cleanup = () => {
-      queueEvents.off('completed', onCompleted);
-      queueEvents.off('failed', onFailed);
-    };
-
-    queueEvents.on('completed', onCompleted);
-    queueEvents.on('failed', onFailed);
-  });
-}
+// waitForJob was removed: it attached 'completed'/'failed' listeners after
+// queue.add() returned, so a fast job could finish first and leave the promise
+// pending forever (build stuck 'pending' in the status map). BullMQ's
+// job.waitUntilFinished(queueEvents) subscribes before checking isFinished,
+// so it settles correctly in both orders. Keeping the last 100 jobs around
+// means isFinished() never sees a removed key and misreports success as failure.
 
 export async function queueGradleBuild(params) {
   if (useRedis) {
@@ -145,12 +121,12 @@ export async function queueGradleBuild(params) {
     // Add job to BullMQ
     const job = await gradleBuildQueue.add('build', params, {
       jobId: params.buildId,
-      removeOnComplete: true,
-      removeOnFail: true
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 100 }
     });
-    
+
     // Wait for the worker to process and complete/fail the job
-    return await waitForJob(job.id);
+    return await job.waitUntilFinished(queueEvents);
   } else {
     console.log(`[Queue Manager] Queueing build ${params.buildId} via LocalQueue`);
     return await localQueue.add(() => buildAPK(params));

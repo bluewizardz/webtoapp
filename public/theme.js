@@ -1,7 +1,12 @@
 // Theme initialization (runs immediately to prevent flash of unstyled content)
 (function () {
   "use strict";
-  const savedTheme = localStorage.getItem("theme");
+  let savedTheme = null;
+  try {
+    savedTheme = localStorage.getItem("theme");
+  } catch (error) {
+    // Storage blocked (private mode / disabled cookies): fall back to system preference.
+  }
   const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   if (savedTheme === "light" || (!savedTheme && !systemPrefersDark)) {
     document.documentElement.classList.add("light-theme");
@@ -16,12 +21,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (toggleBtn) {
     toggleBtn.addEventListener("click", () => {
       const isLight = document.documentElement.classList.contains("light-theme");
-      if (isLight) {
-        document.documentElement.classList.remove("light-theme");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.add("light-theme");
-        localStorage.setItem("theme", "light");
+      const next = isLight ? "dark" : "light";
+      document.documentElement.classList.toggle("light-theme", !isLight);
+      try {
+        localStorage.setItem("theme", next);
+      } catch (error) {
+        /* storage blocked — the toggle still works for this session */
       }
     });
   }

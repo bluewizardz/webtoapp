@@ -10,6 +10,9 @@ on:
 
 jobs:
   deploy:
+    # Fork PRs must never receive the Cloudflare secrets or deploy rights.
+    # Build/validate runs everywhere; deploy is push-to-main or same-repo PRs.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read

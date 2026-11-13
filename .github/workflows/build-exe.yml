@@ -1,4 +1,5 @@
 name: Build Windows EXE Wrapper
+run-name: app-build-${{ inputs.buildId }}
 
 on:
   workflow_dispatch:
@@ -117,28 +118,71 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Validate inputs
+        shell: bash
+        env:
+          INPUT_BUILD_ID: ${{ inputs.buildId }}
+          INPUT_SITE_URL: ${{ inputs.siteUrl }}
+          INPUT_WINDOW_WIDTH: ${{ inputs.windowWidth }}
+          INPUT_WINDOW_HEIGHT: ${{ inputs.windowHeight }}
+          INPUT_INSTALLER_TYPE: ${{ inputs.installerType }}
+          INPUT_ENGINE: ${{ inputs.engine }}
+        run: |
+          if ! [[ "$INPUT_BUILD_ID" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$ ]]; then
+            echo "Invalid buildId: must match ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}\$"
+            exit 1
+          fi
+          if ! [[ "$INPUT_SITE_URL" =~ ^https?:// ]]; then
+            echo "Invalid siteUrl: must start with http:// or https://"
+            exit 1
+          fi
+          if ! [[ "$INPUT_WINDOW_WIDTH" =~ ^[0-9]{2,5}$ && "$INPUT_WINDOW_HEIGHT" =~ ^[0-9]{2,5}$ ]]; then
+            echo "Invalid window dimensions: must be numeric"
+            exit 1
+          fi
+          if [[ "$INPUT_INSTALLER_TYPE" != nsis && "$INPUT_INSTALLER_TYPE" != portable ]]; then
+            echo "Invalid installerType: must be 'nsis' or 'portable'"
+            exit 1
+          fi
+          if [[ "$INPUT_ENGINE" != electron && "$INPUT_ENGINE" != tauri ]]; then
+            echo "Invalid engine: must be 'electron' or 'tauri'"
+            exit 1
+          fi
+
       - name: Compile Windows EXE
         shell: bash
+        env:
+          INPUT_SITE_URL: ${{ inputs.siteUrl }}
+          INPUT_APP_NAME: ${{ inputs.appName }}
+          INPUT_APP_ID: ${{ inputs.appId }}
+          INPUT_APP_VERSION: ${{ inputs.appVersion }}
+          INPUT_INSTALLER_TYPE: ${{ inputs.installerType }}
+          INPUT_WINDOW_WIDTH: ${{ inputs.windowWidth }}
+          INPUT_WINDOW_HEIGHT: ${{ inputs.windowHeight }}
+          INPUT_FULL_SCREEN: ${{ inputs.fullScreen }}
+          INPUT_CUSTOM_USER_AGENT: ${{ inputs.customUserAgent }}
+          INPUT_BUILD_ID: ${{ inputs.buildId }}
+          INPUT_ENGINE: ${{ inputs.engine }}
         run: |
           node cli-build-exe.js \
-            "${{ github.event.inputs.siteUrl }}" \
-            "${{ github.event.inputs.appName }}" \
-            "${{ github.event.inputs.appId }}" \
-            "${{ github.event.inputs.appVersion }}" \
-            "${{ github.event.inputs.installerType }}" \
-            "${{ github.event.inputs.windowWidth }}" \
-            "${{ github.event.inputs.windowHeight }}" \
-            "${{ github.event.inputs.fullScreen }}" \
-            "${{ github.event.inputs.customUserAgent }}" \
-            "${{ github.event.inputs.buildId }}" \
-            "${{ github.event.inputs.engine }}"
+            "$INPUT_SITE_URL" \
+            "$INPUT_APP_NAME" \
+            "$INPUT_APP_ID" \
+            "$INPUT_APP_VERSION" \
+            "$INPUT_INSTALLER_TYPE" \
+            "$INPUT_WINDOW_WIDTH" \
+            "$INPUT_WINDOW_HEIGHT" \
+            "$INPUT_FULL_SCREEN" \
+            "$INPUT_CUSTOM_USER_AGENT" \
+            "$INPUT_BUILD_ID" \
+            "$INPUT_ENGINE"
 
       # The artifact is what the status endpoint polls for.
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 'build-${{ github.event.inputs.buildId }}'
-          path: 'builds-cli/${{ github.event.inputs.buildId }}/*.exe'
+          name: build-${{ inputs.buildId }}
+          path: builds-cli/${{ inputs.buildId }}/*.exe
           if-no-files-found: error
 
       # The installer is stored on a DRAFT release: it gives us a direct CDN
@@ -149,10 +193,12 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_BUILD_ID: ${{ inputs.buildId }}
+          INPUT_SITE_URL: ${{ inputs.siteUrl }}
         run: |
-          TAG="build-${{ github.event.inputs.buildId }}"
-          gh release create "$TAG" builds-cli/${{ github.event.inputs.buildId }}/*.exe \
+          TAG="build-$INPUT_BUILD_ID"
+          gh release create "$TAG" "builds-cli/$INPUT_BUILD_ID"/*.exe \
             --repo "${{ github.repository }}" \
             --title "Windows build $TAG" \
-            --notes "Automated Windows EXE for ${{ github.event.inputs.siteUrl }}" \
+            --notes "Automated Windows EXE for $INPUT_SITE_URL" \
             --draft

@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -6,6 +7,66 @@ import path from 'path';
 const localBin = path.join(process.env.HOME || '', '.local', 'bin');
 if (!process.env.PATH.includes(localBin)) {
   process.env.PATH = `${localBin}:${process.env.PATH}`;
+}
+
+/**
+ * Verify a downloaded file against a `.sha256` published next to it.
+ * Fails closed: if the checksum cannot be fetched or does not match, the
+ * file is considered untrusted and the caller aborts.
+ */
+async function verifySha256(file, sha256Url) {
+  try {
+    const expected = execSync(`curl -fsSL --connect-timeout 10 -m 30 "${sha256Url}"`, { stdio: 'pipe' })
+      .toString()
+      .trim()
+      .split(/\s+/)[0]
+      .toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(expected)) {
+      console.log('[build-utils] Refusing unexpected checksum response from ' + sha256Url);
+      return false;
+    }
+    const actual = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
+    if (actual !== expected) {
+      console.log(`[build-utils] Checksum mismatch for ${path.basename(file)}: expected ${expected}, got ${actual}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.log(`[build-utils] Could not fetch checksum for ${path.basename(file)}: ${e.message}`);
+    return false;
+  }
+}
+
+/**
+ * Run `fn` while holding a mkdir-based lock at `lockDir`. Stale locks
+ * (older than 10 minutes) are broken. Avoids concurrent npm installs of
+ * the same shared cache directory racing each other.
+ */
+async function withLock(lockDir, fn) {
+  const staleMs = 10 * 60 * 1000;
+  const deadline = Date.now() + 5 * 60 * 1000;
+  for (;;) {
+    try {
+      fs.mkdirSync(lockDir);
+      break;
+    } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      try {
+        const stat = fs.statSync(lockDir);
+        if (Date.now() - stat.mtimeMs > staleMs) {
+          fs.rmSync(lockDir, { recursive: true, force: true });
+          continue;
+        }
+      } catch { /* lock vanished between stat and check — retry */ }
+      if (Date.now() > deadline) throw new Error('Timed out waiting for shared cache lock');
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    try { fs.rmdirSync(lockDir); } catch { /* already gone */ }
+  }
 }
 
 /**
@@ -28,17 +89,6 @@ export function tryExec(cmd, options = {}) {
   }
 }
 
-/**
- * Check if a command exists on the system.
- */
-export function commandExists(cmd) {
-  try {
-    execSync(`which ${cmd}`, { stdio: 'pipe' });
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /**
  * Find files matching a pattern (extension) in a directory recursively.
@@ -189,7 +239,11 @@ async function ensureJdk17() {
   const tarPath = '/tmp/jdk17.tar.gz';
 
   try {
-    if (!tryExec(`curl -fsSL "${jdkUrl}" -o "${tarPath}"`, { timeout: 120000 })) {
+    if (!tryExec(`curl -fsSL "${jdkUrl}" -o "${tarPath}"`, { timeout: 180000 })) {
+      return null;
+    }
+    if (!(await verifySha256(tarPath, jdkUrl + '.sha256'))) {
+      tryExec(`rm -f "${tarPath}"`, { timeout: 5000 });
       return null;
     }
 
@@ -239,6 +293,10 @@ async function ensureGradle8() {
     if (!tryExec(`curl -fsSL --retry 5 --retry-delay 5 --retry-max-time 600 --connect-timeout 30 "${gradleUrl}" -o "${zipPath}"`, { timeout: 660000 })) {
       return null;
     }
+    if (!(await verifySha256(zipPath, gradleUrl + '.sha256'))) {
+      tryExec(`rm -f "${zipPath}"`, { timeout: 5000 });
+      return null;
+    }
 
     fs.mkdirSync(path.join(process.env.HOME || '/tmp', '.gradle-android'), { recursive: true });
     if (!tryExec(`unzip -qo "${zipPath}" -d "${path.join(process.env.HOME || '/tmp', '.gradle-android')}"`, { timeout: 60000 })) {
@@ -281,8 +339,10 @@ async function tryInstallAndroidSdk() {
         return false;
       }
       fs.mkdirSync(path.join(sdkRoot, 'cmdline-tools', 'latest'), { recursive: true });
-      if (!tryExec(`mv ${sdkRoot}/cmdline-tools-tmp/cmdline-tools/* ${sdkRoot}/cmdline-tools/latest/`, { timeout: 10000 })) {
-        return false;
+      // Move with node instead of an unquoted shell glob so $HOME paths with spaces work.
+      const tmpToolsDir = path.join(sdkRoot, 'cmdline-tools-tmp', 'cmdline-tools');
+      for (const entry of fs.readdirSync(tmpToolsDir)) {
+        fs.renameSync(path.join(tmpToolsDir, entry), path.join(sdkRoot, 'cmdline-tools', 'latest', entry));
       }
       tryExec(`rm -rf "${toolsZip}" "${sdkRoot}/cmdline-tools-tmp"`, { timeout: 10000 });
     }
@@ -320,25 +380,37 @@ export async function tryBuildElectron(buildDir, target, platform, extension) {
   console.log(`[build-utils] Attempting Electron ${target} build...`);
 
   try {
-    // Set up shared cache directory for Electron packages to bypass npm install on every single build
-    const buildsDir = path.dirname(path.dirname(buildDir)); 
+    // Set up a shared cache for Electron packages, keyed by the dependency
+    // set so different projects never stomp each other's node_modules.
+    const buildsDir = path.dirname(path.dirname(buildDir));
     const cacheDir = path.join(buildsDir, 'cache');
-    const sharedElectronDir = path.join(cacheDir, 'electron-shared');
+    const sourcePkg = path.join(buildDir, 'package.json');
+    let cacheKey = 'electron-shared';
+    let combinedDevDeps = {};
+    try {
+      combinedDevDeps = JSON.parse(fs.readFileSync(sourcePkg, 'utf8')).devDependencies || {};
+    } catch { /* fall back to unkeyed cache */ }
+    if (Object.keys(combinedDevDeps).length > 0) {
+      cacheKey = 'electron-shared-' + crypto.createHash('sha256').update(JSON.stringify(combinedDevDeps)).digest('hex').slice(0, 16);
+    }
+    const sharedElectronDir = path.join(cacheDir, cacheKey);
     const sharedNodeModules = path.join(sharedElectronDir, 'node_modules');
+    const cacheLock = path.join(cacheDir, cacheKey + '.lock');
 
     fs.mkdirSync(sharedElectronDir, { recursive: true });
 
-    // Copy package.json from buildDir to shared cache dir
-    const sourcePkg = path.join(buildDir, 'package.json');
-    const destPkg = path.join(sharedElectronDir, 'package.json');
     if (fs.existsSync(sourcePkg)) {
-      fs.copyFileSync(sourcePkg, destPkg);
+      fs.copyFileSync(sourcePkg, path.join(sharedElectronDir, 'package.json'));
     }
 
-    // Install shared node_modules if not already cached
+    // Install shared node_modules if not already cached; the lock stops
+    // concurrent builds from installing into the same directory at once.
     if (!fs.existsSync(sharedNodeModules)) {
-      console.log('[build-utils] Shared Electron cache missing. Fetching packages once...');
-      tryExec('npm install --prefer-offline --no-audit --no-fund --quiet', { cwd: sharedElectronDir, timeout: 240000 });
+      await withLock(cacheLock, async () => {
+        if (fs.existsSync(sharedNodeModules)) return;
+        console.log('[build-utils] Shared Electron cache missing. Fetching packages once...');
+        tryExec('npm install --prefer-offline --no-audit --no-fund --quiet', { cwd: sharedElectronDir, timeout: 240000 });
+      });
     }
 
     // Create symbolic link to the shared node_modules folder

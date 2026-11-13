@@ -11,19 +11,11 @@
     appVersion: document.querySelector("#appVersion"),
     appId: document.querySelector("#appId"),
     resetIdButton: document.querySelector("#resetIdButton"),
-    sampleButton: document.querySelector("#sampleButton"),
     validationMessage: document.querySelector("#validationMessage"),
-    statusPill: document.querySelector("#statusPill"),
-    previewInitials: document.querySelector("#previewInitials"),
-    previewName: document.querySelector("#previewName"),
-    previewUrl: document.querySelector("#previewUrl"),
     splashName: document.querySelector("#splashName"),
     splashIconImage: document.querySelector("#splashIconImage"),
     previewPlay: document.querySelector("#androidPreviewPlay"),
     previewStatus: document.querySelector("#androidPreviewStatus"),
-    outputAppName: document.querySelector("#outputAppName"),
-    outputAppId: document.querySelector("#outputAppId"),
-    artifactSummary: document.querySelector("#artifactSummary"),
     downloadButton: document.querySelector("#downloadButton"),
     appIcon: document.querySelector("#appIcon"),
     showSpinner: document.querySelector("#showSpinner"),
@@ -62,7 +54,6 @@
     removeIconButton: document.querySelector("#removeIconButton"),
 
     // Phone Preview
-    phoneScreen: document.querySelector("#phoneScreen"),
     screenProgress: document.querySelector("#screenProgress"),
     screenSplash: document.querySelector("#screenSplash"),
     splashInitials: document.querySelector("#splashInitials"),
@@ -79,8 +70,7 @@
     autoFetchIcon: document.querySelector("#autoFetchIcon"),
     iconPreview: document.querySelector("#iconPreview"),
     iconPreviewPlaceholder: document.querySelector("#iconPreviewPlaceholder"),
-    iconPreviewSpinner: document.querySelector("#iconPreviewSpinner"),
-    previewIcon: document.querySelector("#previewIcon")
+    iconPreviewSpinner: document.querySelector("#iconPreviewSpinner")
   };
 
   let packageWasEdited = false;
@@ -103,20 +93,46 @@
   // === URL & String Utilities ===
 
   function normalizeUrl(value) {
-    let raw = String(value || "").trim();
+    const raw = String(value || "").trim();
     if (!raw) {
       throw new Error("Website URL is required.");
     }
-    // Correct common keyboard typos where commas are entered instead of dots (e.g., anwin,pages,dev)
-    raw = raw.replace(/,/g, ".");
 
     const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : "https://" + raw;
     const parsed = new URL(withScheme);
     if (!["http:", "https:"].includes(parsed.protocol)) {
       throw new Error("Use an http or https website URL.");
     }
-    parsed.hash = parsed.hash || "";
+    if (parsed.username || parsed.password) {
+      throw new Error("URLs with embedded credentials are not supported.");
+    }
+    const host = parsed.hostname.replace(/\.+$/, "").toLowerCase();
+    if (isPrivateHost(host)) {
+      throw new Error("Public websites only — local or private addresses are not supported.");
+    }
     return parsed.toString();
+  }
+
+  function isPrivateHost(host) {
+    // The WHATWG URL parser normalizes integer/hex IPv4 forms to dotted quad
+    // before we see them, so only dotted form needs checking here.
+    if (/^\[?(::|fc00:|fe80:|::ffff:)/i.test(host)) return true;
+    if (host === "::1" || host === "[::1]" || host === "0.0.0.0") return true;
+    if (host.endsWith(".local") || host.endsWith(".internal") || host.endsWith(".localhost")) return true;
+    const match = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+    if (match) {
+      const a = Number(match[1]);
+      const b = Number(match[2]);
+      if (match.slice(1).some((part) => Number(part) > 255)) return false;
+      if (a === 10 || a === 127 || a === 0) return true;
+      if (a === 172 && b >= 16 && b <= 31) return true;
+      if (a === 192 && b === 168) return true;
+      if (a === 169 && b === 254) return true;
+      if (a === 100 && b >= 64 && b <= 127) return true;
+      if (a === 198 && (b === 18 || b === 19)) return true;
+      if (a >= 224) return true;
+    }
+    return false;
   }
 
   function titleCaseFromSlug(slug) {
@@ -190,7 +206,7 @@
   // Allow decimals and standard version formats
   function normalizeVersion(value) {
     const version = String(value || "1.0.0").trim();
-    return /^\d+\.\d+\.\d+([-.][a-z0-9.-]+)?$/i.test(version) ? version : "1.0.0";
+    return /^\d+\.\d+\.\d+(-[0-9a-z]+(\.[0-9a-z]+)*)?(\+[0-9a-z]+(\.[0-9a-z]+)*)?$/i.test(version) ? version : "1.0.0";
   }
 
   function deriveAppName(urlValue) {
@@ -219,11 +235,6 @@
 
   function setMessage(message, kind) {
     els.validationMessage.textContent = kind === "error" ? message : "";
-    if (els.statusPill) {
-      els.statusPill.textContent = message;
-      els.statusPill.style.color = kind === "error" ? "#ff0000" : "#0070f3";
-      els.statusPill.style.borderColor = kind === "error" ? "rgba(255, 0, 0, 0.3)" : "rgba(0, 112, 243, 0.3)";
-    }
   }
 
   function showProgress(text, percent) {
@@ -359,6 +370,7 @@
   function timeAgo(dateStr) {
     const now = Date.now();
     const then = new Date(dateStr).getTime();
+    if (!Number.isFinite(then)) return "";
     const diffMs = now - then;
     const mins = Math.floor(diffMs / 60000);
     if (mins < 1) return "Just now";
@@ -390,16 +402,26 @@
               '<span>' + timeAgo(item.date) + '</span>' +
             '</span>' +
           '</div>' +
-          '<a href="' + escapeHtml(item.url) + '" download="' + escapeHtml(item.filename) + '" class="history-item-download">Download</a>' +
+          '<a href="' + escapeHtml(safeDownloadUrl(item.url)) + '" download="' + escapeHtml(item.filename) + '" rel="noopener noreferrer" class="history-item-download">Download</a>' +
         '</li>';
       })
       .join("");
   }
 
   function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str || "";
-    return div.innerHTML;
+    return String(str == null ? "" : str).replace(/[&<>"']/g, (ch) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    }[ch]));
+  }
+
+  // http(s) only — a localStorage-tampered javascript: URL must never reach href.
+  function safeDownloadUrl(url) {
+    const value = String(url || "");
+    return /^https?:\/\//i.test(value) ? value : "#";
   }
 
   function setButtonLoading(loading) {
@@ -443,13 +465,6 @@
     if (els.iconPreviewPlaceholder) {
       els.iconPreviewPlaceholder.style.display = "grid";
     }
-    if (els.previewIcon) {
-      els.previewIcon.removeAttribute("src");
-      els.previewIcon.style.display = "none";
-    }
-    if (els.previewInitials) {
-      els.previewInitials.style.display = "grid";
-    }
     iconAppliedUrl = "";
   }
 
@@ -462,12 +477,6 @@
     }
     if (els.iconPreviewPlaceholder) {
       els.iconPreviewPlaceholder.style.display = "none";
-    }
-    if (els.previewIcon) {
-      els.previewIcon.style.display = "none";
-    }
-    if (els.previewInitials) {
-      els.previewInitials.style.display = "grid";
     }
   }
 
@@ -482,13 +491,6 @@
     if (els.iconPreviewPlaceholder) {
       els.iconPreviewPlaceholder.style.display = "none";
     }
-    if (els.previewIcon) {
-      els.previewIcon.src = base64Icon;
-      els.previewIcon.style.display = "block";
-    }
-    if (els.previewInitials) {
-      els.previewInitials.style.display = "none";
-    }
     iconAppliedUrl = "";
   }
 
@@ -502,13 +504,6 @@
     }
     if (els.iconPreviewPlaceholder) {
       els.iconPreviewPlaceholder.style.display = "none";
-    }
-    if (els.previewIcon) {
-      els.previewIcon.src = src;
-      els.previewIcon.style.display = "block";
-    }
-    if (els.previewInitials) {
-      els.previewInitials.style.display = "none";
     }
   }
 
@@ -604,16 +599,9 @@
       if (!packageWasEdited) {
         els.appId.value = hasUrl ? derivePackageId(els.siteUrl.value, els.appName.value) : "";
       }
-      const app = getAppConfig();
-      if (els.previewName) els.previewName.textContent = app.name;
-      if (els.previewUrl) els.previewUrl.textContent = app.url;
-      if (els.outputAppName) els.outputAppName.textContent = app.name;
-      if (els.outputAppId) els.outputAppId.textContent = app.appId;
-      if (els.artifactSummary) els.artifactSummary.textContent = "Android APK";
+      getAppConfig(); // throws on invalid URL - drives the error message below
       setMessage("Ready", "ok");
     } catch (error) {
-      if (els.previewName) els.previewName.textContent = els.appName.value || "Site App";
-      if (els.previewUrl) els.previewUrl.textContent = els.siteUrl.value || "https://example.com";
       setMessage(hasUrl ? error.message : "Ready", hasUrl ? "error" : "ok");
     }
 
@@ -783,7 +771,7 @@
 
   function playAndroidPreview() {
     clearPreviewTimers();
-    const duration = Math.min(10000, Math.max(0, parseInt(els.splashDuration.value, 10) || 2000));
+    const duration = Math.min(10000, Math.max(500, parseInt(els.splashDuration.value, 10) || 2000));
     const showSplash = els.showSplash.checked;
     const summary = androidPreviewSummary();
     if (showSplash) {
@@ -813,7 +801,11 @@
 
     while (attempts < maxAttempts) {
       const response = await fetch(`${backendUrl}/api/build/${buildId}`);
-      const status = await response.json();
+      const status = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(status.error || `Status check failed (${response.status})`);
+      }
 
       if (status.status === "completed") {
         showProgress(`${label} compiled! Downloading…`, 100);
@@ -831,7 +823,7 @@
         showPlayProtectNotice();
         setMessage("Build complete", "ok");
         showBuildSuccess(downloadUrl, filename);
-        return;
+        return { downloadUrl, filename };
       } else if (status.status === "error") {
         throw new Error(status.error || "Build failed");
       }
@@ -858,13 +850,17 @@
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Build failed");
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error || `Build failed (${response.status})`);
       }
 
-      const { buildId } = await response.json();
+      const postData = await response.json().catch(() => ({}));
+      const buildId = postData.buildId;
+      if (!buildId) {
+        throw new Error("Server did not return a build id.");
+      }
       showProgress("Initializing build environment…", 30);
-      await pollAndDownload(buildId, backendUrl, "Android APK");
+      const buildResult = await pollAndDownload(buildId, backendUrl, "Android APK");
 
       lastSuccessfulBuildFingerprint = fingerprintConfig(requestBody);
       try {
@@ -876,7 +872,7 @@
         name: app.name,
         appId: app.appId,
         url: finalUrl,
-        filename: "app.apk",
+        filename: (buildResult && buildResult.filename) || "app.apk",
         date: new Date().toISOString()
       });
     } catch (error) {
@@ -994,8 +990,9 @@
 
   els.form.addEventListener("submit", async (event) => {
     event.preventDefault();
+    if (buildInProgress) return;
     try {
-      const app = getAppConfig();
+      getAppConfig(); // throws on invalid URL - drives the error message below
       await buildAndDownload(app);
     } catch (error) {
       setMessage(error.message, "error");
@@ -1012,17 +1009,6 @@
     updatePreview();
     updateBuildButtonState();
   });
-
-  if (els.sampleButton) {
-    els.sampleButton.addEventListener("click", () => {
-      els.siteUrl.value = "https://example.com";
-      els.appName.value = "Example Portal";
-      els.appVersion.value = "1.0.0";
-      packageWasEdited = false;
-      updatePreview();
-      updateBuildButtonState();
-    });
-  }
 
   els.appId.addEventListener("input", () => {
     packageWasEdited = true;

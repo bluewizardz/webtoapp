@@ -1,55 +1,48 @@
 import { unzipSync } from 'fflate';
+import {
+  isBuildId, githubHeaders, REPO_API, findReleaseByTag, findArtifact, sanitizeDisposition
+} from '../_lib.js';
+
+const MAX_ARTIFACT_BYTES = 80 * 1024 * 1024; // Pages Functions are memory-limited
+
+function textError(message, status) {
+  return new Response(message, {
+    status,
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }
+  });
+}
 
 export async function onRequestGet(context) {
   const { params, env } = context;
-  const buildId = params.id;
+  const buildId = params && params.id;
 
-  const githubPat = env.GITHUB_PAT;
-  if (!githubPat) {
-    return new Response('Missing GITHUB_PAT secret', { status: 500 });
-  }
+  if (!isBuildId(buildId)) return textError('Invalid build id', 400);
+  if (!env.GITHUB_PAT) return textError('Download service is not configured', 500);
 
-  const headers = {
-    'Authorization': `Bearer ${githubPat}`,
-    'Accept': 'application/vnd.github+json',
-    'X-GitHub-Api-Version': '2022-11-28',
-    'User-Agent': 'SiteToApp-Cloudflare-Bridge'
-  };
+  try {
+    const headers = githubHeaders(env.GITHUB_PAT);
 
-  const repo = 'https://api.github.com/repos/bluewizardz/webtoapp';
-  const tag = `build-${buildId}`;
-
-  // Preferred path: redirect to the signed URL of the draft release asset. This
-  // streams the APK from GitHub's CDN instead of proxying it through Cloudflare.
-  const release = await findReleaseByTag(repo, tag, headers);
-  if (release) {
-    const asset = (release.assets || []).find((item) => item.name.toLowerCase().endsWith('.apk'));
-    if (asset) {
-      const response = await assetResponse(asset, headers);
-      if (response) return response;
+    // Preferred path: redirect to the signed URL of the draft release asset.
+    const release = await findReleaseByTag(REPO_API, `build-${buildId}`, headers);
+    if (release) {
+      const assets = Array.isArray(release.assets) ? release.assets : [];
+      const asset = assets.find((item) => item.name && item.name.toLowerCase().endsWith('.apk'));
+      if (asset) {
+        const response = await assetResponse(asset, headers);
+        if (response) return response;
+      }
     }
+
+    // Fallback: extract the .apk from the Actions artifact ZIP.
+    return artifactDownload(REPO_API, buildId, headers);
+  } catch {
+    return textError('Download is temporarily unavailable', 502);
   }
-
-  // Fallback: extract the .apk from the Actions artifact ZIP.
-  return artifactDownload(repo, buildId, headers);
-}
-
-async function findReleaseByTag(repo, tag, headers) {
-  const direct = await fetch(`${repo}/releases/tags/${tag}`, { headers });
-  if (direct.ok) {
-    return direct.json();
-  }
-
-  const listRes = await fetch(`${repo}/releases?per_page=30`, { headers });
-  if (!listRes.ok) return null;
-
-  const releases = await listRes.json();
-  if (!Array.isArray(releases)) return null;
-  return releases.find((release) => release.tag_name === tag) || null;
 }
 
 async function assetResponse(asset, headers) {
   const assetHeaders = { ...headers, 'Accept': 'application/octet-stream' };
+  const filename = sanitizeDisposition(asset.name);
 
   const manual = await fetch(asset.url, { headers: assetHeaders, redirect: 'manual' });
   const location = manual.headers.get('Location') || manual.headers.get('location');
@@ -58,81 +51,63 @@ async function assetResponse(asset, headers) {
       status: 302,
       headers: {
         'Location': location,
-        'Content-Disposition': `attachment; filename="${asset.name}"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-store',
         'Access-Control-Allow-Origin': '*'
       }
     });
   }
 
-  if (manual.ok && manual.body) {
-    return streamAsset(manual, asset);
-  }
+  if (manual.ok && manual.body) return streamAsset(manual, filename, 'application/vnd.android.package-archive');
 
   const followed = await fetch(asset.url, { headers: assetHeaders });
-  if (followed.ok && followed.body) {
-    return streamAsset(followed, asset);
-  }
+  if (followed.ok && followed.body) return streamAsset(followed, filename, 'application/vnd.android.package-archive');
 
   return null;
 }
 
-function streamAsset(response, asset) {
+function streamAsset(response, filename, contentType) {
   const headers = {
-    'Content-Type': 'application/vnd.android.package-archive',
-    'Content-Disposition': `attachment; filename="${asset.name}"`,
+    'Content-Type': contentType,
+    'Content-Disposition': `attachment; filename="${filename}"`,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
     'Access-Control-Allow-Origin': '*'
   };
-
   const length = response.headers.get('Content-Length');
   if (length) headers['Content-Length'] = length;
-
   return new Response(response.body, { status: 200, headers });
 }
 
 async function artifactDownload(repo, buildId, headers) {
-  const artifactsRes = await fetch(
-    `${repo}/actions/artifacts?name=build-${buildId}`,
-    { headers }
-  );
-
-  if (!artifactsRes.ok) {
-    return new Response(`Failed to search artifacts: ${await artifactsRes.text()}`, { status: 502 });
+  const artifact = await findArtifact(repo, buildId, headers);
+  if (!artifact) return textError('APK not found for this build', 404);
+  if (artifact.size_in_bytes > MAX_ARTIFACT_BYTES) {
+    return textError('Build artifact is too large to serve through this endpoint', 413);
   }
 
-  const artifacts = (await artifactsRes.json()).artifacts || [];
-  if (artifacts.length === 0) {
-    return new Response('APK not found for this build', { status: 404 });
-  }
-
-  const zipRes = await fetch(
-    `${repo}/actions/artifacts/${artifacts[0].id}/zip`,
-    { headers }
-  );
-
-  if (!zipRes.ok) {
-    return new Response(`Failed to download zip: ${await zipRes.text()}`, { status: 502 });
-  }
+  const zipRes = await fetch(`${repo}/actions/artifacts/${artifact.id}/zip`, { headers });
+  if (!zipRes.ok) return textError('Failed to fetch the build artifact', 502);
 
   let unzipped;
   try {
     unzipped = unzipSync(new Uint8Array(await zipRes.arrayBuffer()));
-  } catch (err) {
-    return new Response(`Failed to decompress ZIP artifact: ${err.message}`, { status: 500 });
+  } catch {
+    return textError('Failed to decompress the build artifact', 500);
   }
 
   const apkName = Object.keys(unzipped).find((name) => name.toLowerCase().endsWith('.apk'));
-  if (!apkName) {
-    return new Response('APK file not found inside downloaded ZIP archive', { status: 500 });
-  }
+  if (!apkName) return textError('APK not found inside the build artifact', 500);
 
   const apkData = unzipped[apkName];
   return new Response(apkData, {
     status: 200,
     headers: {
       'Content-Type': 'application/vnd.android.package-archive',
-      'Content-Disposition': `attachment; filename="${apkName.split('/').pop()}"`,
+      'Content-Disposition': `attachment; filename="${sanitizeDisposition(apkName)}"`,
       'Content-Length': String(apkData.length),
+      'Cache-Control': 'no-store',
+      'X-Content-Type-Options': 'nosniff',
       'Access-Control-Allow-Origin': '*'
     }
   });

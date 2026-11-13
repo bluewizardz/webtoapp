@@ -5,6 +5,16 @@ import archiver from 'archiver';
 import { pngToIco } from './icon-generator.js';
 import { resolveWindowsIcon } from './windows-icon.js';
 import { tryBuildElectron } from './build-utils.js';
+import {
+  assertBuildId,
+  assertSiteUrl,
+  assertAppName,
+  assertAppId,
+  assertAppVersion,
+  coerceBoolean,
+  safeFileName,
+  safeJoin
+} from './input-validation.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -29,20 +39,31 @@ export async function buildEXE({
   buildId,
   buildsDir
 }) {
-  const target = installerType === 'portable' ? 'portable' : 'nsis';
+  assertBuildId(buildId);
+  const validSiteUrl = assertSiteUrl(siteUrl);
+  const validName = assertAppName(appName);
+  assertAppId(appId);
+  const validVersion = appVersion ? assertAppVersion(String(appVersion)) : '1.0.0';
+
+  if (installerType !== 'nsis' && installerType !== 'portable') {
+    throw new Error("Invalid installerType: must be 'nsis' or 'portable'");
+  }
+  const target = installerType;
   const width = clampNumber(windowWidth, 800, 3840, 1200);
   const height = clampNumber(windowHeight, 600, 2160, 800);
-  const startFullScreen = fullScreen === true || fullScreen === 'true';
-  const userAgent = typeof customUserAgent === 'string' && customUserAgent.trim() ? customUserAgent.trim() : null;
+  const startFullScreen = coerceBoolean(fullScreen, false);
+  const userAgent = typeof customUserAgent === 'string' && customUserAgent.trim()
+    ? customUserAgent.trim().slice(0, 512)
+    : null;
 
-  const buildDir = path.join(buildsDir, buildId, 'windows');
+  const buildDir = safeJoin(buildsDir, buildId, 'windows');
   fs.mkdirSync(path.join(buildDir, 'src'), { recursive: true });
 
   // Create Electron main process
   const mainContent = `const { app, BrowserWindow, shell, session } = require('electron');
 const path = require('path');
 
-const APP_URL = '${siteUrl}';
+const APP_URL = ${JSON.stringify(validSiteUrl)};
 const START_FULLSCREEN = ${startFullScreen};
 let mainWindow = null;
 
@@ -66,7 +87,13 @@ function isSameSite(value) {
 }
 
 function openExternally(url) {
-  shell.openExternal(url).catch(function () {});
+  try {
+    const parsed = new URL(url);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
+      shell.openExternal(url).catch(function () {});
+    }
+  } catch (e) {}
 }
 
 function createWindow() {
@@ -142,23 +169,23 @@ app.on('activate', function () {
   const preloadContent = `const { contextBridge } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
-  version: '${appVersion}',
-  appName: ${JSON.stringify(appName)}
+  version: ${JSON.stringify(validVersion)},
+  appName: ${JSON.stringify(validName)}
 });
 `;
 
   fs.writeFileSync(path.join(buildDir, 'src', 'preload.js'), preloadContent);
 
-  const safeName = `${appName}-${target === 'portable' ? 'Portable' : 'Setup'}-${appVersion}`
-    .replace(/[\\/:*?"<>|]/g, '')
-    .trim();
+  const safeName = `${safeFileName(validName)}-${target === 'portable' ? 'Portable' : 'Setup'}-${validVersion}`
+    .replace(/[\\/:*?"<>|$`{}]/g, '')
+    .trim() || 'App';
 
   const packageJson = {
-    name: appId,
-    version: appVersion,
-    description: `${appName} - Web app`,
+    name: appId.toLowerCase(),
+    version: validVersion,
+    description: `${validName} - Web app`,
     main: 'src/main.js',
-    homepage: siteUrl,
+    homepage: validSiteUrl,
     author: '',
     license: 'MIT',
     scripts: {
@@ -171,7 +198,7 @@ contextBridge.exposeInMainWorld('api', {
     },
     build: {
       appId: appId,
-      productName: appName,
+      productName: validName,
       artifactName: `${safeName}.exe`,
       files: ['src/**/*', 'package.json'],
       extraResources: [{ from: 'assets/icon.ico', to: 'icon.ico' }],
@@ -201,7 +228,7 @@ contextBridge.exposeInMainWorld('api', {
               allowToChangeInstallationDirectory: true,
               createDesktopShortcut: true,
               createStartMenuShortcut: true,
-              shortcutName: appName
+              shortcutName: validName
             }
           }
         : {})
@@ -243,11 +270,13 @@ jobs:
 `
   );
 
+  const readmeAppName = validName.replace(/[\r\n]+/g, ' ');
+  const readmeSiteUrl = validSiteUrl.replace(/[\r\n]+/g, ' ');
   fs.writeFileSync(
     path.join(buildDir, 'README.md'),
-    `# ${appName}
+    `# ${readmeAppName}
 
-Windows application wrapping ${siteUrl}
+Windows application wrapping ${readmeSiteUrl}
 
 ## Development
 
@@ -268,7 +297,7 @@ Artifacts land in \`dist/\`.
 
   fs.mkdirSync(path.join(buildDir, 'assets'), { recursive: true });
 
-  const pngBuffer = await resolveWindowsIcon({ icon, siteUrl, appName, size: 256 });
+  const pngBuffer = await resolveWindowsIcon({ icon, siteUrl: validSiteUrl, appName: validName, size: 256 });
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.ico'), pngToIco(pngBuffer));
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.png'), pngBuffer);
 
@@ -276,7 +305,7 @@ Artifacts land in \`dist/\`.
   try {
     const artifactPath = await tryBuildElectron(buildDir, target, '--win', '.exe');
     if (artifactPath) {
-      const outputPath = path.join(buildsDir, buildId, `${safeName}.exe`);
+      const outputPath = safeJoin(buildsDir, buildId, `${safeName}.exe`);
       fs.mkdirSync(path.dirname(outputPath), { recursive: true });
       fs.copyFileSync(artifactPath, outputPath);
       console.log(`[windows-builder] EXE built: ${outputPath}`);
@@ -288,11 +317,13 @@ Artifacts land in \`dist/\`.
 
   // === Fallback: source project ZIP ===
   console.log('[windows-builder] Falling back to source project ZIP');
-  const zipPath = path.join(buildsDir, buildId, `${appName}-windows-${appVersion}.zip`);
+  const archiveName = safeFileName(validName);
+  const zipPath = safeJoin(buildsDir, buildId, `${archiveName}-windows-${validVersion}.zip`);
   fs.mkdirSync(path.dirname(zipPath), { recursive: true });
 
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
+    output.on('error', reject);
     const archive = archiver('zip', { zlib: { level: 9 } });
 
     output.on('close', () => resolve(zipPath));
@@ -305,10 +336,10 @@ Artifacts land in \`dist/\`.
         cwd: buildDir,
         ignore: ['node_modules/**', 'dist/**', '.git/**']
       },
-      { prefix: `${appName.replace(/\s+/g, '')}-windows-source` }
+      { prefix: `${archiveName}-windows-source` }
     );
 
-    archive.finalize();
+    archive.finalize().catch(reject);
   });
 }
 

@@ -2,28 +2,78 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import archiver from 'archiver';
-import { generatePngIcon } from './icon-generator.js';
+import { resolveWindowsIcon as resolveDesktopIcon } from './windows-icon.js';
 import { tryBuildElectron } from './build-utils.js';
+import {
+  assertBuildId,
+  assertSiteUrl,
+  assertAppName,
+  assertAppId,
+  assertAppVersion,
+  coerceBoolean,
+  safeFileName,
+  safeJoin
+} from './input-validation.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-export async function buildAppImage({ siteUrl, appName, appId, appVersion, icon, buildId, buildsDir }) {
-  const buildDir = path.join(buildsDir, buildId, 'linux-appimage');
+export async function buildAppImage({ siteUrl, appName, appId, appVersion, icon = null, buildId, buildsDir, windowWidth = 1200, windowHeight = 800, fullScreen = false, customUserAgent = null }) {
+  assertBuildId(buildId);
+  const validSiteUrl = assertSiteUrl(siteUrl);
+  const validName = assertAppName(appName);
+  assertAppId(appId);
+  const validVersion = appVersion ? assertAppVersion(String(appVersion)) : '1.0.0';
+  const width = clampNumber(windowWidth, 400, 3840, 1200);
+  const height = clampNumber(windowHeight, 300, 2160, 800);
+  const startFullScreen = coerceBoolean(fullScreen, false);
+  const userAgent = typeof customUserAgent === 'string' && customUserAgent.trim()
+    ? customUserAgent.trim().slice(0, 512)
+    : null;
+  const buildDir = safeJoin(buildsDir, buildId, 'linux-appimage');
   fs.mkdirSync(buildDir, { recursive: true });
 
   // Create src directory
   fs.mkdirSync(path.join(buildDir, 'src'), { recursive: true });
 
   // Create Electron main process
-  const mainContent = `const { app, BrowserWindow, shell } = require('electron');
+  const mainContent = `const { app, BrowserWindow, shell, session } = require('electron');
 const path = require('path');
 
-let mainWindow;
+let mainWindow = null;
+
+function hostOf(value) {
+  try {
+    return new URL(value).hostname.replace(/^www\./i, '');
+  } catch (e) {
+    return '';
+  }
+}
+
+const APP_HOST = hostOf(${JSON.stringify(validSiteUrl)});
+
+function isSameSite(value) {
+  try {
+    const host = new URL(value).hostname.replace(/^www\./i, '');
+    return host === APP_HOST || host.endsWith('.' + APP_HOST);
+  } catch (e) {
+    return false;
+  }
+}
+
+function openExternally(url) {
+  try {
+    const parsed = new URL(url);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
+      shell.openExternal(url).catch(function () {});
+    }
+  } catch (e) {}
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: ${width},
+    height: ${height},
     minWidth: 400,
     minHeight: 300,
     webPreferences: {
@@ -35,11 +85,28 @@ function createWindow() {
     icon: path.join(__dirname, '../assets/icon.png')
   });
 
-  mainWindow.loadURL('${siteUrl}');
-  
+  ${userAgent ? `session.defaultSession.setUserAgent(${JSON.stringify(userAgent)});` : ''}
+
+  if (${startFullScreen}) {
+    mainWindow.setFullScreen(true);
+  }
+
+  mainWindow.loadURL(${JSON.stringify(validSiteUrl)});
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    openExternally(url);
     return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!isSameSite(url)) {
+      event.preventDefault();
+      openExternally(url);
+    }
+  });
+
+  session.defaultSession.setPermissionRequestHandler((contents, permission, callback) => {
+    callback(['media', 'geolocation', 'notifications', 'clipboard-read'].indexOf(permission) !== -1);
   });
 
   mainWindow.on('closed', () => {
@@ -68,8 +135,8 @@ app.on('activate', () => {
   const preloadContent = `const { contextBridge } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
-  version: '${appVersion}',
-  appName: '${appName}'
+  version: ${JSON.stringify(validVersion)},
+  appName: ${JSON.stringify(validName)}
 });
 `;
 
@@ -77,11 +144,11 @@ contextBridge.exposeInMainWorld('api', {
 
   // Create package.json for Electron
   const packageJson = {
-    name: appId,
-    version: appVersion,
-    description: `${appName} - Web app`,
+    name: appId.toLowerCase(),
+    version: validVersion,
+    description: `${validName} - Web app`,
     main: 'src/main.js',
-    homepage: siteUrl,
+    homepage: validSiteUrl,
     author: '',
     license: 'MIT',
     scripts: {
@@ -94,7 +161,7 @@ contextBridge.exposeInMainWorld('api', {
     },
     build: {
       appId: appId,
-      productName: appName,
+      productName: validName,
       files: ['src/**/*', 'package.json'],
       compression: 'maximum',
       asar: true,
@@ -112,7 +179,7 @@ contextBridge.exposeInMainWorld('api', {
         buildResources: 'assets'
       },
       linux: {
-        target: ['AppImage', 'deb'],
+        target: ['AppImage'],
         category: 'Utility',
         icon: 'assets/icon.png'
       }
@@ -165,9 +232,11 @@ jobs:
 `);
 
   // Create README.md
-  const readmeContent = `# ${appName}
+  const readmeAppName = validName.replace(/[\r\n]+/g, ' ');
+  const readmeSiteUrl = validSiteUrl.replace(/[\r\n]+/g, ' ');
+  const readmeContent = `# ${readmeAppName}
 
-Linux application wrapping ${siteUrl}
+Linux application wrapping ${readmeSiteUrl}
 
 ## Installation
 
@@ -203,23 +272,14 @@ This project has been pre-configured with a GitHub Actions workflow to build you
   fs.mkdirSync(path.join(buildDir, 'assets'), { recursive: true });
 
   // Generate real icon using sharp
-  const iconBuffer = await generatePngIcon(appName, 256);
+  const iconBuffer = await resolveDesktopIcon({ icon, siteUrl: validSiteUrl, appName: validName, size: 512 });
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.png'), iconBuffer);
-
-  // Create .desktop file for AppImage
-  fs.writeFileSync(path.join(buildDir, `${appId}.desktop`), `[Desktop Entry]
-Name=${appName}
-Exec=AppRun
-Icon=icon
-Type=Application
-Categories=Utility;
-`);
 
   // === Try to build actual AppImage ===
   try {
     const artifactPath = await tryBuildElectron(buildDir, 'AppImage', '--linux', '.AppImage');
     if (artifactPath) {
-      const outputPath = path.join(buildsDir, buildId, `${appName}-${appVersion}.AppImage`);
+      const outputPath = safeJoin(buildsDir, buildId, `${safeFileName(validName)}-${validVersion}.AppImage`);
       fs.copyFileSync(artifactPath, outputPath);
       console.log(`[linux-builder] AppImage built: ${outputPath}`);
       return outputPath;
@@ -230,11 +290,12 @@ Categories=Utility;
 
   // === Fallback: package as ZIP ===
   console.log('[linux-builder] Falling back to source project ZIP');
-  const zipPath = path.join(buildsDir, buildId, `${appName}-linux-appimage-${appVersion}.zip`);
+  const zipPath = safeJoin(buildsDir, buildId, `${safeFileName(validName)}-linux-appimage-${validVersion}.zip`);
   fs.mkdirSync(path.dirname(zipPath), { recursive: true }); // Ensure output folder exists
   
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
+    output.on('error', reject);
     const archive = archiver('zip', { zlib: { level: 9 } });
 
     output.on('close', () => resolve(zipPath));
@@ -245,29 +306,69 @@ Categories=Utility;
     archive.glob('**/*', {
       cwd: buildDir,
       ignore: ['node_modules/**', 'dist/**', '.git/**']
-    }, { prefix: `${appName.replace(/\s+/g, '')}-linux-source` });
+    }, { prefix: `${safeFileName(validName)}-linux-source` });
 
-    archive.finalize();
+    archive.finalize().catch(reject);
   });
 }
 
-export async function buildDeb({ siteUrl, appName, appId, appVersion, icon, buildId, buildsDir }) {
-  const buildDir = path.join(buildsDir, buildId, 'linux-deb');
+export async function buildDeb({ siteUrl, appName, appId, appVersion, icon = null, buildId, buildsDir, windowWidth = 1200, windowHeight = 800, fullScreen = false, customUserAgent = null }) {
+  assertBuildId(buildId);
+  const validSiteUrl = assertSiteUrl(siteUrl);
+  const validName = assertAppName(appName);
+  assertAppId(appId);
+  const validVersion = appVersion ? assertAppVersion(String(appVersion)) : '1.0.0';
+  const width = clampNumber(windowWidth, 400, 3840, 1200);
+  const height = clampNumber(windowHeight, 300, 2160, 800);
+  const startFullScreen = coerceBoolean(fullScreen, false);
+  const userAgent = typeof customUserAgent === 'string' && customUserAgent.trim()
+    ? customUserAgent.trim().slice(0, 512)
+    : null;
+  const buildDir = safeJoin(buildsDir, buildId, 'linux-deb');
   fs.mkdirSync(buildDir, { recursive: true });
 
   // Create src directory
   fs.mkdirSync(path.join(buildDir, 'src'), { recursive: true });
 
   // Create Electron main process
-  const mainContent = `const { app, BrowserWindow, shell } = require('electron');
+  const mainContent = `const { app, BrowserWindow, shell, session } = require('electron');
 const path = require('path');
 
-let mainWindow;
+let mainWindow = null;
+
+function hostOf(value) {
+  try {
+    return new URL(value).hostname.replace(/^www\./i, '');
+  } catch (e) {
+    return '';
+  }
+}
+
+const APP_HOST = hostOf(${JSON.stringify(validSiteUrl)});
+
+function isSameSite(value) {
+  try {
+    const host = new URL(value).hostname.replace(/^www\./i, '');
+    return host === APP_HOST || host.endsWith('.' + APP_HOST);
+  } catch (e) {
+    return false;
+  }
+}
+
+function openExternally(url) {
+  try {
+    const parsed = new URL(url);
+    const protocol = parsed.protocol.toLowerCase();
+    if (protocol === 'http:' || protocol === 'https:' || protocol === 'mailto:') {
+      shell.openExternal(url).catch(function () {});
+    }
+  } catch (e) {}
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: ${width},
+    height: ${height},
     minWidth: 400,
     minHeight: 300,
     webPreferences: {
@@ -279,11 +380,28 @@ function createWindow() {
     icon: path.join(__dirname, '../assets/icon.png')
   });
 
-  mainWindow.loadURL('${siteUrl}');
-  
+  ${userAgent ? `session.defaultSession.setUserAgent(${JSON.stringify(userAgent)});` : ''}
+
+  if (${startFullScreen}) {
+    mainWindow.setFullScreen(true);
+  }
+
+  mainWindow.loadURL(${JSON.stringify(validSiteUrl)});
+
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    openExternally(url);
     return { action: 'deny' };
+  });
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    if (!isSameSite(url)) {
+      event.preventDefault();
+      openExternally(url);
+    }
+  });
+
+  session.defaultSession.setPermissionRequestHandler((contents, permission, callback) => {
+    callback(['media', 'geolocation', 'notifications', 'clipboard-read'].indexOf(permission) !== -1);
   });
 
   mainWindow.on('closed', () => {
@@ -312,8 +430,8 @@ app.on('activate', () => {
   const preloadContent = `const { contextBridge } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
-  version: '${appVersion}',
-  appName: '${appName}'
+  version: ${JSON.stringify(validVersion)},
+  appName: ${JSON.stringify(validName)}
 });
 `;
 
@@ -321,11 +439,11 @@ contextBridge.exposeInMainWorld('api', {
 
   // Create package.json for Electron
   const packageJson = {
-    name: appId,
-    version: appVersion,
-    description: `${appName} - Web app`,
+    name: appId.toLowerCase(),
+    version: validVersion,
+    description: `${validName} - Web app`,
     main: 'src/main.js',
-    homepage: siteUrl,
+    homepage: validSiteUrl,
     author: '',
     license: 'MIT',
     scripts: {
@@ -333,12 +451,12 @@ contextBridge.exposeInMainWorld('api', {
       build: 'electron-builder'
     },
     devDependencies: {
-      electron: '^latest',
-      'electron-builder': '^latest'
+      electron: '^31.0.0',
+      'electron-builder': '^25.1.8'
     },
     build: {
       appId: appId,
-      productName: appName,
+      productName: validName,
       files: ['src/**/*', 'package.json'],
       compression: 'maximum',
       asar: true,
@@ -356,7 +474,7 @@ contextBridge.exposeInMainWorld('api', {
         buildResources: 'assets'
       },
       linux: {
-        target: ['deb', 'AppImage'],
+        target: ['deb'],
         category: 'Utility',
         icon: 'assets/icon.png'
       },
@@ -413,9 +531,11 @@ jobs:
 `);
 
   // Create README.md
-  const readmeContent = `# ${appName}
+  const readmeAppName = validName.replace(/[\r\n]+/g, ' ');
+  const readmeSiteUrl = validSiteUrl.replace(/[\r\n]+/g, ' ');
+  const readmeContent = `# ${readmeAppName}
 
-Debian Linux package wrapping ${siteUrl}
+Debian Linux package wrapping ${readmeSiteUrl}
 
 ## Installation
 
@@ -457,14 +577,14 @@ This project has been pre-configured with a GitHub Actions workflow to build you
   fs.mkdirSync(path.join(buildDir, 'assets'), { recursive: true });
 
   // Generate real icon using sharp
-  const iconBuffer = await generatePngIcon(appName, 256);
+  const iconBuffer = await resolveDesktopIcon({ icon, siteUrl: validSiteUrl, appName: validName, size: 512 });
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.png'), iconBuffer);
 
   // === Try to build actual DEB ===
   try {
     const artifactPath = await tryBuildElectron(buildDir, 'deb', '--linux', '.deb');
     if (artifactPath) {
-      const outputPath = path.join(buildsDir, buildId, `${appId}-${appVersion}.deb`);
+      const outputPath = safeJoin(buildsDir, buildId, `${safeFileName(validName)}-${validVersion}.deb`);
       fs.copyFileSync(artifactPath, outputPath);
       console.log(`[linux-builder] DEB built: ${outputPath}`);
       return outputPath;
@@ -475,11 +595,12 @@ This project has been pre-configured with a GitHub Actions workflow to build you
 
   // === Fallback: package as ZIP ===
   console.log('[linux-builder] Falling back to source project ZIP');
-  const zipPath = path.join(buildsDir, buildId, `${appName}-linux-deb-${appVersion}.zip`);
+  const zipPath = safeJoin(buildsDir, buildId, `${safeFileName(validName)}-linux-deb-${validVersion}.zip`);
   fs.mkdirSync(path.dirname(zipPath), { recursive: true }); // Ensure output folder exists
   
   return new Promise((resolve, reject) => {
     const output = fs.createWriteStream(zipPath);
+    output.on('error', reject);
     const archive = archiver('zip', { zlib: { level: 9 } });
 
     output.on('close', () => resolve(zipPath));
@@ -490,8 +611,14 @@ This project has been pre-configured with a GitHub Actions workflow to build you
     archive.glob('**/*', {
       cwd: buildDir,
       ignore: ['node_modules/**', 'dist/**', '.git/**']
-    }, { prefix: `${appName.replace(/\s+/g, '')}-linux-source` });
+    }, { prefix: `${safeFileName(validName)}-linux-source` });
 
-    archive.finalize();
+    archive.finalize().catch(reject);
   });
+}
+
+function clampNumber(value, min, max, fallback) {
+  const parsed = parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(min, parsed));
 }

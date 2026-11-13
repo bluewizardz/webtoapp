@@ -2,12 +2,20 @@ import sharp from 'sharp';
 import { generatePngIcon } from './icon-generator.js';
 import { extractPngOrBmpFromIco, fetchFaviconBuffer } from './android-builder.js';
 
+const MAX_ICON_BYTES = 20 * 1024 * 1024; // 20 MB decoded ceiling
+
+const sharpLimit = { limitInputPixels: 64 * 1024 * 1024 }; // ~4096x4096
+
 /** Resolve a Windows app icon, retrying the site's favicon if the client icon is missing or invalid. */
 export async function resolveWindowsIcon({ icon, siteUrl, appName, size }) {
   if (icon) {
     try {
       const base64 = String(icon).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, '');
-      return await sharp(Buffer.from(base64, 'base64'))
+      const buffer = Buffer.from(base64, 'base64');
+      if (buffer.length > MAX_ICON_BYTES) {
+        throw new Error(`Supplied icon exceeds ${MAX_ICON_BYTES} bytes`);
+      }
+      return await sharp(buffer, sharpLimit)
         .resize(size, size, { fit: 'cover' })
         .png()
         .toBuffer();
@@ -19,8 +27,8 @@ export async function resolveWindowsIcon({ icon, siteUrl, appName, size }) {
   if (siteUrl) {
     try {
       const favicon = await fetchFaviconBuffer(siteUrl);
-      if (favicon) {
-        return await sharp(extractPngOrBmpFromIco(favicon))
+      if (favicon && favicon.length <= MAX_ICON_BYTES) {
+        return await sharp(extractPngOrBmpFromIco(favicon), sharpLimit)
           .resize(size, size, { fit: 'cover' })
           .png()
           .toBuffer();

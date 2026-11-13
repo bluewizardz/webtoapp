@@ -1,4 +1,5 @@
 name: Build Android APK Wrapper
+run-name: app-build-${{ inputs.buildId }}
 
 on:
   workflow_dispatch:
@@ -124,30 +125,62 @@ jobs:
             fi
           fi
 
+      - name: Validate inputs
+        shell: bash
+        env:
+          INPUT_BUILD_ID: ${{ inputs.buildId }}
+          INPUT_SITE_URL: ${{ inputs.siteUrl }}
+          INPUT_SPLASH_DURATION: ${{ inputs.splashDuration }}
+        run: |
+          if ! [[ "$INPUT_BUILD_ID" =~ ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$ ]]; then
+            echo "Invalid buildId: must match ^[A-Za-z0-9][A-Za-z0-9_-]{0,63}\$"
+            exit 1
+          fi
+          if ! [[ "$INPUT_SITE_URL" =~ ^https?:// ]]; then
+            echo "Invalid siteUrl: must start with http:// or https://"
+            exit 1
+          fi
+          if ! [[ "$INPUT_SPLASH_DURATION" =~ ^[0-9]{1,5}$ ]]; then
+            echo "Invalid splashDuration: must be a number of milliseconds"
+            exit 1
+          fi
+
       - name: Compile Android APK
         env:
           APP_ICON: ${{ inputs.icon }}
           AUTO_FETCH_ICON: ${{ inputs.autoFetchIcon }}
+          INPUT_SITE_URL: ${{ inputs.siteUrl }}
+          INPUT_APP_NAME: ${{ inputs.appName }}
+          INPUT_APP_ID: ${{ inputs.appId }}
+          INPUT_APP_VERSION: ${{ inputs.appVersion }}
+          INPUT_PULL_TO_REFRESH: ${{ inputs.pullToRefresh }}
+          INPUT_SHOW_SPINNER: ${{ inputs.showSpinner }}
+          INPUT_SHOW_SPLASH: ${{ inputs.showSplash }}
+          INPUT_SPLASH_DURATION: ${{ inputs.splashDuration }}
+          INPUT_FULL_SCREEN: ${{ inputs.fullScreen }}
+          INPUT_CUSTOM_USER_AGENT: ${{ inputs.customUserAgent }}
+          INPUT_ALLOW_ZOOM: ${{ inputs.allowZoom }}
+          INPUT_BUILD_ID: ${{ inputs.buildId }}
         run: |
           node cli-build-apk.js \
-            "${{ github.event.inputs.siteUrl }}" \
-            "${{ github.event.inputs.appName }}" \
-            "${{ github.event.inputs.appId }}" \
-            "${{ github.event.inputs.appVersion }}" \
-            "${{ github.event.inputs.pullToRefresh }}" \
-            "${{ github.event.inputs.showSpinner }}" \
-            "${{ github.event.inputs.showSplash }}" \
-            "${{ github.event.inputs.splashDuration }}" \
-            "${{ github.event.inputs.fullScreen }}" \
-            "${{ github.event.inputs.customUserAgent }}" \
-            "${{ github.event.inputs.allowZoom }}" \
-            "${{ github.event.inputs.buildId }}"
+            "$INPUT_SITE_URL" \
+            "$INPUT_APP_NAME" \
+            "$INPUT_APP_ID" \
+            "$INPUT_APP_VERSION" \
+            "$INPUT_PULL_TO_REFRESH" \
+            "$INPUT_SHOW_SPINNER" \
+            "$INPUT_SHOW_SPLASH" \
+            "$INPUT_SPLASH_DURATION" \
+            "$INPUT_FULL_SCREEN" \
+            "$INPUT_CUSTOM_USER_AGENT" \
+            "$INPUT_ALLOW_ZOOM" \
+            "$INPUT_BUILD_ID"
 
       - name: Locate Built APK and Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: 'build-${{ github.event.inputs.buildId }}'
-          path: 'builds-cli/${{ github.event.inputs.buildId }}/*.apk'
+          name: build-${{ inputs.buildId }}
+          path: builds-cli/${{ inputs.buildId }}/*.apk
           if-no-files-found: error
 
       # Publish the APK to a DRAFT release so the browser can download it
@@ -156,10 +189,12 @@ jobs:
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_BUILD_ID: ${{ inputs.buildId }}
+          INPUT_SITE_URL: ${{ inputs.siteUrl }}
         run: |
-          TAG="build-${{ github.event.inputs.buildId }}"
-          gh release create "$TAG" builds-cli/${{ github.event.inputs.buildId }}/*.apk \
+          TAG="build-$INPUT_BUILD_ID"
+          gh release create "$TAG" "builds-cli/$INPUT_BUILD_ID"/*.apk \
             --repo "${{ github.repository }}" \
             --title "Android build $TAG" \
-            --notes "Automated Android APK for ${{ github.event.inputs.siteUrl }}" \
+            --notes "Automated Android APK for $INPUT_SITE_URL" \
             --draft

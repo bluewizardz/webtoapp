@@ -13,11 +13,15 @@ import { buildEXE } from './builders/windows-builder.js';
 import { buildTauri } from './builders/tauri-builder.js';
 import { buildAppImage, buildDeb } from './builders/linux-builder.js';
 import { queueGradleBuild } from './queue-manager.js';
+import { assertSiteUrl, assertAppName, assertAppId, assertAppVersion, assertSplashDuration, coerceBoolean, isBuildId, safeFileName, safeJoin } from './builders/input-validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+if (process.env.TRUST_PROXY === 'true') {
+  app.set('trust proxy', 1);
+}
 const PORT = process.env.PORT || 3000;
 const BUILDS_DIR = path.join(__dirname, 'builds');
 
@@ -27,9 +31,12 @@ if (!fs.existsSync(BUILDS_DIR)) {
 }
 
 // Middleware
-app.use(cors());
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+const corsOptions = process.env.CORS_ORIGIN
+  ? { origin: process.env.CORS_ORIGIN.split(',').map(s => s.trim()) }
+  : {};
+app.use(cors(corsOptions));
+app.use(bodyParser.json({ limit: '15mb' }));
+app.use(bodyParser.urlencoded({ limit: '15mb', extended: true }));
 
 // Global siteUrl normalization middleware to ensure URLs have a scheme
 app.use((req, res, next) => {
@@ -44,11 +51,23 @@ app.use((req, res, next) => {
 
 // Rate limiting middleware to prevent abuse and API exhaustion
 const rateLimits = new Map();
+const MAX_RATE_LIMIT_ENTRIES = 10000;
 
 const rateLimiter = (options = { windowMs: 15 * 60 * 1000, max: 10 }) => {
   return (req, res, next) => {
-    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const now = Date.now();
+
+    if (rateLimits.size > MAX_RATE_LIMIT_ENTRIES) {
+      for (const [key, stamps] of rateLimits) {
+        const active = stamps.filter(t => now - t < options.windowMs);
+        if (active.length === 0) rateLimits.delete(key);
+      }
+      while (rateLimits.size > MAX_RATE_LIMIT_ENTRIES) {
+        const firstKey = rateLimits.keys().next().value;
+        rateLimits.delete(firstKey);
+      }
+    }
     
     if (!rateLimits.has(ip)) {
       rateLimits.set(ip, []);
@@ -128,16 +147,129 @@ app.use(express.static('dist'));
 
 // Build request queue
 const buildQueue = new Map();
+const BUILD_QUEUE_TTL_MS = 60 * 60 * 1000; // prune non-pending entries older than 1h
+const MAX_BUILD_QUEUE_ENTRIES = 5000;
+function queueSet(id, entry) {
+  if (!entry.createdAt) entry.createdAt = Date.now();
+  queueSet(id, entry);
+}
+const buildQueuePrune = setInterval(() => {
+  const now = Date.now();
+  for (const [id, entry] of buildQueue) {
+    if (entry.status !== 'pending' && entry.createdAt && now - entry.createdAt > BUILD_QUEUE_TTL_MS) {
+      buildQueue.delete(id);
+    }
+  }
+  while (buildQueue.size > MAX_BUILD_QUEUE_ENTRIES) {
+    let oldestId = null;
+    let oldest = Infinity;
+    for (const [id, entry] of buildQueue) {
+      if (entry.status === 'pending') continue;
+      if ((entry.createdAt || 0) < oldest) { oldest = entry.createdAt || 0; oldestId = id; }
+    }
+    if (!oldestId) break;
+    buildQueue.delete(oldestId);
+  }
+}, 10 * 60 * 1000);
+buildQueuePrune.unref();
+
+
+// Shared request validation for all build endpoints
+const ALLOWED_PLATFORMS = ['android', 'macos', 'windows', 'linux-appimage', 'linux-deb'];
+
+function validateBuildRequest(body) {
+  if (!body || typeof body !== 'object') {
+    throw new Error('Invalid request body');
+  }
+  const siteUrl = assertSiteUrl(body.siteUrl);
+  const appName = assertAppName(body.appName);
+  const appId = assertAppId(body.appId);
+  const appVersion = (body.appVersion == null || body.appVersion === '')
+    ? '1.0.0'
+    : assertAppVersion(String(body.appVersion));
+
+  let icon = null;
+  if (body.icon != null) {
+    if (typeof body.icon !== 'string' || body.icon.length > 14_000_000) {
+      throw new Error('Invalid icon: expected a data URL under ~10 MB');
+    }
+    if (!/^data:image\//i.test(body.icon)) {
+      throw new Error('Invalid icon: expected a data:image/ URL');
+    }
+    icon = body.icon;
+  }
+
+  const splashDuration = body.splashDuration == null ? 2000 : assertSplashDuration(body.splashDuration);
+
+  let customUserAgent = null;
+  if (typeof body.customUserAgent === 'string' && body.customUserAgent.trim()) {
+    customUserAgent = body.customUserAgent.trim().slice(0, 512);
+  }
+
+  let windowWidth;
+  let windowHeight;
+  const w = Number(body.windowWidth);
+  if (Number.isFinite(w)) windowWidth = Math.min(3840, Math.max(800, Math.floor(w)));
+  const h = Number(body.windowHeight);
+  if (Number.isFinite(h)) windowHeight = Math.min(2160, Math.max(600, Math.floor(h)));
+
+  let installerType;
+  if (body.installerType !== undefined) {
+    installerType = String(body.installerType).toLowerCase();
+    if (!['nsis', 'portable'].includes(installerType)) {
+      throw new Error('installerType must be nsis or portable');
+    }
+  }
+
+  let engine;
+  if (body.engine !== undefined) {
+    engine = String(body.engine).toLowerCase();
+    if (!['electron', 'tauri'].includes(engine)) {
+      throw new Error('engine must be electron or tauri');
+    }
+  }
+
+  return {
+    siteUrl,
+    appName,
+    appId,
+    appVersion,
+    icon,
+    splashDuration,
+    customUserAgent,
+    windowWidth,
+    windowHeight,
+    installerType,
+    engine,
+    showSpinner: coerceBoolean(body.showSpinner, true),
+    pullToRefresh: coerceBoolean(body.pullToRefresh, true),
+    allowZoom: coerceBoolean(body.allowZoom, false),
+    showSplash: coerceBoolean(body.showSplash, true),
+    fullScreen: coerceBoolean(body.fullScreen, false),
+    autoFetchIcon: coerceBoolean(body.autoFetchIcon, true)
+  };
+}
+
+function validatePlatforms(raw) {
+  if (!Array.isArray(raw)) return [];
+  return [...new Set(raw.filter(p => typeof p === 'string' && ALLOWED_PLATFORMS.includes(p)))];
+}
 
 // Proxy endpoint to scrape the favicon the same way a browser fetches it (bypassing CORS)
 app.get('/api/favicon', async (req, res) => {
   const { url } = req.query;
-  if (!url) {
+  if (!url || typeof url !== 'string') {
     return res.status(400).send('Missing url parameter');
+  }
+  let safeUrl;
+  try {
+    safeUrl = assertSiteUrl(url);
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
   }
 
   try {
-    let buffer = await fetchFaviconBuffer(url);
+    let buffer = await fetchFaviconBuffer(safeUrl);
     if (buffer) {
       try {
         buffer = extractPngOrBmpFromIco(buffer);
@@ -163,45 +295,46 @@ app.get('/api/favicon', async (req, res) => {
 // Generate APK
 app.post('/api/build/apk', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon, autoFetchIcon, showSpinner, pullToRefresh, allowZoom, showSplash, splashDuration, fullScreen, customUserAgent } = req.body;
+    let valid;
+    try {
+      valid = validateBuildRequest(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
     const buildId = uuidv4();
 
-    if (!siteUrl || !appName || !appId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    buildQueue.set(buildId, { status: 'pending', platform: 'android' });
+    queueSet(buildId, { status: 'pending', platform: 'android' });
 
     res.json({ buildId, status: 'queued' });
 
     // Build asynchronously
     try {
       const resultPath = await queueGradleBuild({
-        siteUrl,
-        appName,
-        appId,
-        appVersion: appVersion || '1.0.0',
-        icon,
-        autoFetchIcon: autoFetchIcon !== false,
-        showSpinner: showSpinner !== false,
-        pullToRefresh: pullToRefresh !== false,
-        allowZoom: allowZoom === true,
-        showSplash: showSplash !== false,
-        splashDuration: splashDuration || 2000,
-        fullScreen: fullScreen === true,
-        customUserAgent: customUserAgent || null,
+        siteUrl: valid.siteUrl,
+        appName: valid.appName,
+        appId: valid.appId,
+        appVersion: valid.appVersion,
+        icon: valid.icon,
+        autoFetchIcon: valid.autoFetchIcon,
+        showSpinner: valid.showSpinner,
+        pullToRefresh: valid.pullToRefresh,
+        allowZoom: valid.allowZoom,
+        showSplash: valid.showSplash,
+        splashDuration: valid.splashDuration,
+        fullScreen: valid.fullScreen,
+        customUserAgent: valid.customUserAgent,
         buildId,
         buildsDir: BUILDS_DIR
       });
 
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'completed',
         platform: 'android',
         file: resultPath,
         filename: path.basename(resultPath)
       });
     } catch (error) {
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'error',
         platform: 'android',
         error: error.message
@@ -215,36 +348,41 @@ app.post('/api/build/apk', compilerLimiter, async (req, res) => {
 // Generate DMG (macOS)
 app.post('/api/build/dmg', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon } = req.body;
+    let valid;
+    try {
+      valid = validateBuildRequest(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
     const buildId = uuidv4();
 
-    if (!siteUrl || !appName || !appId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    buildQueue.set(buildId, { status: 'pending', platform: 'macos' });
+    queueSet(buildId, { status: 'pending', platform: 'macos' });
 
     res.json({ buildId, status: 'queued' });
 
     try {
       const resultPath = await buildDMG({
-        siteUrl,
-        appName,
-        appId,
-        appVersion: appVersion || '1.0.0',
-        icon,
+        siteUrl: valid.siteUrl,
+        appName: valid.appName,
+        appId: valid.appId,
+        appVersion: valid.appVersion,
+        icon: valid.icon,
+        windowWidth: valid.windowWidth,
+        windowHeight: valid.windowHeight,
+        fullScreen: valid.fullScreen,
+        customUserAgent: valid.customUserAgent,
         buildId,
         buildsDir: BUILDS_DIR
       });
 
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'completed',
         platform: 'macos',
         file: resultPath,
         filename: path.basename(resultPath)
       });
     } catch (error) {
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'error',
         platform: 'macos',
         error: error.message
@@ -258,45 +396,43 @@ app.post('/api/build/dmg', compilerLimiter, async (req, res) => {
 // Generate EXE (Windows)
 app.post('/api/build/exe', compilerLimiter, async (req, res) => {
   try {
-    const {
-      siteUrl, appName, appId, appVersion, icon,
-      installerType, engine, windowWidth, windowHeight, fullScreen, customUserAgent
-    } = req.body;
+    let valid;
+    try {
+      valid = validateBuildRequest(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
     const buildId = uuidv4();
 
-    if (!siteUrl || !appName || !appId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    buildQueue.set(buildId, { status: 'pending', platform: 'windows' });
+    queueSet(buildId, { status: 'pending', platform: 'windows' });
 
     res.json({ buildId, status: 'queued' });
 
     try {
-      const builder = engine === 'tauri' ? buildTauri : buildEXE;
+      const builder = valid.engine === 'tauri' ? buildTauri : buildEXE;
       const resultPath = await builder({
-        siteUrl,
-        appName,
-        appId,
-        appVersion: appVersion || '1.0.0',
-        icon,
-        installerType,
-        windowWidth,
-        windowHeight,
-        fullScreen,
-        customUserAgent,
+        siteUrl: valid.siteUrl,
+        appName: valid.appName,
+        appId: valid.appId,
+        appVersion: valid.appVersion,
+        icon: valid.icon,
+        installerType: valid.installerType,
+        windowWidth: valid.windowWidth,
+        windowHeight: valid.windowHeight,
+        fullScreen: valid.fullScreen,
+        customUserAgent: valid.customUserAgent,
         buildId,
         buildsDir: BUILDS_DIR
       });
 
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'completed',
         platform: 'windows',
         file: resultPath,
         filename: path.basename(resultPath)
       });
     } catch (error) {
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'error',
         platform: 'windows',
         error: error.message
@@ -310,36 +446,41 @@ app.post('/api/build/exe', compilerLimiter, async (req, res) => {
 // Generate AppImage (Linux)
 app.post('/api/build/appimage', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon } = req.body;
+    let valid;
+    try {
+      valid = validateBuildRequest(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
     const buildId = uuidv4();
 
-    if (!siteUrl || !appName || !appId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    buildQueue.set(buildId, { status: 'pending', platform: 'linux' });
+    queueSet(buildId, { status: 'pending', platform: 'linux' });
 
     res.json({ buildId, status: 'queued' });
 
     try {
       const resultPath = await buildAppImage({
-        siteUrl,
-        appName,
-        appId,
-        appVersion: appVersion || '1.0.0',
-        icon,
+        siteUrl: valid.siteUrl,
+        appName: valid.appName,
+        appId: valid.appId,
+        appVersion: valid.appVersion,
+        icon: valid.icon,
+        windowWidth: valid.windowWidth,
+        windowHeight: valid.windowHeight,
+        fullScreen: valid.fullScreen,
+        customUserAgent: valid.customUserAgent,
         buildId,
         buildsDir: BUILDS_DIR
       });
 
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'completed',
         platform: 'linux',
         file: resultPath,
         filename: path.basename(resultPath)
       });
     } catch (error) {
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'error',
         platform: 'linux',
         error: error.message
@@ -353,36 +494,41 @@ app.post('/api/build/appimage', compilerLimiter, async (req, res) => {
 // Generate DEB (Linux Debian)
 app.post('/api/build/deb', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon } = req.body;
+    let valid;
+    try {
+      valid = validateBuildRequest(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
     const buildId = uuidv4();
 
-    if (!siteUrl || !appName || !appId) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
-
-    buildQueue.set(buildId, { status: 'pending', platform: 'linux' });
+    queueSet(buildId, { status: 'pending', platform: 'linux' });
 
     res.json({ buildId, status: 'queued' });
 
     try {
       const resultPath = await buildDeb({
-        siteUrl,
-        appName,
-        appId,
-        appVersion: appVersion || '1.0.0',
-        icon,
+        siteUrl: valid.siteUrl,
+        appName: valid.appName,
+        appId: valid.appId,
+        appVersion: valid.appVersion,
+        icon: valid.icon,
+        windowWidth: valid.windowWidth,
+        windowHeight: valid.windowHeight,
+        fullScreen: valid.fullScreen,
+        customUserAgent: valid.customUserAgent,
         buildId,
         buildsDir: BUILDS_DIR
       });
 
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'completed',
         platform: 'linux',
         file: resultPath,
         filename: path.basename(resultPath)
       });
     } catch (error) {
-      buildQueue.set(buildId, {
+      queueSet(buildId, {
         status: 'error',
         platform: 'linux',
         error: error.message
@@ -399,6 +545,9 @@ app.get('/api/exe/:buildId', getBuildStatus);
 
 function getBuildStatus(req, res) {
   const { buildId } = req.params;
+  if (!isBuildId(buildId)) {
+    return res.status(400).json({ error: 'Invalid build id' });
+  }
   const buildStatus = buildQueue.get(buildId);
 
   if (!buildStatus) {
@@ -414,6 +563,9 @@ app.get('/api/exe/download/:buildId', downloadBuild);
 
 function downloadBuild(req, res) {
   const { buildId } = req.params;
+  if (!isBuildId(buildId)) {
+    return res.status(400).json({ error: 'Invalid build id' });
+  }
   const buildStatus = buildQueue.get(buildId);
 
   if (!buildStatus || buildStatus.status !== 'completed') {
@@ -433,33 +585,48 @@ function downloadBuild(req, res) {
 // Batch build endpoint (individual polling per platform)
 app.post('/api/build/batch', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon, platforms, showSpinner, pullToRefresh, allowZoom } = req.body;
-
-    if (!siteUrl || !appName || !appId || !platforms || platforms.length === 0) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    let valid;
+    try {
+      valid = validateBuildRequest(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
+    const platforms = validatePlatforms(req.body.platforms);
+    if (platforms.length === 0) {
+      return res.status(400).json({ error: 'platforms must be a non-empty array of supported platforms' });
     }
 
     const batchId = uuidv4();
     const builds = {};
+    const base = {
+      siteUrl: valid.siteUrl,
+      appName: valid.appName,
+      appId: valid.appId,
+      appVersion: valid.appVersion,
+      icon: valid.icon,
+      windowWidth: valid.windowWidth,
+      windowHeight: valid.windowHeight,
+      fullScreen: valid.fullScreen,
+      customUserAgent: valid.customUserAgent
+    };
 
     // Start all builds
     if (platforms.includes('android')) {
       const buildId = uuidv4();
       builds['android'] = buildId;
-      queueGradleBuild({ 
-        siteUrl, 
-        appName, 
-        appId, 
-        appVersion, 
-        icon, 
-        showSpinner: showSpinner !== false, 
-        pullToRefresh: pullToRefresh !== false, 
-        allowZoom: allowZoom === true, 
-        buildId, 
-        buildsDir: BUILDS_DIR 
+      queueSet(buildId, { status: 'pending', platform: 'android' });
+      queueGradleBuild({
+        ...base,
+        showSpinner: valid.showSpinner,
+        pullToRefresh: valid.pullToRefresh,
+        allowZoom: valid.allowZoom,
+        showSplash: valid.showSplash,
+        splashDuration: valid.splashDuration,
+        buildId,
+        buildsDir: BUILDS_DIR
       })
         .then((apkPath) => {
-          buildQueue.set(buildId, {
+          queueSet(buildId, {
             status: 'completed',
             platform: 'android',
             file: apkPath,
@@ -467,16 +634,17 @@ app.post('/api/build/batch', compilerLimiter, async (req, res) => {
           });
         })
         .catch((error) => {
-          buildQueue.set(buildId, { status: 'error', platform: 'android', error: error.message });
+          queueSet(buildId, { status: 'error', platform: 'android', error: error.message });
         });
     }
 
     if (platforms.includes('macos')) {
       const buildId = uuidv4();
       builds['macos'] = buildId;
-      buildDMG({ siteUrl, appName, appId, appVersion, icon, buildId, buildsDir: BUILDS_DIR })
+      queueSet(buildId, { status: 'pending', platform: 'macos' });
+      buildDMG({ ...base, buildId, buildsDir: BUILDS_DIR })
         .then((dmgPath) => {
-          buildQueue.set(buildId, {
+          queueSet(buildId, {
             status: 'completed',
             platform: 'macos',
             file: dmgPath,
@@ -484,16 +652,17 @@ app.post('/api/build/batch', compilerLimiter, async (req, res) => {
           });
         })
         .catch((error) => {
-          buildQueue.set(buildId, { status: 'error', platform: 'macos', error: error.message });
+          queueSet(buildId, { status: 'error', platform: 'macos', error: error.message });
         });
     }
 
     if (platforms.includes('windows')) {
       const buildId = uuidv4();
       builds['windows'] = buildId;
-      buildEXE({ siteUrl, appName, appId, appVersion, icon, buildId, buildsDir: BUILDS_DIR })
+      queueSet(buildId, { status: 'pending', platform: 'windows' });
+      buildEXE({ ...base, buildId, buildsDir: BUILDS_DIR })
         .then((exePath) => {
-          buildQueue.set(buildId, {
+          queueSet(buildId, {
             status: 'completed',
             platform: 'windows',
             file: exePath,
@@ -501,16 +670,17 @@ app.post('/api/build/batch', compilerLimiter, async (req, res) => {
           });
         })
         .catch((error) => {
-          buildQueue.set(buildId, { status: 'error', platform: 'windows', error: error.message });
+          queueSet(buildId, { status: 'error', platform: 'windows', error: error.message });
         });
     }
 
     if (platforms.includes('linux-appimage')) {
       const buildId = uuidv4();
       builds['linux-appimage'] = buildId;
-      buildAppImage({ siteUrl, appName, appId, appVersion, icon, buildId, buildsDir: BUILDS_DIR })
+      queueSet(buildId, { status: 'pending', platform: 'linux' });
+      buildAppImage({ ...base, buildId, buildsDir: BUILDS_DIR })
         .then((appImagePath) => {
-          buildQueue.set(buildId, {
+          queueSet(buildId, {
             status: 'completed',
             platform: 'linux',
             file: appImagePath,
@@ -518,16 +688,17 @@ app.post('/api/build/batch', compilerLimiter, async (req, res) => {
           });
         })
         .catch((error) => {
-          buildQueue.set(buildId, { status: 'error', platform: 'linux', error: error.message });
+          queueSet(buildId, { status: 'error', platform: 'linux', error: error.message });
         });
     }
 
     if (platforms.includes('linux-deb')) {
       const buildId = uuidv4();
       builds['linux-deb'] = buildId;
-      buildDeb({ siteUrl, appName, appId, appVersion, icon, buildId, buildsDir: BUILDS_DIR })
+      queueSet(buildId, { status: 'pending', platform: 'linux' });
+      buildDeb({ ...base, buildId, buildsDir: BUILDS_DIR })
         .then((debPath) => {
-          buildQueue.set(buildId, {
+          queueSet(buildId, {
             status: 'completed',
             platform: 'linux',
             file: debPath,
@@ -535,7 +706,7 @@ app.post('/api/build/batch', compilerLimiter, async (req, res) => {
           });
         })
         .catch((error) => {
-          buildQueue.set(buildId, { status: 'error', platform: 'linux', error: error.message });
+          queueSet(buildId, { status: 'error', platform: 'linux', error: error.message });
         });
     }
 
@@ -548,14 +719,19 @@ app.post('/api/build/batch', compilerLimiter, async (req, res) => {
 // Combined build endpoint — builds all selected platforms into one ZIP
 app.post('/api/build/combined', compilerLimiter, async (req, res) => {
   try {
-    const { siteUrl, appName, appId, appVersion, icon, platforms, showSpinner, pullToRefresh, allowZoom, showSplash, splashDuration, fullScreen, customUserAgent } = req.body;
-
-    if (!siteUrl || !appName || !appId || !platforms || platforms.length === 0) {
-      return res.status(400).json({ error: 'Missing required fields' });
+    let valid;
+    try {
+      valid = validateBuildRequest(req.body);
+    } catch (e) {
+      return res.status(400).json({ error: e.message });
+    }
+    const platforms = validatePlatforms(req.body.platforms);
+    if (platforms.length === 0) {
+      return res.status(400).json({ error: 'platforms must be a non-empty array of supported platforms' });
     }
 
     const buildId = uuidv4();
-    buildQueue.set(buildId, { status: 'pending', platform: 'combined' });
+    queueSet(buildId, { status: 'pending', platform: 'combined' });
 
     res.json({ buildId, status: 'queued' });
 
@@ -564,9 +740,9 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
       try {
         const subBuilds = [];
         const baseConfig = {
-          siteUrl, appName, appId,
-          appVersion: appVersion || '1.0.0',
-          icon, buildsDir: BUILDS_DIR
+          siteUrl: valid.siteUrl, appName: valid.appName, appId: valid.appId,
+          appVersion: valid.appVersion,
+          icon: valid.icon, buildsDir: BUILDS_DIR
         };
 
         if (platforms.includes('android')) {
@@ -575,13 +751,13 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
             label: 'android',
             promise: queueGradleBuild({ 
               ...baseConfig, 
-              showSpinner: showSpinner !== false, 
-              pullToRefresh: pullToRefresh !== false, 
-              allowZoom: allowZoom === true, 
-              showSplash: showSplash !== false,
-              splashDuration: splashDuration || 2000,
-              fullScreen: fullScreen === true,
-              customUserAgent: customUserAgent || null,
+              showSpinner: valid.showSpinner,
+              pullToRefresh: valid.pullToRefresh,
+              allowZoom: valid.allowZoom,
+              showSplash: valid.showSplash,
+              splashDuration: valid.splashDuration,
+              fullScreen: valid.fullScreen,
+              customUserAgent: valid.customUserAgent,
               buildId: subId 
             }),
             subId
@@ -591,7 +767,7 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
           const subId = uuidv4();
           subBuilds.push({
             label: 'macos',
-            promise: buildDMG({ ...baseConfig, buildId: subId }),
+            promise: buildDMG({ ...baseConfig, windowWidth: valid.windowWidth, windowHeight: valid.windowHeight, fullScreen: valid.fullScreen, customUserAgent: valid.customUserAgent, buildId: subId }),
             subId
           });
         }
@@ -599,7 +775,7 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
           const subId = uuidv4();
           subBuilds.push({
             label: 'windows',
-            promise: buildEXE({ ...baseConfig, buildId: subId }),
+            promise: buildEXE({ ...baseConfig, installerType: valid.installerType, windowWidth: valid.windowWidth, windowHeight: valid.windowHeight, fullScreen: valid.fullScreen, customUserAgent: valid.customUserAgent, buildId: subId }),
             subId
           });
         }
@@ -607,7 +783,7 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
           const subId = uuidv4();
           subBuilds.push({
             label: 'linux-appimage',
-            promise: buildAppImage({ ...baseConfig, buildId: subId }),
+            promise: buildAppImage({ ...baseConfig, windowWidth: valid.windowWidth, windowHeight: valid.windowHeight, fullScreen: valid.fullScreen, customUserAgent: valid.customUserAgent, buildId: subId }),
             subId
           });
         }
@@ -615,7 +791,7 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
           const subId = uuidv4();
           subBuilds.push({
             label: 'linux-deb',
-            promise: buildDeb({ ...baseConfig, buildId: subId }),
+            promise: buildDeb({ ...baseConfig, windowWidth: valid.windowWidth, windowHeight: valid.windowHeight, fullScreen: valid.fullScreen, customUserAgent: valid.customUserAgent, buildId: subId }),
             subId
           });
         }
@@ -665,16 +841,18 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
         }
 
         // Create combined ZIP
-        const version = appVersion || '1.0.0';
-        const safeName = appName.replace(/[^a-zA-Z0-9-_]/g, '-');
-        const zipPath = path.join(BUILDS_DIR, buildId, `${safeName}-all-platforms-${version}.zip`);
-        fs.mkdirSync(path.join(BUILDS_DIR, buildId), { recursive: true });
+        const version = valid.appVersion;
+        const safeName = safeFileName(valid.appName);
+        const zipName = `${safeName}-all-platforms-${version}.zip`;
+        const zipPath = safeJoin(BUILDS_DIR, buildId, zipName);
+        fs.mkdirSync(path.dirname(zipPath), { recursive: true });
 
         await new Promise((resolve, reject) => {
           const output = fs.createWriteStream(zipPath);
           const archive = archiver('zip', { zlib: { level: 9 } });
 
           output.on('close', resolve);
+          output.on('error', reject);
           archive.on('error', reject);
           archive.pipe(output);
 
@@ -683,25 +861,25 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
           }
 
           for (const file of successFiles) {
-            archive.file(file.path, { name: file.name });
+            archive.file(file.path, { name: safeFileName(file.name) });
           }
 
-          archive.finalize();
+          archive.finalize().catch(reject);
         });
 
         const statusInfo = {
           status: 'completed',
           platform: 'combined',
           file: zipPath,
-          filename: `${safeName}-all-platforms-${version}.zip`
+          filename: zipName
         };
         if (errors.length > 0) {
           statusInfo.warnings = errors;
         }
-        buildQueue.set(buildId, statusInfo);
+        queueSet(buildId, statusInfo);
 
       } catch (error) {
-        buildQueue.set(buildId, {
+        queueSet(buildId, {
           status: 'error',
           platform: 'combined',
           error: error.message
@@ -716,6 +894,7 @@ app.post('/api/build/combined', compilerLimiter, async (req, res) => {
 
 // Health check
 app.get('/api/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
