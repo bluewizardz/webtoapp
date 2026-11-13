@@ -278,33 +278,50 @@ button, input {
 }
 
 .nav-links {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 2px;
   margin-left: 32px;
   font-size: 0.88rem;
   background-color: var(--accents-2);
   padding: 4px;
-  border-radius: 20px;
+  border-radius: 12px;
   border: 1px solid var(--accents-3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .nav-links a {
   color: var(--accents-6);
-  font-weight: 600;
-  padding: 8px 16px;
-  border-radius: 16px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 6px 16px;
+  border-radius: 8px;
   white-space: nowrap;
   line-height: 1.25;
   display: inline-flex;
   align-items: center;
+  transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.nav-links a:hover,
+.nav-links a:focus-visible {
+  outline: 2px solid var(--accents-5);
+  outline-offset: 2px;
+}
+
+.nav-links a:hover {
+  color: var(--foreground);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.light-theme .nav-links a:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
 .nav-links a.active {
   color: var(--foreground);
   background-color: var(--accents-1);
-  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--accents-3), 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 .nav-disabled {
@@ -3899,29 +3916,35 @@ body:is(.landing-page, .builder-page) .navbar .nav-links {
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
+  justify-content: center;
   margin: 0;
-  gap: 4px;
+  gap: 2px;
   white-space: nowrap;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
 }
 
 body:is(.landing-page, .builder-page) .navbar .nav-links a {
-  padding: 8px 10px;
-  font-size: 14px;
-  font-weight: 400;
+  padding: 6px 14px;
+  font-size: 13.5px;
+  font-weight: 500;
   white-space: nowrap;
   color: var(--accents-6);
   border-radius: 8px;
 }
 
-body:is(.landing-page, .builder-page) .navbar .nav-links a:hover,
+body:is(.landing-page, .builder-page) .navbar .nav-links a:hover {
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.light-theme body:is(.landing-page, .builder-page) .navbar .nav-links a:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 body:is(.landing-page, .builder-page) .navbar .nav-links a.active {
   color: var(--foreground);
-  background: var(--accents-2);
-  box-shadow: inset 0 0 0 1px var(--accents-3);
+  background: var(--accents-1);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--accents-3), 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 body:is(.landing-page, .builder-page) .navbar .nav-actions {
@@ -4052,25 +4075,34 @@ body.builder-page .brand-logo {
 
 body.builder-page .nav-links {
   margin-left: auto;
-  padding: 0;
-  gap: 4px;
-  border: 0;
-  background: transparent;
+  margin-right: 8px;
+  justify-content: center;
+  gap: 2px;
+  white-space: nowrap;
 }
 
 body.builder-page .nav-links a {
-  padding: 8px 10px;
+  padding: 6px 14px;
   border-radius: 8px;
   color: var(--accents-6);
-  font-size: 14px;
-  font-weight: 400;
+  font-size: 13.5px;
+  font-weight: 500;
 }
 
-body.builder-page .nav-links a:hover,
+body.builder-page .nav-links a:hover {
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+body.light-theme.builder-page .nav-links a:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 body.builder-page .nav-links a.active {
   color: var(--foreground);
-  background: var(--accents-2);
-  box-shadow: inset 0 0 0 1px var(--accents-3);
+  background: var(--accents-1);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--accents-3), 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 body.builder-page .nav-actions {
@@ -6329,30 +6361,36 @@ body:is(.landing-page, .builder-page) .navbar .nav-links {
   grid-column: 2;
   grid-row: 1;
   justify-self: center;
+  justify-content: center;
   margin: 0;
-  gap: 4px;
+  gap: 2px;
   white-space: nowrap;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
 }
 
 body:is(.landing-page, .builder-page) .navbar .nav-links a {
-  padding: 8px 10px;
-  font-size: 14px;
-  font-weight: 400;
+  padding: 6px 14px;
+  font-size: 13.5px;
+  font-weight: 500;
   white-space: nowrap;
   color: var(--accents-6);
   border-radius: 8px;
   line-height: 1.25;
 }
 
-body:is(.landing-page, .builder-page) .navbar .nav-links a:hover,
+body:is(.landing-page, .builder-page) .navbar .nav-links a:hover {
+  color: var(--foreground);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.light-theme body:is(.landing-page, .builder-page) .navbar .nav-links a:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 body:is(.landing-page, .builder-page) .navbar .nav-links a.active {
   color: var(--foreground);
-  background: var(--accents-2);
-  box-shadow: inset 0 0 0 1px var(--accents-3);
+  background: var(--accents-1);
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px var(--accents-3), 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 body:is(.landing-page, .builder-page) .navbar .nav-actions {

@@ -967,7 +967,7 @@ This project has been pre-configured with a GitHub Actions workflow to build you
     const apkPath = await attemptAPK(buildDir);
     if (apkPath) {
       // Copy the APK to the build output directory with a clean name
-      const outputApk = safeJoin(buildsDir, buildId, `${safeFileName(appId)}-${safeFileName(appVersion)}.apk`);
+      const outputApk = safeJoin(buildsDir, buildId, `${safeFileName(appName)}-${safeFileName(appVersion)}.apk`);
       fs.mkdirSync(path.dirname(outputApk), { recursive: true }); // Ensure output folder exists
       fs.copyFileSync(apkPath, outputApk);
       console.log(`[android-builder] APK built: ${outputApk}`);
@@ -979,7 +979,7 @@ This project has been pre-configured with a GitHub Actions workflow to build you
 
   // === Fallback: package as ZIP ===
   console.log('[android-builder] Falling back to source project ZIP');
-  const zipPath = safeJoin(buildsDir, buildId, `${safeFileName(appId)}-android-${safeFileName(appVersion)}.zip`);
+  const zipPath = safeJoin(buildsDir, buildId, `${safeFileName(appName)}-android-${safeFileName(appVersion)}.zip`);
   fs.mkdirSync(path.dirname(zipPath), { recursive: true }); // Ensure output folder exists
 
   return new Promise((resolve, reject) => {
