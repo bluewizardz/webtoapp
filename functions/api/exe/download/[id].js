@@ -1,7 +1,7 @@
 import { unzipSync } from 'fflate';
 import {
   isBuildId, githubHeaders, REPO_API, findReleaseByTag, findArtifact, sanitizeDisposition
-} from '../_lib.js';
+} from '../../_lib.js';
 
 const MAX_ARTIFACT_BYTES = 80 * 1024 * 1024; // Pages Functions are memory-limited
 
