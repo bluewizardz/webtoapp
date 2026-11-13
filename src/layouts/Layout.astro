@@ -138,7 +138,8 @@ const pathname = Astro.url.pathname;
     <script is:inline>
       (function () {
         "use strict";
-        const savedTheme = localStorage.getItem("theme");
+        let savedTheme = null;
+        try { savedTheme = localStorage.getItem("theme"); } catch (e) { /* storage blocked */ }
         const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         if (savedTheme === "light" || (!savedTheme && !systemPrefersDark)) {
           document.documentElement.classList.add("light-theme");
@@ -218,10 +219,10 @@ const pathname = Astro.url.pathname;
           const isLight = document.documentElement.classList.contains("light-theme");
           if (isLight) {
             document.documentElement.classList.remove("light-theme");
-            localStorage.setItem("theme", "dark");
+            try { localStorage.setItem("theme", "dark"); } catch (e) { /* storage blocked */ }
           } else {
             document.documentElement.classList.add("light-theme");
-            localStorage.setItem("theme", "light");
+            try { localStorage.setItem("theme", "light"); } catch (e) { /* storage blocked */ }
           }
         });
       }

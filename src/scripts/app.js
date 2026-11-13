@@ -992,7 +992,7 @@
     event.preventDefault();
     if (buildInProgress) return;
     try {
-      getAppConfig(); // throws on invalid URL - drives the error message below
+      const app = getAppConfig(); // throws on invalid URL
       await buildAndDownload(app);
     } catch (error) {
       setMessage(error.message, "error");
