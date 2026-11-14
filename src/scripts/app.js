@@ -76,6 +76,7 @@
   let packageWasEdited = false;
   let nameWasEdited = false;
   let base64Icon = null;
+  let fetchedIconDataUrl = null;
   let iconUploadToken = 0;
   let iconProcessing = false;
   const MAX_ICON_DATA_URL_LENGTH = 48 * 1024;
@@ -323,7 +324,7 @@
       appName: config.name,
       appId: config.appId,
       appVersion: config.version,
-      icon: base64Icon,
+      icon: base64Icon || fetchedIconDataUrl,
       autoFetchIcon: els.autoFetchIcon ? els.autoFetchIcon.checked : true,
       showSpinner: els.showSpinner.checked,
       pullToRefresh: els.pullToRefresh.checked,
@@ -466,6 +467,7 @@
       els.iconPreviewPlaceholder.style.display = "grid";
     }
     iconAppliedUrl = "";
+    fetchedIconDataUrl = null;
   }
 
   function showIconPending() {
@@ -516,6 +518,39 @@
     });
   }
 
+  function loadImageFavicon(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("favicon-unavailable"));
+      img.src = src;
+    });
+  }
+
+  function fetchedIconToDataUrl(img) {
+    // Compress to a small WebP data URL so the favicon fits under the
+    // Cloudflare request/body limits (48 KB) when it is sent to the builder.
+    const sizes = [192, 128, 96];
+    const qualities = [0.85, 0.7, 0.55];
+    for (const size of sizes) {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const context = canvas.getContext("2d");
+      if (!context) break;
+      context.clearRect(0, 0, size, size);
+      context.drawImage(img, 0, 0, size, size);
+      for (const quality of qualities) {
+        const dataUrl = canvas.toDataURL("image/webp", quality);
+        if (typeof dataUrl === "string" && dataUrl.length <= MAX_ICON_DATA_URL_LENGTH) {
+          return dataUrl;
+        }
+      }
+    }
+    throw new Error("Could not compress the fetched favicon enough to upload.");
+  }
+
   function isFetchableHost(url) {
     try {
       const hostname = new URL(url).hostname;
@@ -547,21 +582,21 @@
     const faviconUrl = `${backendUrl}/api/favicon?url=${encodeURIComponent(url)}`;
 
     try {
-      await preloadImage(faviconUrl);
+      const img = await loadImageFavicon(faviconUrl);
+      if (token !== iconFetchToken) {
+        return;
+      }
+      fetchedIconDataUrl = fetchedIconToDataUrl(img);
+      iconAppliedUrl = url;
+      showFetchedIcon(faviconUrl);
+      updatePhonePreview();
+      updateBuildButtonState();
     } catch (error) {
+      fetchedIconDataUrl = null;
       if (token === iconFetchToken) {
         showPlaceholderIcon();
       }
-      return;
     }
-
-    if (token !== iconFetchToken) {
-      return;
-    }
-
-    iconAppliedUrl = url;
-    showFetchedIcon(faviconUrl);
-    updatePhonePreview();
   }
 
   function scheduleFaviconRefresh() {
@@ -581,6 +616,7 @@
 
     iconScheduledUrl = rawValue;
     cancelPendingIconFetch();
+    fetchedIconDataUrl = null;
     showIconPending();
 
     iconFetchTimer = setTimeout(() => {
@@ -978,6 +1014,7 @@
     iconUploadToken++;
     iconProcessing = false;
     base64Icon = null;
+    fetchedIconDataUrl = null;
     els.appIcon.value = "";
     packageWasEdited = false;
     updateIconUploadState();
@@ -1103,6 +1140,7 @@
       prepareUploadedIcon(file).then((preparedIcon) => {
         if (token !== iconUploadToken) return;
         base64Icon = preparedIcon;
+        fetchedIconDataUrl = null;
         iconProcessing = false;
         updateIconUploadState();
         updatePreview();
@@ -1119,6 +1157,7 @@
       });
     } else {
       base64Icon = null;
+      fetchedIconDataUrl = null;
       iconProcessing = false;
       updateIconUploadState();
       updatePreview();
@@ -1132,6 +1171,7 @@
       iconUploadToken++;
       iconProcessing = false;
       base64Icon = null;
+      fetchedIconDataUrl = null;
       els.appIcon.value = "";
       updateIconUploadState();
       updatePreview();

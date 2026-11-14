@@ -4,6 +4,8 @@ import {
 } from '../_lib.js';
 
 const MAX_BODY_BYTES = 64 * 1024;
+const MAX_ICON_LENGTH = 48 * 1024;
+const ICON_DATA_URL = /^data:image\/(png|jpeg|webp);base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/i;
 
 export async function onRequestPost(context) {
   const { request, env } = context;
@@ -33,6 +35,20 @@ export async function onRequestPost(context) {
     ? body.customUserAgent.trim().slice(0, 512)
     : '';
 
+  // --- Icon: a PNG/JPEG/WebP data URL, or nothing. ---
+  const icon = body.icon == null || body.icon === '' ? '' : body.icon;
+  if (icon !== '') {
+    if (typeof icon !== 'string') return json({ error: 'Icon must be a Base64 image data URL' }, { status: 400 });
+    if (icon.length > MAX_ICON_LENGTH) return json({ error: 'Icon is too large. Choose a smaller image.' }, { status: 413 });
+    const comma = icon.indexOf(',');
+    if (comma === -1 || !ICON_DATA_URL.test(icon)) {
+      return json({ error: 'Icon must be a PNG, JPEG, or WebP Base64 data URL' }, { status: 400 });
+    }
+  }
+  const autoFetchIcon = body.autoFetchIcon == null
+    ? true
+    : body.autoFetchIcon === true || body.autoFetchIcon === 'true';
+
   const buildId = crypto.randomUUID();
 
   const inputs = {
@@ -46,6 +62,8 @@ export async function onRequestPost(context) {
     windowHeight: String(height),
     fullScreen: String(body.fullScreen === true),
     customUserAgent,
+    icon,
+    autoFetchIcon: String(autoFetchIcon),
     buildId
   };
 

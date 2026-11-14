@@ -609,6 +609,29 @@
     });
   }
 
+  function compressFetchedIcon(img) {
+    // Compress the favicon into a small WebP data URL so it fits under the
+    // 45 KB upload limit and can be passed to the EXE builder.
+    const sizes = [256, 192, 128];
+    const qualities = [0.85, 0.7, 0.55];
+    for (const size of sizes) {
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) break;
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      for (const quality of qualities) {
+        const dataUrl = canvas.toDataURL("image/webp", quality);
+        if (typeof dataUrl === "string" && dataUrl.length <= MAX_ICON_DATA_URL_LENGTH) {
+          return dataUrl;
+        }
+      }
+    }
+    throw new Error("Could not compress the fetched favicon enough to upload.");
+  }
+
   async function refreshFavicon() {
     if (uploadedIcon || !els.autoIcon || !els.autoIcon.checked) return;
     let url;
@@ -626,13 +649,7 @@
         `${backendUrl}/api/favicon?url=${encodeURIComponent(url)}`
       );
       if (token !== faviconToken) return;
-      const canvas = document.createElement("canvas");
-      canvas.width = 256;
-      canvas.height = 256;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) throw new Error("canvas-unavailable");
-      ctx.drawImage(img, 0, 0, 256, 256);
-      fetchedIcon = canvas.toDataURL("image/png");
+      fetchedIcon = compressFetchedIcon(img);
     } catch (error) {
       if (token === faviconToken) fetchedIcon = null;
     }

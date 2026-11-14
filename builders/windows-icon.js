@@ -6,8 +6,8 @@ const MAX_ICON_BYTES = 20 * 1024 * 1024; // 20 MB decoded ceiling
 
 const sharpLimit = { limitInputPixels: 64 * 1024 * 1024 }; // ~4096x4096
 
-/** Resolve a Windows app icon, retrying the site's favicon if the client icon is missing or invalid. */
-export async function resolveWindowsIcon({ icon, siteUrl, appName, size }) {
+/** Resolve a Windows app icon. `autoFetchIcon` gates the site-favicon fallback. */
+export async function resolveWindowsIcon({ icon, siteUrl, appName, size, autoFetchIcon = true }) {
   if (icon) {
     try {
       const base64 = String(icon).replace(/^data:image\/[a-z0-9.+-]+;base64,/i, '');
@@ -24,7 +24,7 @@ export async function resolveWindowsIcon({ icon, siteUrl, appName, size }) {
     }
   }
 
-  if (siteUrl) {
+  if (autoFetchIcon !== false && autoFetchIcon !== 'false' && siteUrl) {
     try {
       const favicon = await fetchFaviconBuffer(siteUrl);
       if (favicon && favicon.length <= MAX_ICON_BYTES) {

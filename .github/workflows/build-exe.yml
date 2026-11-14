@@ -45,6 +45,15 @@ on:
         description: 'Custom User Agent (Optional)'
         required: false
         default: ''
+      icon:
+        description: 'Optional Base64 image data URL for the app icon'
+        required: false
+        default: ''
+      autoFetchIcon:
+        description: 'Fetch a website favicon when no valid custom icon is provided'
+        type: boolean
+        required: true
+        default: true
       buildId:
         description: 'Internal Build ID'
         required: true
@@ -152,6 +161,8 @@ jobs:
       - name: Compile Windows EXE
         shell: bash
         env:
+          APP_ICON: ${{ inputs.icon }}
+          AUTO_FETCH_ICON: ${{ inputs.autoFetchIcon }}
           INPUT_SITE_URL: ${{ inputs.siteUrl }}
           INPUT_APP_NAME: ${{ inputs.appName }}
           INPUT_APP_ID: ${{ inputs.appId }}

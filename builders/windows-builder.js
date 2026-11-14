@@ -31,6 +31,7 @@ export async function buildEXE({
   appId,
   appVersion,
   icon = null,
+  autoFetchIcon = true,
   installerType = 'nsis',
   windowWidth = 1200,
   windowHeight = 800,
@@ -297,7 +298,7 @@ Artifacts land in \`dist/\`.
 
   fs.mkdirSync(path.join(buildDir, 'assets'), { recursive: true });
 
-  const pngBuffer = await resolveWindowsIcon({ icon, siteUrl: validSiteUrl, appName: validName, size: 256 });
+  const pngBuffer = await resolveWindowsIcon({ icon, siteUrl: validSiteUrl, appName: validName, size: 256, autoFetchIcon });
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.ico'), pngToIco(pngBuffer));
   fs.writeFileSync(path.join(buildDir, 'assets', 'icon.png'), pngBuffer);
 

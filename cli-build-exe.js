@@ -22,6 +22,10 @@ const engine = (process.argv[12] || process.env.BUILD_ENGINE || 'electron').toLo
   : 'electron';
 
 const buildsDir = path.resolve('./builds-cli');
+const icon = process.env.APP_ICON || null;
+const autoFetchIcon = process.env.AUTO_FETCH_ICON === undefined
+  ? true
+  : process.env.AUTO_FETCH_ICON === 'true';
 
 console.log('--- SiteToApp Windows CLI Build ---');
 console.log('Website URL:', siteUrl);
@@ -33,6 +37,8 @@ console.log('Engine:', engine);
 console.log('Window Size:', windowWidth + 'x' + windowHeight);
 console.log('Full Screen:', fullScreen);
 console.log('Custom User Agent:', customUserAgent);
+console.log('Custom Icon:', icon ? 'provided' : 'not provided');
+console.log('Auto Fetch Icon:', autoFetchIcon);
 console.log('Build ID:', buildId);
 console.log('-----------------------------------');
 
@@ -43,7 +49,8 @@ builder({
   appName,
   appId,
   appVersion,
-  icon: null,
+  icon,
+  autoFetchIcon,
   installerType,
   windowWidth,
   windowHeight,

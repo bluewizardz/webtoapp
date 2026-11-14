@@ -27,6 +27,7 @@ export async function buildTauri(rawParams = {}) {
     appId,
     appVersion,
     icon = null,
+    autoFetchIcon = true,
     installerType = 'nsis'
   } = rawParams || {};
 
@@ -192,7 +193,7 @@ tauri = { version = "2", features = [] }
   );
 
   // === Icons ===
-  const pngBuffer = await resolveWindowsIcon({ icon, siteUrl: validSiteUrl, appName: validName, size: 512 });
+  const pngBuffer = await resolveWindowsIcon({ icon, siteUrl: validSiteUrl, appName: validName, size: 512, autoFetchIcon });
 
   await writePngSize(pngBuffer, path.join(iconsDir, '32x32.png'), 32);
   await writePngSize(pngBuffer, path.join(iconsDir, '128x128.png'), 128);

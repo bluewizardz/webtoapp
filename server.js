@@ -416,6 +416,7 @@ app.post('/api/build/exe', compilerLimiter, async (req, res) => {
         appId: valid.appId,
         appVersion: valid.appVersion,
         icon: valid.icon,
+        autoFetchIcon: valid.autoFetchIcon,
         installerType: valid.installerType,
         windowWidth: valid.windowWidth,
         windowHeight: valid.windowHeight,
