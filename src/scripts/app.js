@@ -878,6 +878,7 @@
     try {
       setButtonLoading(true);
       showProgress("Queuing Android compiler build…", 15);
+      hideBuildSuccess();
 
       const response = await fetch(`${backendUrl}/api/build/apk`, {
         method: "POST",

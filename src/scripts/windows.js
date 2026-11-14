@@ -586,12 +586,12 @@
     if (hasUrl) {
       try {
         normalizeUrl(els.url.value);
-        setStatus("Ready");
+        setStatus("");
       } catch (error) {
         setStatus(error.message, "error");
       }
     } else {
-      setStatus("Ready");
+      setStatus("");
     }
 
     updateBadge();

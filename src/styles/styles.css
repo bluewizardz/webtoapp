@@ -357,17 +357,6 @@ button, input {
   position: relative;
 }
 
-.btn:not(:has(svg))::before,
-button:not(:has(svg)):not(.theme-toggle)::before {
-  content: "";
-  width: 0.42em;
-  height: 0.42em;
-  flex: 0 0 auto;
-  border-top: 1.5px solid currentColor;
-  border-right: 1.5px solid currentColor;
-  transform: rotate(45deg);
-}
-
 .btn-primary {
   background: var(--primary-color);
   color: var(--primary-btn-text);
