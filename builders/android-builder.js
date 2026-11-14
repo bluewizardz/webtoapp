@@ -509,16 +509,21 @@ public class MainActivity extends Activity {
               return false;
             }
 
+            // A nested scroll region (chat list, feed, drawer, …) blocks
+            // pull-to-refresh even at its top: a downward swipe there is the
+            // user scrolling, not asking to reload. The document roots keep
+            // the top-of-page check below so PTR still works on normal pages.
+            var roots = [document.scrollingElement, document.documentElement, document.body];
             while (element && element.nodeType === 1) {
-              var overflowY = window.getComputedStyle(element).overflowY;
-              var scrollable = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
-              if (scrollable && element.scrollHeight > element.clientHeight + 1 && element.scrollTop > 1) {
-                return false;
+              if (roots.indexOf(element) === -1) {
+                var overflowY = window.getComputedStyle(element).overflowY;
+                var scrollable = overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay';
+                if (scrollable && element.scrollHeight > element.clientHeight + 1) {
+                  return false;
+                }
               }
               element = element.parentElement;
             }
-
-            var roots = [document.scrollingElement, document.documentElement, document.body];
             for (var i = 0; i < roots.length; i++) {
               if (roots[i] && roots[i].scrollTop > 1) return false;
             }
