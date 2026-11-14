@@ -1,4 +1,4 @@
-import { unzipSync } from 'fflate';
+import { Unzip, UnzipInflate } from 'fflate';
 import {
   isBuildId, githubHeaders, REPO_API, findReleaseByTag, findArtifact, sanitizeDisposition
 } from '../_lib.js';
@@ -53,7 +53,8 @@ async function assetResponse(asset, headers) {
         'Location': location,
         'Content-Disposition': `attachment; filename="${filename}"`,
         'Cache-Control': 'no-store',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'X-Download-Path': 'release-asset'
       }
     });
   }
@@ -72,13 +73,19 @@ function streamAsset(response, filename, contentType) {
     'Content-Disposition': `attachment; filename="${filename}"`,
     'Cache-Control': 'no-store',
     'X-Content-Type-Options': 'nosniff',
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': '*',
+    'X-Download-Path': 'release-asset'
   };
   const length = response.headers.get('Content-Length');
   if (length) headers['Content-Length'] = length;
   return new Response(response.body, { status: 200, headers });
 }
 
+// Streams the .apk entry out of a GitHub Actions artifact ZIP without
+// buffering the whole archive, so the client starts receiving bytes
+// immediately instead of waiting for a full download + decompress in memory.
+// The ZIP entry name is only known after the response has started, so the
+// download is named app-<buildId>.apk.
 async function artifactDownload(repo, buildId, headers) {
   const artifact = await findArtifact(repo, buildId, headers);
   if (!artifact) return textError('APK not found for this build', 404);
@@ -87,28 +94,60 @@ async function artifactDownload(repo, buildId, headers) {
   }
 
   const zipRes = await fetch(`${repo}/actions/artifacts/${artifact.id}/zip`, { headers });
-  if (!zipRes.ok) return textError('Failed to fetch the build artifact', 502);
+  if (!zipRes.ok || !zipRes.body) return textError('Failed to fetch the build artifact', 502);
 
-  let unzipped;
-  try {
-    unzipped = unzipSync(new Uint8Array(await zipRes.arrayBuffer()));
-  } catch {
-    return textError('Failed to decompress the build artifact', 500);
-  }
+  const stream = new ReadableStream({
+    async start(controller) {
+      const unzip = new Unzip();
+      unzip.register(UnzipInflate);
+      let sawApk = false;
 
-  const apkName = Object.keys(unzipped).find((name) => name.toLowerCase().endsWith('.apk'));
-  if (!apkName) return textError('APK not found inside the build artifact', 500);
+      unzip.onfile = (file) => {
+        const name = String(file.name || '');
+        if (!name.toLowerCase().endsWith('.apk')) return;
+        sawApk = true;
+        file.ondata = (err, dat, final) => {
+          if (err) {
+            try { controller.error(err); } catch {}
+            return;
+          }
+          try { controller.enqueue(dat); } catch {}
+          if (final) {
+            try { controller.close(); } catch {}
+          }
+        };
+        file.start();
+      };
 
-  const apkData = unzipped[apkName];
-  return new Response(apkData, {
+      const reader = zipRes.body.getReader();
+      try {
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) {
+            unzip.push(new Uint8Array(0), true);
+            break;
+          }
+          unzip.push(value);
+        }
+      } catch (error) {
+        try { controller.error(error); } catch {}
+        return;
+      }
+      if (!sawApk) {
+        try { controller.error(new Error('APK not found inside the build artifact')); } catch {}
+      }
+    }
+  });
+
+  return new Response(stream, {
     status: 200,
     headers: {
       'Content-Type': 'application/vnd.android.package-archive',
-      'Content-Disposition': `attachment; filename="${sanitizeDisposition(apkName)}"`,
-      'Content-Length': String(apkData.length),
+      'Content-Disposition': `attachment; filename="app-${sanitizeDisposition(buildId)}.apk"`,
       'Cache-Control': 'no-store',
       'X-Content-Type-Options': 'nosniff',
-      'Access-Control-Allow-Origin': '*'
+      'Access-Control-Allow-Origin': '*',
+      'X-Download-Path': 'artifact-stream'
     }
   });
 }
