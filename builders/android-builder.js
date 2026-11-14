@@ -338,6 +338,25 @@ dependencies {
     </style>
 </resources>`;
 
+  // Night-mode variant: Android merges res/values-night when system night
+  // mode is on, so the WebView's prefers-color-scheme follows the device.
+  // Same style name and colors as day — pass-through, no force-dark.
+  const valuesNightDir = path.join(resDir, 'values-night');
+  fs.mkdirSync(valuesNightDir, { recursive: true });
+
+  const stylesNightContent = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.${sanitizedThemeName}" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:colorPrimary">@color/primary</item>
+        <item name="android:colorPrimaryDark">@color/primary_dark</item>
+        <item name="android:colorAccent">@color/accent</item>
+    </style>
+</resources>`;
+
+  fs.writeFileSync(path.join(valuesNightDir, 'styles.xml'), stylesNightContent);
+
   fs.writeFileSync(path.join(valuesDir, 'styles.xml'), stylesContent);
 
   // Create activity_main.xml
